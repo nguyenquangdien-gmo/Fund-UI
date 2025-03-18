@@ -1,18 +1,19 @@
 <template>
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">Danh sách quỹ chưa đóng</h2>
-
-
+        <h2 class="text-xl font-bold mb-4" style="text-align: center;">Danh sách quỹ chưa đóng</h2>
 
         <p v-if="error" class="text-red-500">{{ error }}</p>
         <p v-if="loading">Đang tải dữ liệu...</p>
 
-        <div v-if="filteredContributions.length > 0">
+        <div v-if="paginatedContributions.length > 0">
             <div class="mb-4 flex items-center gap-4">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm, mô tả..."
                     class="p-inputtext w-64" />
             </div>
-            <DataTable :value="filteredContributions" class="p-datatable-striped">
+
+            <!-- DataTable với phân trang -->
+            <DataTable :value="paginatedContributions" class="p-datatable-striped" paginator :rows="rowsPerPage"
+                :totalRecords="filteredContributions.length" @page="onPageChange" responsiveLayout="scroll">
                 <Column field="month" header="Tháng" />
                 <Column field="year" header="Năm" />
                 <Column field="deadline" header="Hạn chót">
@@ -48,6 +49,7 @@
         </Dialog>
     </div>
 </template>
+
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import DataTable from "primevue/datatable";
@@ -67,6 +69,11 @@ const selectedContribution = ref(null);
 const showDialog = ref(false);
 const paymentAmount = ref(0);
 
+// Pagination
+const rowsPerPage = ref(5); // Số dòng hiển thị trên mỗi trang
+const currentPage = ref(0); // Trang hiện tại
+
+// Fetch Data
 const fetchPendingContributions = async () => {
     try {
         const token = localStorage.getItem("accessToken");
@@ -75,10 +82,9 @@ const fetchPendingContributions = async () => {
         }
 
         const response = await axios.get(`http://localhost:8080/api/periods/unpaid/${user.id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
         });
+
         contributions.value = response.data;
     } catch (err) {
         error.value = "Không thể tải dữ liệu";
@@ -87,12 +93,13 @@ const fetchPendingContributions = async () => {
         loading.value = false;
     }
 };
+
 onMounted(fetchPendingContributions);
 
+// Filter Search
 const filteredContributions = computed(() => {
-    if (!searchQuery.value) {
-        return contributions.value;
-    }
+    if (!searchQuery.value) return contributions.value;
+
     return contributions.value.filter((contribution) =>
         (contribution.month && contribution.month.toString().includes(searchQuery.value)) ||
         (contribution.year && contribution.year.toString().includes(searchQuery.value)) ||
@@ -100,12 +107,25 @@ const filteredContributions = computed(() => {
     );
 });
 
+// Phân trang dữ liệu đã lọc
+const paginatedContributions = computed(() => {
+    const start = currentPage.value * rowsPerPage.value;
+    return filteredContributions.value.slice(start, start + rowsPerPage.value);
+});
+
+// Xử lý chuyển trang
+const onPageChange = (event) => {
+    currentPage.value = event.page;
+};
+
+// Mở Dialog Thanh Toán
 const openPaymentDialog = (contribution) => {
     selectedContribution.value = contribution;
     paymentAmount.value = 0;
     showDialog.value = true;
 };
 
+// Xác nhận thanh toán
 const confirmPayment = async () => {
     try {
         const token = localStorage.getItem("accessToken");
@@ -117,15 +137,11 @@ const confirmPayment = async () => {
             periodId: selectedContribution.value.id,
             userId: userId.value,
             totalAmount: paymentAmount.value,
-            note: "Thanh toán quỹ tháng " + selectedContribution.value.month + " năm " + selectedContribution.value.year,
+            note: `Thanh toán quỹ tháng ${selectedContribution.value.month} năm ${selectedContribution.value.year}`,
         };
-        console.log(selectedContribution.value);
-
 
         await axios.post(`http://localhost:8080/api/v1/contributions`, paymentData, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
         });
 
         showDialog.value = false;
@@ -135,8 +151,6 @@ const confirmPayment = async () => {
     }
 };
 </script>
-
-
 
 <style scoped>
 .p-datatable th {

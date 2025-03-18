@@ -81,7 +81,7 @@ const onPageChange = (event) => {
 
 <template>
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">Danh sách đóng quỹ</h2>
+        <h2 class="text-xl font-bold mb-4">Lịch sử đóng quỹ</h2>
 
         <div class="mb-4 flex items-center gap-4">
             <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."

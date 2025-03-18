@@ -4,8 +4,11 @@ import LoginView from '@/views/auth/LoginView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import ContributionsView from '@/views/ContributionsView.vue'
 import OwedView from '@/views/OwedView.vue'
-import FundView from '@/views/FundView.vue'
-import Periodview from '@/views/Periodview.vue'
+import FundView from '@/views/admin/FundView.vue'
+import PeriodView from '@/views/admin/PeriodView.vue'
+import PenaltyView from '@/views/admin/PenaltyView.vue'
+import PayPenView from '@/views/PayPenView.vue'
+import StatsView from '@/views/StatsView.vue'
 // import ContributionView from '@/views/ContributionView.vue'
 // @ts-ignore// @ts-ignore
 const router = createRouter({
@@ -15,6 +18,11 @@ const router = createRouter({
       path: '/',
       name: 'login',
       component: LoginView,
+    },
+    {
+      path: '/home',
+      name: 'home',
+      component: StatsView,
     },
     {
       path: '/register',
@@ -44,8 +52,29 @@ const router = createRouter({
     {
       path: '/periods',
       name: 'periods',
-      component: Periodview,
+      component: PeriodView,
     },
+    {
+      path: '/penalties',
+      name: 'penalties',
+      component: PenaltyView,
+    },
+    {
+      path: '/bills',
+      name: 'bills',
+      component: PayPenView,
+    },
+    {
+      path: '/stats',
+      name: 'stats',
+      component: StatsView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFound.vue'),
+    },
+
     {
       path: '/about',
       name: 'about',

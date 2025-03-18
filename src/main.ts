@@ -11,7 +11,14 @@ import 'primeicons/primeicons.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import Chart from 'chart.js/auto'
 
+declare global {
+  interface Window {
+    Chart: typeof Chart
+  }
+}
+window.Chart = Chart
 const app = createApp(App)
 
 app.use(createPinia())

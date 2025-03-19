@@ -82,7 +82,9 @@ const validateForm = (): boolean => {
 
     return isValid;
 };
+import { useUserStore } from '@/pinia/userStore';
 
+const userStore = useUserStore();
 const handleLogin = async () => {
     if (validateForm()) {
         try {
@@ -94,6 +96,9 @@ const handleLogin = async () => {
                 localStorage.setItem('accessToken', response.data.accessToken);
                 sessionStorage.setItem('user', JSON.stringify(response.data.user));
                 console.log('login successful');
+                const user = response.data.user;
+                // console.log('user', user);
+                userStore.setUser(user);
 
                 router.push('/histories');
             } else {

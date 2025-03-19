@@ -115,10 +115,10 @@ const handleRegister = async () => {
                 fullName: name.value,
                 email: email.value,
                 password: password.value,
-                role: 'USER'
+                role: 'MEMBER'
             });
-            if (response.data === 'Register succeeded') {
-                router.push('/');
+            if (response.data) {
+                router.push('/login');
             } else {
                 errors.value.email = 'Registration failed. Please try again.';
             }

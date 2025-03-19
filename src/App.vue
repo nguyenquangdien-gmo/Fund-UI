@@ -14,7 +14,7 @@ import Header from '@/components/common/Header.vue'
 
 <style scoped>
 .container {
-  background-color: white;
+  background-color: #f1f5f9;
   border-radius: 15px;
   padding: 0;
 }

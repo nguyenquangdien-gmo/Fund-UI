@@ -8,21 +8,22 @@ import FundView from '@/views/admin/FundView.vue'
 import PeriodView from '@/views/admin/PeriodView.vue'
 import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
-import StatsView from '@/views/StatsView.vue'
-// import ContributionView from '@/views/ContributionView.vue'
-// @ts-ignore// @ts-ignore
+import axios from 'axios'
+import StatsView from '@/views/admin/StatsView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'login',
-      component: LoginView,
+      name: 'home',
+      component: HistoryView,
+      meta: { requiresAuth: true }, // Yêu cầu phải đăng nhập
     },
     {
-      path: '/home',
-      name: 'home',
-      component: StatsView,
+      path: '/login',
+      name: 'login',
+      component: LoginView,
     },
     {
       path: '/register',
@@ -33,57 +34,91 @@ const router = createRouter({
       path: '/histories',
       name: 'histories',
       component: HistoryView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/contributions',
       name: 'contributions',
       component: ContributionsView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/contributions/owed',
       name: 'owed',
       component: OwedView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/funds',
-      name: 'funs',
+      name: 'funds',
       component: FundView,
+      meta: { requiresAdmin: true },
     },
     {
       path: '/periods',
       name: 'periods',
       component: PeriodView,
+      meta: { requiresAdmin: true },
     },
     {
       path: '/penalties',
       name: 'penalties',
       component: PenaltyView,
-    },
-    {
-      path: '/bills',
-      name: 'bills',
-      component: PayPenView,
+      meta: { requiresAdmin: true },
     },
     {
       path: '/stats',
       name: 'stats',
       component: StatsView,
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/bills',
+      name: 'bills',
+      component: PayPenView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('../views/NotFound.vue'),
     },
-
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
-    },
   ],
+})
+
+// Hàm kiểm tra người dùng có phải admin không
+const checkAdmin = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axios.get('http://localhost:8080/api/v1/tokens/is-admin', {
+      params: { token },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return response.data // Trả về true nếu là admin
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra quyền admin:', error)
+    return false
+  }
+}
+
+// Middleware kiểm tra quyền truy cập trước khi vào trang
+router.beforeEach(async (to, from, next) => {
+  const token = localStorage.getItem('accessToken')
+  const isAuthenticated = !!token
+
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next({ name: 'login' }) // Nếu chưa đăng nhập, chuyển đến login
+  }
+
+  if (to.meta.requiresAdmin) {
+    const isAdmin = await checkAdmin()
+    if (!isAdmin) {
+      return next({ name: 'not-found' }) // Nếu không phải admin, chuyển đến NotFound
+    }
+  }
+
+  next()
 })
 
 export default router

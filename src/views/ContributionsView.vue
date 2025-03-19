@@ -16,6 +16,11 @@
                 :totalRecords="filteredContributions.length" @page="onPageChange" responsiveLayout="scroll">
                 <Column field="month" header="Tháng" />
                 <Column field="year" header="Năm" />
+                <Column field="totalAmount" header="Tổng tiền">
+                    <template #body="slotProps">
+                        {{ formatCurrency(slotProps.data.totalAmount) }}
+                    </template>
+                </Column>
                 <Column field="deadline" header="Hạn chót">
                     <template #body="slotProps">
                         <span :class="{ 'text-red-500': new Date() > new Date(slotProps.data.deadline) }">
@@ -40,7 +45,7 @@
         <Dialog v-model:visible="showDialog" header="Đóng Quỹ" :modal="true">
             <div class="p-fluid">
                 <p class="mb-2">Nhập số tiền cần đóng:</p>
-                <InputText v-model="paymentAmount" type="number" class="p-inputtext w-full" />
+                <InputText v-model="paymentAmount" value="150000" type="number" class="p-inputtext w-full" />
                 <div class="flex justify-end gap-2 mt-4">
                     <Button label="Hủy" class="p-button-text" @click="showDialog = false" />
                     <Button label="Xác nhận" class="p-button-primary" @click="confirmPayment" />
@@ -58,6 +63,7 @@ import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import axios from "axios";
+import formatCurrency from "@/utils/FormatCurrency";
 
 const contributions = ref([]);
 const loading = ref(true);
@@ -69,11 +75,9 @@ const selectedContribution = ref(null);
 const showDialog = ref(false);
 const paymentAmount = ref(0);
 
-// Pagination
-const rowsPerPage = ref(5); // Số dòng hiển thị trên mỗi trang
-const currentPage = ref(0); // Trang hiện tại
+const rowsPerPage = ref(5);
+const currentPage = ref(0);
 
-// Fetch Data
 const fetchPendingContributions = async () => {
     try {
         const token = localStorage.getItem("accessToken");
@@ -96,7 +100,6 @@ const fetchPendingContributions = async () => {
 
 onMounted(fetchPendingContributions);
 
-// Filter Search
 const filteredContributions = computed(() => {
     if (!searchQuery.value) return contributions.value;
 
@@ -107,25 +110,21 @@ const filteredContributions = computed(() => {
     );
 });
 
-// Phân trang dữ liệu đã lọc
 const paginatedContributions = computed(() => {
     const start = currentPage.value * rowsPerPage.value;
     return filteredContributions.value.slice(start, start + rowsPerPage.value);
 });
 
-// Xử lý chuyển trang
 const onPageChange = (event) => {
     currentPage.value = event.page;
 };
 
-// Mở Dialog Thanh Toán
 const openPaymentDialog = (contribution) => {
     selectedContribution.value = contribution;
     paymentAmount.value = 0;
     showDialog.value = true;
 };
 
-// Xác nhận thanh toán
 const confirmPayment = async () => {
     try {
         const token = localStorage.getItem("accessToken");
@@ -145,7 +144,7 @@ const confirmPayment = async () => {
         });
 
         showDialog.value = false;
-        fetchPendingContributions(); // Refresh danh sách sau khi thanh toán
+        fetchPendingContributions();
     } catch (err) {
         console.error("Lỗi khi thanh toán:", err);
     }

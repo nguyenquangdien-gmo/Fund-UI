@@ -83,49 +83,53 @@ const onPageChange = (event) => {
     <div class="p-4">
         <h2 class="text-xl font-bold mb-4">Lịch sử đóng quỹ</h2>
 
-        <div class="mb-4 flex items-center gap-4">
-            <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-                class="p-inputtext w-64" />
-            <Dropdown v-model="rowsPerPage" :options="[5, 10, 15]" placeholder="Số dòng/trang" class="w-32" />
+        <div v-if="filteredContributions.length > 0">
+            <div class="mb-4 flex items-center gap-4">
+                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
+                    class="p-inputtext w-64" />
+                <Dropdown v-model="rowsPerPage" :options="[5, 10, 15]" placeholder="Số dòng/trang" class="w-32" />
+            </div>
+
+            <p v-if="error" class="text-red-500">{{ error }}</p>
+            <p v-if="loading">Đang tải dữ liệu...</p>
+
+            <DataTable v-else :value="paginatedContributions" class="p-datatable-striped" paginator :rows="rowsPerPage"
+                :totalRecords="filteredContributions.length" :first="currentPage * rowsPerPage" @page="onPageChange">
+                <Column field="id" header="Id" />
+                <Column field="periodName" header="Kỳ đóng" />
+                <Column field="totalAmount" header="Số tiền">
+                    <template #body="slotProps">
+                        {{ formatCurrency(slotProps.data.totalAmount) }}
+                    </template>
+                </Column>
+                <Column field="paymentStatus" header="Trạng thái">
+                    <template #body="slotProps">
+                        <Tag :value="slotProps.data.paymentStatus"
+                            :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
+                    </template>
+                </Column>
+                <Column field="note" header="Ghi chú" />
+                <Column field="deadline" header="Hạn chót">
+                    <template #body="slotProps">
+                        <span :class="{ 'text-red-500': slotProps.data.isLate }">
+                            {{ slotProps.data.deadline }}
+                        </span>
+                    </template>
+                </Column>
+                <Column field="owedAmount" header="Thiếu">
+                    <template #body="slotProps">
+                        {{ formatCurrency(slotProps.data.owedAmount) }}
+                    </template>
+                </Column>
+                <Column field="overpaidAmount" header="Dư">
+                    <template #body="slotProps">
+                        {{ formatCurrency(slotProps.data.overpaidAmount) }}
+                    </template>
+                </Column>
+            </DataTable>
         </div>
+        <p v-else>Bạn chưa đóng bất kì quỹ nào</p>
 
-        <p v-if="error" class="text-red-500">{{ error }}</p>
-        <p v-if="loading">Đang tải dữ liệu...</p>
-
-        <DataTable v-else :value="paginatedContributions" class="p-datatable-striped" paginator :rows="rowsPerPage"
-            :totalRecords="filteredContributions.length" :first="currentPage * rowsPerPage" @page="onPageChange">
-            <Column field="id" header="Id" />
-            <Column field="periodName" header="Kỳ đóng" />
-            <Column field="totalAmount" header="Số tiền">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.totalAmount) }}
-                </template>
-            </Column>
-            <Column field="paymentStatus" header="Trạng thái">
-                <template #body="slotProps">
-                    <Tag :value="slotProps.data.paymentStatus"
-                        :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
-                </template>
-            </Column>
-            <Column field="note" header="Ghi chú" />
-            <Column field="deadline" header="Hạn chót">
-                <template #body="slotProps">
-                    <span :class="{ 'text-red-500': slotProps.data.isLate }">
-                        {{ slotProps.data.deadline }}
-                    </span>
-                </template>
-            </Column>
-            <Column field="owedAmount" header="Thiếu">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.owedAmount) }}
-                </template>
-            </Column>
-            <Column field="overpaidAmount" header="Dư">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.overpaidAmount) }}
-                </template>
-            </Column>
-        </DataTable>
     </div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
-    <div class="card">
-        <Menubar :model="items">
+    <div v-if="isLoggedIn" class="card">
+        <Menubar :model="filteredItems">
             <template #end>
                 <div class="flex items-center gap-2 info-box">
                     <Message severity="success">
@@ -8,11 +8,38 @@
                             <span class="ml-2">
                                 {{ user.fullName || "Guest" }}
                             </span>
+
+                            <!-- Nút Thông báo -->
                             <Button icon="pi pi-bell" style="font-size: 1.2rem;"
-                                class="p-button-rounded p-button-text p-button-plain" />
-                            <Badge :value="8" class="notification-badge" style="background-color: #f77a86;" />
+                                class="p-button-rounded p-button-text p-button-plain"
+                                @mouseenter="toggleReminder($event)" />
+
+                            <Badge v-if="reminders.length > 0" :value="reminders.length" class="notification-badge"
+                                style="background-color: #f77a86;" />
                         </template>
                     </Message>
+
+                    <!-- Popup Reminders -->
+                    <OverlayPanel ref="reminderPanel">
+                        <div v-if="reminders.length > 0">
+                            <ul class="reminder-list">
+                                <li v-for="reminder in reminders" :key="reminder.id"
+                                    @click="markAsReadAndGo(reminder.id)" class="reminder-item">
+                                    <strong>{{ reminder.title }}</strong>
+                                    <p>{{ reminder.description }}</p>
+                                </li>
+                            </ul>
+                            <!-- Nút Đã xem tất cả -->
+                            <Button label="Đã xem tất cả" class="p-button-sm p-button-text mark-all-read-btn"
+                                @click="markAllAsRead" />
+                        </div>
+                        <div v-else>
+                            <p class="no-reminder">No reminders</p>
+                        </div>
+                    </OverlayPanel>
+
+                    <!-- Nút Logout -->
+                    <Button label="Logout" icon="pi pi-sign-out" class="p-button-danger" @click="handleLogout" />
                 </div>
             </template>
         </Menubar>
@@ -20,71 +47,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router"; // Import router
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/pinia/userStore";
 import Menubar from "primevue/menubar";
 import Message from "primevue/message";
 import Badge from "primevue/badge";
 import Button from "primevue/button";
+import OverlayPanel from "primevue/overlaypanel";
+import axios from "axios";
 
-const router = useRouter(); // Sử dụng Vue Router
+const router = useRouter();
+const userStore = useUserStore();
+const user = computed(() => userStore.user);
+const isLoggedIn = computed(() => !!user.value.role);
 
-const user = ref(JSON.parse(sessionStorage.getItem("user") || "{}"));
+interface Reminder {
+    id: number;
+    title: string;
+    description: string;
+}
+const token = localStorage.getItem("accessToken");
+const reminders = ref<Reminder[]>([]);
+const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null);
 
-const items = ref([
-    {
-        label: "Thống kê",
-        icon: "pi pi-chart-line",
-        command: () => router.push("/home") // Điều hướng đến trang chủ
-    },
+// Lấy danh sách reminders
+const fetchReminders = async () => {
+    try {
+        const response = await axios.get(`http://localhost:8080/api/v1/reminders/user/${user.value.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        reminders.value = response.data;
+
+    } catch (error) {
+        console.error("Error fetching reminders:", error);
+    }
+};
+
+// Đánh dấu một reminder là đã đọc và chuyển hướng
+const markAsReadAndGo = async (reminderId: number) => {
+    try {
+        await axios.put(`http://localhost:8080/api/v1/reminders/mark-read/${reminderId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Cập nhật danh sách reminders (lọc bỏ reminder đã đọc)
+        reminders.value = reminders.value.filter(r => r.id !== reminderId);
+
+        // Chuyển hướng đến trang `/contributions`
+        router.push("/contributions");
+
+        if (reminderPanel.value) {
+            reminderPanel.value.hide();
+        }
+    } catch (error) {
+        console.error("Error marking reminder as read:", error);
+    }
+};
+const markAllAsRead = async () => {
+    if (reminders.value.length === 0) return; // Không cần gọi API nếu không có reminder nào
+
+    try {
+        const reminderIds = reminders.value.map(reminder => reminder.id); // Lấy danh sách ID
+
+        await axios.put(`http://localhost:8080/api/v1/reminders/mark-reads`, { reminderIds }, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
+        });
+
+        // Cập nhật lại danh sách reminders (xóa toàn bộ)
+        reminders.value = [];
+
+        if (reminderPanel.value) {
+            reminderPanel.value.hide();
+        }
+    } catch (error) {
+        console.error("Error marking all reminders as read:", error);
+    }
+};
+
+// Hiển thị popup khi hover vào icon `pi-bell`
+const toggleReminder = (event: Event) => {
+    if (reminderPanel.value) {
+        reminderPanel.value.toggle(event);
+    }
+};
+
+// Gọi API khi component mounted
+onMounted(() => {
+    if (isLoggedIn.value) {
+        fetchReminders();
+    } else {
+        router.push("/login");
+    }
+});
+
+// Danh sách menu
+const baseItems = [
     {
         label: "Danh sách",
         icon: "pi pi-list",
         items: [
-            {
-                label: "Quỹ chưa đóng",
-                icon: "pi pi-bolt",
-                command: () => router.push("/contributions")
-            },
-            {
-                label: "Quỹ nợ",
-                icon: "pi pi-server",
-                command: () => router.push("/contributions/owed")
-            },
-            {
-                label: "Nợ phạt",
-                icon: "pi pi-pencil",
-                command: () => router.push("/bills")
-            }
+            { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
+            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
+            { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") }
         ]
     },
+    { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") }
+];
+
+const adminItems = [
+    { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
     {
         label: "Tạo quỹ",
         icon: "pi pi-list",
         items: [
-            {
-                label: "Quỹ mới",
-                icon: "pi pi-bolt",
-                command: () => router.push("/funds")
-            },
-            {
-                label: "Quỹ nợ",
-                icon: "pi pi-server",
-                command: () => router.push("/periods")
-            },
-            {
-                label: "Quỹ hàng tháng",
-                icon: "pi pi-pencil",
-                command: () => router.push("/penalties")
-            }
+            { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
+            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/periods") },
+            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/penalties") }
         ]
-    },
-    {
-        label: "Lịch sử",
-        icon: "pi pi-history",
-        command: () => router.push("/histories")
     }
-]);
+];
+
+const filteredItems = computed(() => {
+    if (user.value.role === "ADMIN") {
+        return [...baseItems, ...adminItems];
+    }
+    return baseItems;
+});
+
+
+// Logout
+const handleLogout = async () => {
+    try {
+        await axios.post('http://localhost:8080/api/v1/auth/logout', {}, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
+        });
+
+        localStorage.removeItem("accessToken");
+        sessionStorage.removeItem("user");
+        userStore.logout();
+        router.push("/login");
+    } catch (error) {
+        console.error("Logout error:", error);
+    }
+};
 </script>
 
 <style scoped>
@@ -92,6 +198,7 @@ const items = ref([
     display: flex;
 }
 
+/* Notification Badge */
 .notification-badge {
     position: absolute;
     color: white;
@@ -100,6 +207,30 @@ const items = ref([
     border-radius: 50%;
     padding: 0.3rem 0.5rem;
     top: 18px;
-    right: 19px;
+    right: 130px;
+}
+
+/* Reminder Popup */
+.reminder-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.reminder-item {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.reminder-item:hover {
+    background: #f5f5f5;
+}
+
+.no-reminder {
+    text-align: center;
+    padding: 10px;
+    color: #888;
 }
 </style>

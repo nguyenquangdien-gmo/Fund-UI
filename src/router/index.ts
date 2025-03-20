@@ -10,6 +10,7 @@ import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
 import axios from 'axios'
 import StatsView from '@/views/admin/StatsView.vue'
+import ExpenseView from '@/views/admin/ExpenseView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +47,12 @@ const router = createRouter({
       path: '/contributions/owed',
       name: 'owed',
       component: OwedView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/expenses',
+      name: 'expenses',
+      component: ExpenseView,
       meta: { requiresAuth: true },
     },
     {

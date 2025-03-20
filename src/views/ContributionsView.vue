@@ -45,7 +45,7 @@
         <Dialog v-model:visible="showDialog" header="Đóng Quỹ" :modal="true">
             <div class="p-fluid">
                 <p class="mb-2">Nhập số tiền cần đóng:</p>
-                <InputText v-model="paymentAmount" value="150000" type="number" class="p-inputtext w-full" />
+                <InputText v-model="paymentAmount" type="number" class="p-inputtext w-full" />
                 <div class="flex justify-end gap-2 mt-4">
                     <Button label="Hủy" class="p-button-text" @click="showDialog = false" />
                     <Button label="Xác nhận" class="p-button-primary" @click="confirmPayment" />

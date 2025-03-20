@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/pinia/userStore";
 import Menubar from "primevue/menubar";
@@ -78,6 +78,8 @@ const fetchReminders = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         reminders.value = response.data;
+        console.log("Reminders:", reminders.value);
+
 
     } catch (error) {
         console.error("Error fetching reminders:", error);
@@ -141,6 +143,14 @@ onMounted(() => {
     }
 });
 
+watch(user, (newUser) => {
+    if (newUser?.id) {
+        fetchReminders(); // Nếu có user, load reminders
+    } else {
+        reminders.value = []; // Nếu logout, reset danh sách
+    }
+});
+
 // Danh sách menu
 const baseItems = [
     {
@@ -177,18 +187,27 @@ const filteredItems = computed(() => {
     return baseItems;
 });
 
-
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            handleLogout();
+        }
+        return Promise.reject(error);
+    }
+);
 // Logout
 const handleLogout = async () => {
     try {
         await axios.post('http://localhost:8080/api/v1/auth/logout', {}, {
             headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
         });
-
         localStorage.removeItem("accessToken");
         sessionStorage.removeItem("user");
         userStore.logout();
         router.push("/login");
+        reminders.value = [];
     } catch (error) {
         console.error("Logout error:", error);
     }

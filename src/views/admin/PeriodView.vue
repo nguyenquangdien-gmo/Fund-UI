@@ -33,13 +33,7 @@
         </div>
     </div>
 
-    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
-        <div>Bạn có chắc chắn muốn xóa kỳ hạn này?</div>
-        <div class="d-flex justify-content-end gap-2 mt-3">
-            <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-            <Button label="Xóa" severity="danger" @click="deletePeriod" />
-        </div>
-    </Dialog> -->
+
 
     <Dialog v-model:visible="showPeriodDialog" modal :header="isUpdate ? 'Update Period' : 'Create Period'"
         @hide="resetErrors" :style="{ width: '30rem' }">

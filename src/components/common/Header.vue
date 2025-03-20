@@ -157,13 +157,15 @@ const baseItems = [
 
 const adminItems = [
     { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
+    { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
+    { label: "Danh sách Chi", icon: "pi pi-cart-plus", command: () => router.push("/expenses") },
     {
         label: "Tạo quỹ",
         icon: "pi pi-list",
         items: [
             { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
-            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/periods") },
-            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/penalties") }
+            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/penalties") },
+            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") }
         ]
     }
 ];

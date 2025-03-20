@@ -62,7 +62,7 @@
         </div>
         <div class="d-flex justify-content-end gap-2">
             <Button type="button" label="Cancel" severity="secondary" @click="showPeriodDialog = false"></Button>
-            <!-- <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button> -->
+            <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button>
         </div>
     </Dialog>
 </template>

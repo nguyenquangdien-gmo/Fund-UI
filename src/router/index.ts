@@ -11,6 +11,7 @@ import PayPenView from '@/views/PayPenView.vue'
 import axios from 'axios'
 import StatsView from '@/views/admin/StatsView.vue'
 import ExpenseView from '@/views/admin/ExpenseView.vue'
+import TransactionView from '@/views/admin/TransactionView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,6 +67,12 @@ const router = createRouter({
       name: 'periods',
       component: PeriodView,
       meta: { requiresAdmin: true },
+    },
+    {
+      path: '/logs',
+      name: 'logs',
+      component: TransactionView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/penalties',

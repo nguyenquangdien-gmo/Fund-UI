@@ -157,7 +157,8 @@ const baseItems = [
         items: [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
             { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
-            { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") }
+            { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
+            { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") },
         ]
     },
     { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") }

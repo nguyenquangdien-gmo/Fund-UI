@@ -145,7 +145,7 @@ const saveUser = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
-            await axios.put(`http://localhost:8080/api/v1/users//${form.value.id}`, form.value, {
+            await axios.put(`http://localhost:8080/api/v1/users/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {

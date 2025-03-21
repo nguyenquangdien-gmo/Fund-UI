@@ -13,29 +13,18 @@
                 <Column field="title" header="Tên" sortable></Column>
                 <Column field="type" header="Loại" sortable></Column>
                 <Column field="description" header="Mô tả" sortable></Column>
-                <Column field="status" header="Trạng thái" sortable></Column>
+                <!-- <Column field="status" header="Trạng thái" sortable></Column> -->
 
                 <Column field="createdAt" header="Ngày Tạo" sortable>
                     <template #body="{ data }">
                         {{ formatDate(data.createdAt) }}
                     </template>
                 </Column>
-                <Column header="Actions">
-                    <template #body="{ data }">
-                        <!-- <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" /> -->
-                        <!-- <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteFund(data)" /> -->
-                    </template>
-                </Column>
+
             </DataTable>
         </div>
     </div>
-    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
-        <div>Bạn có chắc chắn muốn xóa nhắc nhở này?</div>
-        <div class="d-flex justify-content-end gap-2 mt-3">
-            <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-            <Button label="Xóa" severity="danger" @click="deleteFund" />
-        </div>
-    </Dialog> -->
+
 
     <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
         :style="{ width: '30rem' }">
@@ -71,9 +60,6 @@ import ReminderType from '@/types/ReminderType';
 import formatDate from '@/utils/FormatDate';
 import { useUserStore } from '@/pinia/userStore';
 
-
-// const showConfirmDialog = ref(false);
-// const reminderToDelete = ref<Reminder | null>(null);
 const token = localStorage.getItem('accessToken');
 const reminders = ref<Reminder[]>([]);
 const searchQuery = ref("");

@@ -6,7 +6,7 @@
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
                 <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
             </div>
-            <DataTable :value="filteredFunds" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
+            <DataTable :value="filteredExpense" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
                 class="p-datatable-sm">
                 <Column field="id" header="ID" sortable></Column>
                 <Column field="expenseType" header="Mã Quỹ" sortable></Column>
@@ -40,27 +40,27 @@
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showExpense" modal :header="isUpdate ? 'Update Fund' : 'Create Fund'" @hide="resetErrors"
+    <Dialog v-model:visible="showExpense" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
-            <label for="name" class="fw-bold">Name</label>
+            <label for="name" class="fw-bold">Tên</label>
             <InputText id="name" v-model="form.name" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
         </div>
         <div class="mb-3">
-            <label for="description" class="fw-bold">Description</label>
+            <label for="description" class="fw-bold">Mô tả</label>
             <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
         </div>
         <div class="mb-3">
-            <label for="amount" class="fw-bold">Total</label>
+            <label for="amount" class="fw-bold">Tổng tiền</label>
             <InputText id="amount" type="number" v-model="form.amount" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
         </div>
         <div class="mb-3">
-            <label for="type" class="fw-bold">Category</label>
-            <Select v-model="selectedExpense" :options="typeOfFund" optionLabel="name" placeholder="Select a category"
-                class="w-100 md:w-56" />
+            <label for="type" class="fw-bold">Loại quỹ</label>
+            <Dropdown v-model="selectedType" :options="types" optionLabel="label" optionValue="value"
+                placeholder="Chọn loại quỹ" class="w-100 md:w-56" />
             <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
@@ -79,11 +79,12 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import { Select } from 'primevue';
 import type FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Expense from '@/types/Expense';
 import { useUserStore } from '@/pinia/userStore';
+import Dropdown from 'primevue/dropdown';
+import ExpenseType from '@/types/ExpenseType';
 
 
 const showConfirmDialog = ref(false);
@@ -99,11 +100,12 @@ const router = useRouter();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 
-const selectedExpense = ref<FundType | null>(null);
-const typeOfFund = ref([
-    { name: 'snack_fund', code: 'SNACK' },
-    { name: 'common_fund', code: 'COMMON' }
+const selectedType = ref<ExpenseType | null>(null);
+const types = ref([
+    { label: "Quỹ chung", value: ExpenseType.COMMON },
+    { label: "Quỹ ăn vặt", value: ExpenseType.SNACK }
 ]);
+
 
 const fetchExpense = async () => {
     try {
@@ -112,16 +114,11 @@ const fetchExpense = async () => {
         });
         expenses.value = response.data;
     } catch (error) {
-        console.error('Error fetching funds:', error);
+        console.error('Error fetching expenses:', error);
     }
 };
-// const confirmDeleteExpense = (expense: Expense) => {
-//     expeneseToDelete.value = expense;
-//     showConfirmDialog.value = true;
-// };
 
-
-const filteredFunds = computed(() => {
+const filteredExpense = computed(() => {
     if (!searchQuery.value) return expenses.value;
     return expenses.value.filter(expense => expense.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
@@ -133,11 +130,22 @@ const openCreateDialog = () => {
 };
 
 const openUpdateDialog = (expense: Expense) => {
-    form.value = { id: expense.id, name: expense.name, userId: user.value.id, description: expense.description, expenseType: expense.expenseType, amount: expense.amount.toString() };
-    selectedExpense.value = typeOfFund.value.find(type => type.code === expense.expenseType) || null;
+    form.value = {
+        id: expense.id,
+        name: expense.name,
+        userId: user.value.id,
+        description: expense.description,
+        expenseType: expense.expenseType.toString(),
+        amount: expense.amount.toString()
+    };
+    selectedType.value = types.value.find(t => t.value === expense.expenseType)?.value || null;
+
     isUpdate.value = true;
     showExpense.value = true;
+    console.log(form.value);
+
 };
+
 
 
 
@@ -145,7 +153,7 @@ const validateForm = () => {
     errors.value = { name: "", description: "", type: "", amount: "" };
     if (!form.value.name) errors.value.name = "Name is required!";
     if (!form.value.description) errors.value.name = "Description is required!";
-    if (!selectedExpense) errors.value.type = "Type is required!";
+    if (!selectedType.value) errors.value.type = "Type is required!";
     if (!form.value.amount || Number(form.value.amount) < 0)
         errors.value.amount = "Amount is required and must be greater than 0!";
     return Object.values(errors.value).every(err => err === "");
@@ -155,12 +163,17 @@ const saveExpense = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
+            if (selectedType.value) {
+                form.value.expenseType = selectedType.value;
+            }
             await axios.put(`http://localhost:8080/api/v1/expenses/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log(form.value);
+
         } else {
-            if (selectedExpense.value) {
-                form.value.expenseType = selectedExpense.value.code;
+            if (selectedType.value) {
+                form.value.expenseType = selectedType.value;
                 form.value.userId = user.value.id;
                 console.log(form.value);
                 await axios.post('http://localhost:8080/api/v1/expenses', form.value, {

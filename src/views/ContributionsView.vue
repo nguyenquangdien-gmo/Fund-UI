@@ -24,7 +24,7 @@
                 <Column field="deadline" header="Hạn chót">
                     <template #body="slotProps">
                         <span :class="{ 'text-red-500': new Date() > new Date(slotProps.data.deadline) }">
-                            {{ slotProps.data.deadline }}
+                            {{ formatDate(slotProps.data.deadline) }}
                         </span>
                     </template>
                 </Column>
@@ -64,6 +64,7 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import axios from "axios";
 import formatCurrency from "@/utils/FormatCurrency";
+import formatDate from "@/utils/FormatDate";
 
 const contributions = ref([]);
 const loading = ref(true);

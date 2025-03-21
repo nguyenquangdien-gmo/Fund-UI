@@ -71,7 +71,6 @@ const token = localStorage.getItem("accessToken");
 const reminders = ref<Reminder[]>([]);
 const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null);
 
-// Lấy danh sách reminders
 const fetchReminders = async () => {
     try {
         const response = await axios.get(`http://localhost:8080/api/v1/reminders/user/${user.value.id}`, {
@@ -86,17 +85,14 @@ const fetchReminders = async () => {
     }
 };
 
-// Đánh dấu một reminder là đã đọc và chuyển hướng
 const markAsReadAndGo = async (reminderId: number) => {
     try {
         await axios.put(`http://localhost:8080/api/v1/reminders/mark-read/${reminderId}`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Cập nhật danh sách reminders (lọc bỏ reminder đã đọc)
         reminders.value = reminders.value.filter(r => r.id !== reminderId);
 
-        // Chuyển hướng đến trang `/contributions`
         router.push("/contributions");
 
         if (reminderPanel.value) {
@@ -107,16 +103,15 @@ const markAsReadAndGo = async (reminderId: number) => {
     }
 };
 const markAllAsRead = async () => {
-    if (reminders.value.length === 0) return; // Không cần gọi API nếu không có reminder nào
+    if (reminders.value.length === 0) return;
 
     try {
-        const reminderIds = reminders.value.map(reminder => reminder.id); // Lấy danh sách ID
+        const reminderIds = reminders.value.map(reminder => reminder.id);
 
         await axios.put(`http://localhost:8080/api/v1/reminders/mark-reads`, { reminderIds }, {
             headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
         });
 
-        // Cập nhật lại danh sách reminders (xóa toàn bộ)
         reminders.value = [];
 
         if (reminderPanel.value) {
@@ -127,14 +122,12 @@ const markAllAsRead = async () => {
     }
 };
 
-// Hiển thị popup khi hover vào icon `pi-bell`
 const toggleReminder = (event: Event) => {
     if (reminderPanel.value) {
         reminderPanel.value.toggle(event);
     }
 };
 
-// Gọi API khi component mounted
 onMounted(() => {
     if (isLoggedIn.value) {
         fetchReminders();
@@ -145,13 +138,13 @@ onMounted(() => {
 
 watch(user, (newUser) => {
     if (newUser?.id) {
-        fetchReminders(); // Nếu có user, load reminders
+        fetchReminders();
     } else {
-        reminders.value = []; // Nếu logout, reset danh sách
+        reminders.value = [];
     }
 });
 
-// Danh sách menu
+
 const baseItems = [
     {
         label: "Danh sách",
@@ -174,7 +167,7 @@ const adminItems = [
         icon: "pi pi-list",
         items: [
             { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
-            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/penalties") },
+            { label: "Quỹ Phạt", icon: "pi pi-server", command: () => router.push("/penalties") },
             { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") }
         ]
     }

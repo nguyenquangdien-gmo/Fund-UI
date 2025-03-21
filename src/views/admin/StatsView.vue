@@ -52,14 +52,14 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts">
             <div class="bg-white shadow-lg rounded-lg p-5 line">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-semibold text-gray-700">Quỹ hàng tháng</h3>
+                    <p class="text-xl font-semibold text-gray-700">Quỹ hàng tháng</p>
 
                 </div>
                 <Chart type="line" :data="chartDataMonths" :options="chartMonthOptions" class="h-[20rem]" />
             </div>
 
             <div class="bg-white shadow-lg rounded-lg p-5 column">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Quỹ hàng năm</h3>
+                <p class="text-xl font-semibold text-gray-700 mb-4">Quỹ hàng năm</p>
                 <Chart type="bar" :data="chartDataYears" :options="chartYearOptions" class="h-[20rem]" />
             </div>
         </div>
@@ -300,5 +300,9 @@ chartYearOptions.value = {
     border-radius: 10px;
     margin: 0 5px;
     padding: 0;
+}
+
+.text-xl {
+    color: #6474a9;
 }
 </style>

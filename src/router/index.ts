@@ -13,6 +13,7 @@ import StatsView from '@/views/admin/StatsView.vue'
 import ExpenseView from '@/views/admin/ExpenseView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
 import ReminderView from '@/views/admin/ReminderView.vue'
+import UserView from '@/views/admin/UserView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -84,6 +85,12 @@ const router = createRouter({
       path: '/penalties',
       name: 'penalties',
       component: PenaltyView,
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: UserView,
       meta: { requiresAdmin: true },
     },
     {

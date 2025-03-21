@@ -56,17 +56,15 @@ import Badge from "primevue/badge";
 import Button from "primevue/button";
 import OverlayPanel from "primevue/overlaypanel";
 import axios from "axios";
+import type Reminder from "@/types/Reminder";
+import ReminderType from "@/types/ReminderType";
 
 const router = useRouter();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const isLoggedIn = computed(() => !!user.value.role);
 
-interface Reminder {
-    id: number;
-    title: string;
-    description: string;
-}
+
 const token = localStorage.getItem("accessToken");
 const reminders = ref<Reminder[]>([]);
 const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null);
@@ -87,13 +85,20 @@ const fetchReminders = async () => {
 
 const markAsReadAndGo = async (reminderId: number) => {
     try {
+        const reminder = reminders.value.find(r => r.id === reminderId);
+        if (!reminder) return;
+
         await axios.put(`http://localhost:8080/api/v1/reminders/mark-read/${reminderId}`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
         reminders.value = reminders.value.filter(r => r.id !== reminderId);
 
-        router.push("/contributions");
+        if (reminder.type !== ReminderType.OTHER) {
+            router.push("/contributions");
+        } else {
+            router.push("/reminders");
+        }
 
         if (reminderPanel.value) {
             reminderPanel.value.hide();
@@ -168,7 +173,8 @@ const adminItems = [
         items: [
             { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
             { label: "Quỹ Phạt", icon: "pi pi-server", command: () => router.push("/penalties") },
-            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") }
+            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
+            { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
         ]
     }
 ];

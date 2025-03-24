@@ -60,7 +60,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import type { Error } from '@/types/Error'
 
-
+const baseURL = "http://localhost:8080/api/v1";
 const router = useRouter()
 const email = ref('')
 const password = ref('')
@@ -111,7 +111,7 @@ const handleRegister = async () => {
 
     if (isValid) {
         try {
-            const response = await axios.post('http://localhost:8080/api/v1/auth/register', {
+            const response = await axios.post(`${baseURL}/auth/register`, {
                 fullName: name.value,
                 email: email.value,
                 password: password.value,

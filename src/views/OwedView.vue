@@ -73,6 +73,8 @@ const paymentAmount = ref(0);
 const rowsPerPage = ref(5);
 const currentPage = ref(0);
 
+const baseURL = "http://localhost:8080/api/v1";
+
 const fetchPendingContributions = async () => {
     try {
         const token = localStorage.getItem("accessToken");
@@ -80,7 +82,7 @@ const fetchPendingContributions = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`http://localhost:8080/api/v1/contributions/owed/${userId.value}`, {
+        const response = await axios.get(`${baseURL}/contributions/owed/${userId.value}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -140,7 +142,7 @@ const confirmUpdate = async () => {
             note: "Thanh toán bổ sung quỹ " + selectedContribution.value.periodName,
         };
 
-        await axios.put(`http://localhost:8080/api/v1/contributions/${selectedContribution.value.id}`, paymentData, {
+        await axios.put(`${baseURL}/contributions/${selectedContribution.value.id}`, paymentData, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

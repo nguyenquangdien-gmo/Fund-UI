@@ -78,6 +78,7 @@ import months from '@/utils/Months';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Penalty from '@/types/Penalty';
 
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const penaltyDelete = ref<Penalty | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -91,7 +92,7 @@ const errors = ref({ name: "", description: "", amount: 0 });
 
 const fetchPeriods = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/penalties', {
+        const response = await axios.get('${baseURL}/penalties', {
             headers: { Authorization: `Bearer ${token}` }
         });
         penalties.value = response.data;
@@ -130,11 +131,11 @@ const savePeriod = async () => {
     try {
         const penaltyData = { ...form.value };
         if (isUpdate.value) {
-            await axios.put(`http://localhost:8080/api/v1/penalties/${form.value.id}`, penaltyData, {
+            await axios.put(`${baseURL}/penalties/${form.value.id}`, penaltyData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post('http://localhost:8080/api/v1/penalties', penaltyData, {
+            await axios.post('${baseURL}/penalties', penaltyData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
@@ -148,7 +149,7 @@ const savePeriod = async () => {
 const deletePenalty = async () => {
     if (!penaltyDelete.value) return;
     try {
-        await axios.delete(`http://localhost:8080/api/v1/penalties/${penaltyDelete.value.id}`, {
+        await axios.delete(`${baseURL}/penalties/${penaltyDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchPeriods();

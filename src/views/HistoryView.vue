@@ -15,6 +15,8 @@ const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
 const rowsPerPage = ref(5); // Số dòng mỗi trang
 const currentPage = ref(0);
+const baseURL = "http://localhost:8080/api/v1";
+
 
 const fetchContributions = async () => {
     try {
@@ -23,7 +25,7 @@ const fetchContributions = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`http://localhost:8080/api/v1/contributions/user/${userId.value}`, {
+        const response = await axios.get(`${baseURL}/contributions/user/${userId.value}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

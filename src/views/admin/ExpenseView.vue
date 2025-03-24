@@ -86,7 +86,7 @@ import { useUserStore } from '@/pinia/userStore';
 import Dropdown from 'primevue/dropdown';
 import ExpenseType from '@/types/ExpenseType';
 
-
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const expeneseToDelete = ref<Expense | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -109,7 +109,7 @@ const types = ref([
 
 const fetchExpense = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/expenses', {
+        const response = await axios.get(`${baseURL}/expenses`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         expenses.value = response.data;
@@ -166,7 +166,9 @@ const saveExpense = async () => {
             if (selectedType.value) {
                 form.value.expenseType = selectedType.value;
             }
-            await axios.put(`http://localhost:8080/api/v1/expenses/${form.value.id}`, form.value, {
+            console.log(selectedType.value);
+
+            await axios.put(`${baseURL}/expenses/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log(form.value);
@@ -176,7 +178,7 @@ const saveExpense = async () => {
                 form.value.expenseType = selectedType.value;
                 form.value.userId = user.value.id;
                 console.log(form.value);
-                await axios.post('http://localhost:8080/api/v1/expenses', form.value, {
+                await axios.post(`${baseURL}/expenses`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log(form.value);
@@ -194,7 +196,7 @@ const saveExpense = async () => {
 const deleteExpense = async () => {
     if (!expeneseToDelete.value) return;
     try {
-        await axios.delete(`http://localhost:8080/api/v1/expenses/${expeneseToDelete.value.id}`, {
+        await axios.delete(`${baseURL}/expenses/${expeneseToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchExpense();

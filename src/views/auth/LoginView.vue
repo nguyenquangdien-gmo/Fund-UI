@@ -45,6 +45,7 @@ import Button from 'primevue/button'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
+const baseURL = "http://localhost:8080/api/v1";
 interface Error {
     email: string,
     password: string
@@ -88,7 +89,7 @@ const userStore = useUserStore();
 const handleLogin = async () => {
     if (validateForm()) {
         try {
-            const response = await axios.post('http://localhost:8080/api/v1/auth/login', {
+            const response = await axios.post(`${baseURL}/auth/login`, {
                 email: email.value,
                 password: password.value
             });

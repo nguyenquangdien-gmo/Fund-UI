@@ -72,6 +72,7 @@ import axios from 'axios';
 import Chart from 'primevue/chart';
 import formatCurrency from '@/utils/FormatCurrency';
 
+const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 
 const stats = ref({
@@ -108,7 +109,7 @@ const chartYearOptions = ref({});
 
 const fetchDataMonths = async (year) => {
     try {
-        const response = await axios.get(`http://localhost:8080/api/v1/contributions/monthly-stats`, {
+        const response = await axios.get(`${baseURL}/contributions/monthly-stats`, {
             params: { year },
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -138,7 +139,7 @@ const fetchDataMonths = async (year) => {
 
 const fetchBalance = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/balances', {
+        const response = await axios.get(`${baseURL}/balances`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         balance.value = response.data;
@@ -150,7 +151,7 @@ const fetchBalance = async () => {
 const amountExpense = ref({ value: 0 });
 const fetchExpenseByYear = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/expenses/total-year', {
+        const response = await axios.get(`${baseURL}/expenses/total-year`, {
             params: { year: selectedYear.value },
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -163,7 +164,7 @@ const fetchExpenseByYear = async () => {
 const amountCharge = ref({ value: 0 });
 const fetchChargeByYear = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/contributions/total', {
+        const response = await axios.get(`${baseURL}/contributions/total`, {
             params: { year: selectedYear.value },
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -176,7 +177,7 @@ const fetchChargeByYear = async () => {
 
 const fetchDataYears = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/contributions/yearly-stats', {
+        const response = await axios.get(`${baseURL}/contributions/yearly-stats`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 

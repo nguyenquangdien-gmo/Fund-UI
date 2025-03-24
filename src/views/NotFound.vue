@@ -18,6 +18,7 @@
 import { useRouter } from 'vue-router';
 import Button from 'primevue/button';
 
+const baseURL = import.meta.env.API_URL;
 const router = useRouter();
 
 const goHome = () => {

@@ -80,7 +80,7 @@ import type { User } from '@/types/User';
 import Dropdown from 'primevue/dropdown';
 import UserRole from '@/types/UserRole';
 
-
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const userToDelete = ref<User | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -100,7 +100,7 @@ const roles = ref([
 
 const fetchUsers = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/users', {
+        const response = await axios.get(`${baseURL}/users`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         users.value = response.data;
@@ -145,14 +145,14 @@ const saveUser = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
-            await axios.put(`http://localhost:8080/api/v1/users/${form.value.id}`, form.value, {
+            await axios.put(`${baseURL}/users/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
             if (selectedRole.value) {
                 form.value.role = selectedRole.value;
                 console.log(form.value);
-                await axios.post('http://localhost:8080/api/v1/auth/register', form.value, {
+                await axios.post('${baseURL}/auth/register', form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log(form.value);
@@ -170,7 +170,7 @@ const saveUser = async () => {
 const deleteUser = async () => {
     if (!userToDelete.value) return;
     try {
-        await axios.delete(`http://localhost:8080/api/v1/users/${userToDelete.value.id}`, {
+        await axios.delete(`${baseURL}/users/${userToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();

@@ -53,6 +53,7 @@ import { useRouter } from 'vue-router';
 import formatCurrency from '@/utils/FormatCurrency';
 import type PenBill from '@/types/PenBill';
 
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const token = localStorage.getItem('accessToken');
 const bills = ref<PenBill[]>([]);
@@ -62,7 +63,7 @@ const router = useRouter();
 const user = ref(JSON.parse(sessionStorage.getItem('user') || '{}'));
 const fetchBills = async () => {
     try {
-        const response = await axios.get(`http://localhost:8080/api/pen-bills/user/${user.value.id}`, {
+        const response = await axios.get(`${baseURL}/pen-bills/user/${user.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         bills.value = response.data;
@@ -94,7 +95,7 @@ const payBill = async () => {
         description: form.value.description
     }
     try {
-        await axios.put(`http://localhost:8080/api/pen-bills/${form.value.id}`, billData, {
+        await axios.put(`${baseURL}/pen-bills/${form.value.id}`, billData, {
             headers: { Authorization: `Bearer ${token}` }
         });
         showConfirmDialog.value = false;

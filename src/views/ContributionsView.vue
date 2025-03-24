@@ -66,6 +66,8 @@ import axios from "axios";
 import formatCurrency from "@/utils/FormatCurrency";
 import formatDate from "@/utils/FormatDate";
 
+
+const baseURL = "http://localhost:8080/api/v1";
 const contributions = ref([]);
 const loading = ref(true);
 const error = ref(null);
@@ -86,7 +88,7 @@ const fetchPendingContributions = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`http://localhost:8080/api/periods/unpaid/${user.id}`, {
+        const response = await axios.get(`${baseURL}/periods/unpaid/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -140,7 +142,7 @@ const confirmPayment = async () => {
             note: `Thanh toán quỹ tháng ${selectedContribution.value.month} năm ${selectedContribution.value.year}`,
         };
 
-        await axios.post(`http://localhost:8080/api/v1/contributions`, paymentData, {
+        await axios.post(`${baseURL}/contributions`, paymentData, {
             headers: { Authorization: `Bearer ${token}` },
         });
 

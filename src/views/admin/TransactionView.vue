@@ -44,7 +44,7 @@ import { useRouter } from 'vue-router';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Trans from '@/types/Trans';
 
-
+const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 const trans = ref<Trans[]>([]);
 const searchQuery = ref("");
@@ -52,7 +52,7 @@ const router = useRouter();
 
 const fetchExpense = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/trans', {
+        const response = await axios.get(`${baseURL}/trans`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         trans.value = response.data;

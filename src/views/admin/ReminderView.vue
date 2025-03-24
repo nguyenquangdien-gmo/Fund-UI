@@ -60,6 +60,7 @@ import ReminderType from '@/types/ReminderType';
 import formatDate from '@/utils/FormatDate';
 import { useUserStore } from '@/pinia/userStore';
 
+const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 const reminders = ref<Reminder[]>([]);
 const searchQuery = ref("");
@@ -76,7 +77,7 @@ const isAdmin = computed(() => user.value?.role === "ADMIN");
 
 const fetchFunds = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/v1/reminders', {
+        const response = await axios.get(`${baseURL}/reminders`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         reminders.value = response.data;
@@ -95,10 +96,6 @@ const openCreateDialog = () => {
     showReminderDialog.value = true;
 };
 
-
-
-
-
 const validateForm = () => {
     errors.value = { name: "", description: "" };
     if (!form.value.title) errors.value.name = "Name is required!";
@@ -111,7 +108,7 @@ const saveReminder = async () => {
     if (!validateForm()) return;
     try {
 
-        await axios.post('http://localhost:8080/api/v1/reminders/create/other', form.value, {
+        await axios.post(`${baseURL}/reminders/create/other`, form.value, {
             headers: { Authorization: `Bearer ${token}` }
         });
         console.log(form.value);

@@ -76,6 +76,7 @@ import type Period from '@/types/Period';
 import months from '@/utils/Months';
 import formatCurrency from '@/utils/FormatCurrency';
 
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const periodToDelete = ref<Period | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -89,7 +90,7 @@ const errors = ref({ month: 0, year: 0, description: "", dealdline: "" });
 
 const fetchPeriods = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/periods', {
+        const response = await axios.get(`${baseURL}/periods`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         periods.value = response.data;
@@ -128,11 +129,11 @@ const savePeriod = async () => {
     try {
         const periodData = { ...form.value, deadline: form.value.deadline.toISOString().split('T')[0] };
         if (isUpdate.value) {
-            await axios.put(`http://localhost:8080/api/periods/${form.value.id}`, periodData, {
+            await axios.put(`${baseURL}/periods/${form.value.id}`, periodData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post('http://localhost:8080/api/periods', periodData, {
+            await axios.post(`${baseURL}/periods`, periodData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
@@ -146,7 +147,7 @@ const savePeriod = async () => {
 // const deletePeriod = async () => {
 //     if (!periodToDelete.value) return;
 //     try {
-//         await axios.delete(`http://localhost:8080/api/periods/${periodToDelete.value.id}`, {
+//         await axios.delete(`${baseURL}/periods/${periodToDelete.value.id}`, {
 //             headers: { Authorization: `Bearer ${token}` }
 //         });
 //         fetchPeriods();

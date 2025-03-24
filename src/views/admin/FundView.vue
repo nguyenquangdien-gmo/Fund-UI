@@ -82,7 +82,7 @@ import { Select } from 'primevue';
 import type FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
 
-
+const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const fundToDelete = ref<Fund | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -102,7 +102,7 @@ const typeOfFund = ref([
 
 const fetchFunds = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/funds', {
+        const response = await axios.get(`${baseURL}/funds`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         funds.value = response.data;
@@ -149,14 +149,14 @@ const saveFund = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
-            await axios.put(`http://localhost:8080/api/funds/${form.value.id}`, form.value, {
+            await axios.put(`${baseURL}/funds/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
             if (selectedFund.value) {
                 form.value.type = selectedFund.value.code;
                 console.log(form.value);
-                await axios.post('http://localhost:8080/api/funds', form.value, {
+                await axios.post('${baseURL}/funds', form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log(form.value);
@@ -174,7 +174,7 @@ const saveFund = async () => {
 const deleteFund = async () => {
     if (!fundToDelete.value) return;
     try {
-        await axios.delete(`http://localhost:8080/api/funds/${fundToDelete.value.id}`, {
+        await axios.delete(`${baseURL}/funds/${fundToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchFunds();

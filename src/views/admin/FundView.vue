@@ -38,27 +38,27 @@
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showFundDialog" modal :header="isUpdate ? 'Update Fund' : 'Create Fund'"
-        @hide="resetErrors" :style="{ width: '30rem' }">
+    <Dialog v-model:visible="showFundDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
+        :style="{ width: '30rem' }">
         <div class="mb-3">
-            <label for="name" class="fw-bold">Name</label>
+            <label for="name" class="fw-bold">Tên</label>
             <InputText id="name" v-model="form.name" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
         </div>
         <div class="mb-3">
-            <label for="description" class="fw-bold">Description</label>
+            <label for="description" class="fw-bold">Mô tả</label>
             <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
         </div>
         <div class="mb-3">
-            <label for="amount" class="fw-bold">Total</label>
+            <label for="amount" class="fw-bold">Tổng tiền</label>
             <InputText id="amount" type="number" v-model="form.amount" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
         </div>
         <div class="mb-3">
-            <label for="type" class="fw-bold">Category</label>
-            <Select v-model="selectedFund" :options="typeOfFund" optionLabel="name" placeholder="Select a category"
-                class="w-100 md:w-56" />
+            <label for="type" class="fw-bold">Loại quỹ</label>
+            <Dropdown v-model="selectedFund" :options="types" optionLabel="label" optionValue="value"
+                placeholder="Chọn loại quỹ" class="w-100 md:w-56" />
             <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
@@ -78,9 +78,10 @@ import Dialog from 'primevue/dialog';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import type Fund from '@/types/Fund';
-import { Select } from 'primevue';
-import type FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
+import FundType from '@/types/FundType';
+import Dropdown from 'primevue/dropdown';
+
 
 const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
@@ -95,9 +96,9 @@ const errors = ref({ name: "", description: "", type: "", amount: "" });
 const router = useRouter();
 
 const selectedFund = ref<FundType | null>(null);
-const typeOfFund = ref([
-    { name: 'snack_fund', code: 'SNACK' },
-    { name: 'common_fund', code: 'COMMON' }
+const types = ref([
+    { label: "Quỹ chung", value: FundType.COMMON },
+    { label: "Quỹ ăn vặt", value: FundType.SNACK }
 ]);
 
 const fetchFunds = async () => {
@@ -124,7 +125,7 @@ const openCreateDialog = () => {
 
 const openUpdateDialog = (fund: Fund) => {
     form.value = { id: fund.id, name: fund.name, description: fund.description, type: fund.type, amount: String(fund.amount) };
-    selectedFund.value = typeOfFund.value.find(type => type.code === fund.type) || null;
+    selectedFund.value = types.value.find(t => t.value === fund.type)?.value || null;
     isUpdate.value = true;
     showFundDialog.value = true;
 };
@@ -154,9 +155,9 @@ const saveFund = async () => {
             });
         } else {
             if (selectedFund.value) {
-                form.value.type = selectedFund.value.code;
+                form.value.type = selectedFund.value;
                 console.log(form.value);
-                await axios.post('${baseURL}/funds', form.value, {
+                await axios.post(`${baseURL}/funds`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log(form.value);

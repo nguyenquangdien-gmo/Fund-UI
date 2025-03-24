@@ -21,7 +21,7 @@
                         {{ formatDate(data.createdAt) }}
                     </template>
                 </Column>
-                <Column field="description" header="Mô Tả" sortable></Column>
+                <Column field="slug" header="Slug" sortable></Column>
                 <Column header="Actions">
                     <template #body="{ data }">
                         <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
@@ -92,7 +92,7 @@ const errors = ref({ name: "", description: "", amount: 0 });
 
 const fetchPeriods = async () => {
     try {
-        const response = await axios.get('${baseURL}/penalties', {
+        const response = await axios.get(`${baseURL}/penalties`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         penalties.value = response.data;

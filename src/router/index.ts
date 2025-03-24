@@ -12,8 +12,10 @@ import axios from 'axios'
 import StatsView from '@/views/admin/StatsView.vue'
 import ExpenseView from '@/views/admin/ExpenseView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
-import ReminderView from '@/views/admin/ReminderView.vue'
+import ReminderView from '@/views/ReminderView.vue'
 import UserView from '@/views/admin/UserView.vue'
+import NotContributionsView from '@/views/admin/NotContributionsView.vue'
+import LateContributions from '@/views/admin/LateContributions.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,13 +46,26 @@ const router = createRouter({
       path: '/contributions',
       name: 'contributions',
       component: ContributionsView,
-      meta: { requiresAuth: true },
     },
     {
       path: '/contributions/owed',
       name: 'owed',
       component: OwedView,
-      meta: { requiresAuth: true },
+    },
+    {
+      path: '/bills',
+      name: 'bills',
+      component: PayPenView,
+    },
+    {
+      path: '/users/not-paid',
+      name: 'not-paid',
+      component: NotContributionsView,
+    },
+    {
+      path: '/users/late-contributions',
+      name: 'late-contributions',
+      component: LateContributions,
     },
     {
       path: '/expenses',
@@ -99,12 +114,7 @@ const router = createRouter({
       component: StatsView,
       meta: { requiresAdmin: true },
     },
-    {
-      path: '/bills',
-      name: 'bills',
-      component: PayPenView,
-      meta: { requiresAuth: true },
-    },
+
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

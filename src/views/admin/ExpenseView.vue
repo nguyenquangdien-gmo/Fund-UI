@@ -9,8 +9,9 @@
             <DataTable :value="filteredExpense" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
                 class="p-datatable-sm">
                 <Column field="id" header="ID" sortable></Column>
+                <Column field="name" header="Tên" sortable></Column>
                 <Column field="expenseType" header="Mã Quỹ" sortable></Column>
-                <Column field="description" header="Tên Quỹ" sortable></Column>
+                <Column field="description" header="Mô tả" sortable></Column>
                 <Column field="amount" header="Số Tiền" sortable>
                     <template #body="{ data }">
                         {{ formatCurrency(data.amount) }}
@@ -79,12 +80,11 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import type FundType from '@/types/FundType';
+import FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Expense from '@/types/Expense';
 import { useUserStore } from '@/pinia/userStore';
 import Dropdown from 'primevue/dropdown';
-import ExpenseType from '@/types/ExpenseType';
 
 const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
@@ -94,16 +94,16 @@ const expenses = ref<Expense[]>([]);
 const searchQuery = ref("");
 const showExpense = ref(false);
 const isUpdate = ref(false);
-const form = ref({ id: 0, name: "", description: "", userId: 0, expenseType: "", amount: "" });
+const form = ref({ id: 0, name: "", expenseType: "", description: "", userId: 0, amount: "" });
 const errors = ref({ name: "", description: "", type: "", amount: "" });
 const router = useRouter();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 
-const selectedType = ref<ExpenseType | null>(null);
+const selectedType = ref<FundType | null>(null);
 const types = ref([
-    { label: "Quỹ chung", value: ExpenseType.COMMON },
-    { label: "Quỹ ăn vặt", value: ExpenseType.SNACK }
+    { label: "Quỹ chung", value: FundType.COMMON },
+    { label: "Quỹ ăn vặt", value: FundType.SNACK }
 ]);
 
 
@@ -139,11 +139,9 @@ const openUpdateDialog = (expense: Expense) => {
         amount: expense.amount.toString()
     };
     selectedType.value = types.value.find(t => t.value === expense.expenseType)?.value || null;
-
     isUpdate.value = true;
     showExpense.value = true;
     console.log(form.value);
-
 };
 
 
@@ -166,7 +164,7 @@ const saveExpense = async () => {
             if (selectedType.value) {
                 form.value.expenseType = selectedType.value;
             }
-            console.log(selectedType.value);
+            console.log(form.value.expenseType);
 
             await axios.put(`${baseURL}/expenses/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }

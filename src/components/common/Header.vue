@@ -175,6 +175,7 @@ const adminItems = [
             { label: "Chi tiêu", icon: "pi pi-user", command: () => router.push("/expenses") },
             { label: "Chưa đóng quỹ", icon: "pi pi-bolt", command: () => router.push("/users/not-paid") },
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },
+            { label: "Đi muộn", icon: "pi pi-server", command: () => router.push("/users/late-checkin") },
             // { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
             // { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
         ]

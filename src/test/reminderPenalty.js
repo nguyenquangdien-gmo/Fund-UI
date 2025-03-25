@@ -21,7 +21,7 @@ function NhacNopPhat2() {
     var url = 'https://chat.runsystem.vn/api/v4/posts'
     var data = {
       message:
-        'Các anh/chị/em đã đi trễ quá số ngày cho phép nhưng chưa nộp phạt:' + listNotify.join(''),
+        'Các anh/chị/em đã đi trễ quá số ngày cho phép nhưng chưa nộp phạt: ' + listNotify.join(''),
       channel_id: 'hz6obkn4t7fz9qzhd5mc55sw4w',
     }
     var options = {

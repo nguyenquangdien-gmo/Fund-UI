@@ -16,6 +16,7 @@ import ReminderView from '@/views/ReminderView.vue'
 import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
 import LateContributions from '@/views/admin/LateContributions.vue'
+import LateListView from '@/views/admin/LateListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,6 +67,11 @@ const router = createRouter({
       path: '/users/late-contributions',
       name: 'late-contributions',
       component: LateContributions,
+    },
+    {
+      path: '/users/late-checkin',
+      name: 'late-checkin',
+      component: LateListView,
     },
     {
       path: '/expenses',

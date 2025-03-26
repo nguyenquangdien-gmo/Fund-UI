@@ -2,32 +2,40 @@
     <div class="container">
         <div class="p-4">
             <h2 class="text-center">Danh Sách nợ phạt</h2>
-            <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo id, tên..." class="w-full p-inputtext-sm" />
-                <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
-            </div>
-            <DataTable :value="filteredBills" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
-                class="p-datatable-sm">
-                <Column field="description" header="Mô Tả" sortable></Column>
-                <Column field="amount" header="Tổng cộng" sortable>
-                    <template #body="{ data }">
-                        {{ formatCurrency(data.amount) }}
-                    </template>
-                </Column>
+            <div v-if="bills.length > 0">
+                <div class="mb-3">
+                    <InputText v-model="searchQuery" placeholder="Tìm kiếm theo id, tên..."
+                        class="w-full p-inputtext-sm" />
+                    <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
+                </div>
+                <DataTable :value="filteredBills" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
+                    class="p-datatable-sm">
+                    <Column field="description" header="Mô Tả" sortable></Column>
+                    <Column field="amount" header="Tổng cộng" sortable>
+                        <template #body="{ data }">
+                            {{ formatCurrency(data.amount) }}
+                        </template>
+                    </Column>
 
-                <Column field="created" header="Ngày tạo" sortable>
-                    <template #body="{ data }">
-                        {{ formatDate(data.dueDate) }}
-                    </template>
-                </Column>
-                <Column header="Actions">
-                    <template #body="{ data }">
-                        <Button v-if="data.paymentStatus !== 'PAID'" label="Đóng phạt" icon="pi pi-wallet"
-                            @click="confirmPay(data)" severity="info" />
-                        <Button v-else label="Đã đóng phạt" icon="pi pi-check-square" severity="success" disabled />
-                    </template>
-                </Column>
-            </DataTable>
+                    <Column field="created" header="Ngày tạo" sortable>
+                        <template #body="{ data }">
+                            {{ formatDate(data.dueDate) }}
+                        </template>
+                    </Column>
+                    <Column header="Actions">
+                        <template #body="{ data }">
+                            <Button v-if="data.paymentStatus === 'UNPAID'" label="Đóng phạt" icon="pi pi-wallet"
+                                @click="confirmPay(data)" severity="info" />
+                            <Button v-if="data.paymentStatus === 'PENDING'" label="Chờ xác nhận" icon="pi pi-hourglass"
+                                severity="info" disabled />
+                            <!-- <Button v-else label="Đã đóng phạt" icon="pi pi-check-square" severity="success" disabled /> -->
+                        </template>
+                    </Column>
+                </DataTable>
+            </div>
+            <div v-else>
+                <p>Bạn không có bất kỳ nợ phạt nào!</p>
+            </div>
         </div>
     </div>
 
@@ -63,7 +71,7 @@ const router = useRouter();
 const user = ref(JSON.parse(sessionStorage.getItem('user') || '{}'));
 const fetchBills = async () => {
     try {
-        const response = await axios.get(`${baseURL}/pen-bills/user/${user.value.id}`, {
+        const response = await axios.get(`${baseURL}/pen-bills/user/${user.value.id}/unpaid`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         bills.value = response.data;

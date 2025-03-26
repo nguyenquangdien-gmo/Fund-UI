@@ -172,10 +172,11 @@ const adminItems = [
         icon: "pi pi-list",
         items: [
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
-            { label: "Chi tiêu", icon: "pi pi-user", command: () => router.push("/expenses") },
+            { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/expenses") },
+            { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },
             { label: "Chưa đóng quỹ", icon: "pi pi-bolt", command: () => router.push("/users/not-paid") },
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },
-            { label: "Đi muộn", icon: "pi pi-server", command: () => router.push("/users/late-checkin") },
+            { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/users/late-checkin") },
             // { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
             // { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
         ]
@@ -186,7 +187,7 @@ const adminItems = [
         items: [
             { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
             { label: "Quỹ Phạt", icon: "pi pi-server", command: () => router.push("/penalties") },
-            { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
+            { label: "Quỹ hàng tháng", icon: "pi pi-file-edit", command: () => router.push("/periods") },
             { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
         ]
     }

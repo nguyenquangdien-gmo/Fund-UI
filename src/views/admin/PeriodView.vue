@@ -2,34 +2,40 @@
     <div class="container">
         <div class="p-4">
             <h2 class="text-center">Danh Sách Kỳ Hạn</h2>
-            <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo năm..." class="w-full p-inputtext-sm" />
-                <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+            <div v-if="periods.length > 0" class="mb-3">
+                <div class="mb-3">
+                    <InputText v-model="searchQuery" placeholder="Tìm kiếm theo năm..." class="w-full p-inputtext-sm" />
+                    <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+                </div>
+                <DataTable :value="filteredPeriods" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
+                    class="p-datatable-sm">
+                    <Column field="id" header="ID" sortable></Column>
+                    <Column field="month" header="Tháng" sortable></Column>
+                    <Column field="year" header="Năm" sortable></Column>
+                    <Column field="totalAmount" header="Tổng cộng" sortable>
+                        <template #body="{ data }">
+                            {{ formatCurrency(data.totalAmount) }}
+                        </template>
+                    </Column>
+                    <Column field="deadline" header="Hạn Chót" sortable>
+                        <template #body="{ data }">
+                            {{ formatDate(data.deadline) }}
+                        </template>
+                    </Column>
+                    <Column field="description" header="Mô Tả" sortable></Column>
+                    <Column header="Actions">
+                        <template #body="{ data }">
+                            <Button label="Update" icon="pi pi-refresh" severity="info"
+                                @click="openUpdateDialog(data)" />
+                            <Button label="Delete" icon="pi pi-trash" severity="danger"
+                                @click="confirmDeletePeriod(data)" />
+                        </template>
+                    </Column>
+                </DataTable>
             </div>
-            <DataTable :value="filteredPeriods" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
-                class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
-                <Column field="month" header="Tháng" sortable></Column>
-                <Column field="year" header="Năm" sortable></Column>
-                <Column field="totalAmount" header="Tổng cộng" sortable>
-                    <template #body="{ data }">
-                        {{ formatCurrency(data.totalAmount) }}
-                    </template>
-                </Column>
-                <Column field="deadline" header="Hạn Chót" sortable>
-                    <template #body="{ data }">
-                        {{ formatDate(data.deadline) }}
-                    </template>
-                </Column>
-                <Column field="description" header="Mô Tả" sortable></Column>
-                <Column header="Actions">
-                    <template #body="{ data }">
-                        <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
-                        <!-- <Button label="Delete" icon="pi pi-trash" severity="danger"
-                            @click="confirmDeletePeriod(data)" /> -->
-                    </template>
-                </Column>
-            </DataTable>
+            <div v-else>
+                <h4 class="text-center">Không tìm thấy kỳ hạn nào.</h4>
+            </div>
         </div>
     </div>
 
@@ -57,6 +63,13 @@
         <div class="d-flex justify-content-end gap-2">
             <Button type="button" label="Cancel" severity="secondary" @click="showPeriodDialog = false"></Button>
             <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button>
+        </div>
+    </Dialog>
+    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+        <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
+            <Button label="Xóa" severity="danger" @click="deletePeriod" />
         </div>
     </Dialog>
 </template>
@@ -120,10 +133,10 @@ const openUpdateDialog = (period: Period) => {
     showPeriodDialog.value = true;
 };
 
-// const confirmDeletePeriod = (period: Period) => {
-//     periodToDelete.value = period;
-//     showConfirmDialog.value = true;
-// };
+const confirmDeletePeriod = (period: Period) => {
+    periodToDelete.value = period;
+    showConfirmDialog.value = true;
+};
 
 const savePeriod = async () => {
     try {
@@ -144,20 +157,20 @@ const savePeriod = async () => {
     }
 };
 
-// const deletePeriod = async () => {
-//     if (!periodToDelete.value) return;
-//     try {
-//         await axios.delete(`${baseURL}/periods/${periodToDelete.value.id}`, {
-//             headers: { Authorization: `Bearer ${token}` }
-//         });
-//         fetchPeriods();
-//     } catch (error) {
-//         console.error('Error deleting period:', error);
-//     } finally {
-//         showConfirmDialog.value = false;
-//         periodToDelete.value = null;
-//     }
-// };
+const deletePeriod = async () => {
+    if (!periodToDelete.value) return;
+    try {
+        await axios.delete(`${baseURL}/periods/${periodToDelete.value.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchPeriods();
+    } catch (error) {
+        console.error('Error deleting period:', error);
+    } finally {
+        showConfirmDialog.value = false;
+        periodToDelete.value = null;
+    }
+};
 
 const formatDate = (dateString: string) => {
     if (!dateString) return "";

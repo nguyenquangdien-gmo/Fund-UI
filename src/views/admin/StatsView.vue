@@ -14,7 +14,7 @@
                 <div>
                     <h3 class="text-gray">Tiền chung</h3>
                     <p class="text-2xl font-semibold" v-if="balance.length > 0"> ${{
-                        formatCurrency(balance[0].totalAmount) }}
+                        formatCurrency(balance[1].totalAmount) }}
                     </p>
                     <p class="text-green-500 text-sm">Tổng tiền chung của nhóm</p>
                 </div>
@@ -24,7 +24,7 @@
                 <div>
                     <h3 class="text-gray">Tiền ăn vặt</h3>
                     <p class="text-2xl font-semibold">
-                        {{ balance.length > 1 ? `$${formatCurrency(balance[1].totalAmount)}` : 'Đang tải...' }}
+                        {{ balance.length > 1 ? `$${formatCurrency(balance[0].totalAmount)}` : 'Đang tải...' }}
                     </p>
 
                     <p class="text-green-500 text-sm">Tổng tiền ăn vặt của nhóm</p>
@@ -75,16 +75,16 @@ import formatCurrency from '@/utils/FormatCurrency';
 const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 
-const stats = ref({
-    orders: 152,
-    newOrders: 24,
-    revenue: 2100,
-    revenueGrowth: 52,
-    customers: 28441,
-    newCustomers: 520,
-    unreadComments: 152,
-    respondedComments: 85
-});
+// const stats = ref({
+//     orders: 152,
+//     newOrders: 24,
+//     revenue: 2100,
+//     revenueGrowth: 52,
+//     customers: 28441,
+//     newCustomers: 520,
+//     unreadComments: 152,
+//     respondedComments: 85
+// });
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);

@@ -6,10 +6,15 @@
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
                 <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
-            <DataTable :value="filteredTrans" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
+            <DataTable :value="filteredTrans" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
                 <!-- <Column field="id" header="ID" sortable></Column> -->
-                <Column field="transactionType" header="Mã Quỹ" sortable></Column>
+                <Column field="transactionType" header="Loại giao dịch" sortable>
+                    <template #body="{ data }">
+                        {{ getTransactionLabel(data.transactionType) }}
+                    </template>
+                </Column>
+
                 <Column field="userDto.fullName" header="Tên thành viên" sortable>
                     <template #body="{ data }">
                         {{ data.userDto?.fullName || 'N/A' }}
@@ -49,6 +54,16 @@ const token = localStorage.getItem('accessToken');
 const trans = ref<Trans[]>([]);
 const searchQuery = ref("");
 const router = useRouter();
+
+const getTransactionLabel = (type: string) => {
+    const mapping: Record<string, string> = {
+        INCOME_FUND: "Đóng quỹ",
+        INCOME_PENALTY: "Đóng phạt",
+        EXPENSE: "Chi tiêu"
+    };
+    return mapping[type] || "Không xác định";
+};
+
 
 const fetchExpense = async () => {
     try {

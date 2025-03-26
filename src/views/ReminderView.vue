@@ -3,12 +3,14 @@
         <div class="p-4">
             <h2 class="text-center">Thông báo nhắc nhở</h2>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
+                <InputText v-if="reminders.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
+                    class="w-full p-inputtext-sm" />
                 <Button v-if="isAdmin" label="Create" severity="success" raised size="small"
                     @click="openCreateDialog" />
+
             </div>
-            <DataTable :value="filteredFunds" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
-                class="p-datatable-sm">
+            <DataTable v-if="reminders.length > 0" :value="filteredFunds" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column field="id" header="ID" sortable></Column>
                 <Column field="title" header="Tên" sortable></Column>
                 <Column field="type" header="Loại" sortable></Column>
@@ -22,7 +24,11 @@
                 </Column>
 
             </DataTable>
+            <div v-else>
+                <p>Bạn không có bất kỳ thông báo nào!</p>
+            </div>
         </div>
+
     </div>
 
 
@@ -56,7 +62,6 @@ import Dialog from 'primevue/dialog';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import type Reminder from '@/types/Reminder';
-import ReminderType from '@/types/ReminderType';
 import formatDate from '@/utils/FormatDate';
 import { useUserStore } from '@/pinia/userStore';
 
@@ -71,8 +76,29 @@ const errors = ref({ name: "", description: "" });
 const router = useRouter();
 
 const userStore = useUserStore();
-const user = computed(() => userStore.user);
-const isAdmin = computed(() => user.value?.role === "ADMIN");
+// const user = computed(() => userStore.user);
+const isAdmin = ref(false); // Mặc định là false
+
+const checkIsAdmin = async () => {
+    if (!token) return;
+    try {
+        const response = await axios.get(`${baseURL}/tokens/is-admin?token=${token}`);
+        isAdmin.value = response.data; // API trả về true/false
+    } catch (error) {
+        console.error("Error checking admin status:", error);
+        isAdmin.value = false;
+    }
+};
+
+onMounted(() => {
+    if (!token) {
+        router.push('/');
+    } else {
+        fetchFunds();
+        checkIsAdmin(); // Gọi API kiểm tra quyền admin
+    }
+});
+
 
 
 const fetchFunds = async () => {

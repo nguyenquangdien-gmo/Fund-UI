@@ -5,15 +5,15 @@
         <p v-if="error" class="text-red-500">{{ error }}</p>
         <p v-if="loading">Đang tải dữ liệu...</p>
 
-        <div v-if="paginatedContributions.length > 0">
+        <div v-if="contributions.length > 0">
             <div class="mb-4 flex items-center gap-4">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm, mô tả..."
                     class="p-inputtext w-64" />
             </div>
 
             <!-- DataTable với phân trang -->
-            <DataTable :value="paginatedContributions" class="p-datatable-striped" paginator :rows="rowsPerPage"
-                :totalRecords="filteredContributions.length" @page="onPageChange" responsiveLayout="scroll">
+            <DataTable :value="paginatedContributions" class="p-datatable-striped" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
                 <Column field="month" header="Tháng" />
                 <Column field="year" header="Năm" />
                 <Column field="totalAmount" header="Tổng tiền">
@@ -141,6 +141,8 @@ const confirmPayment = async () => {
             totalAmount: paymentAmount.value,
             note: `Thanh toán quỹ tháng ${selectedContribution.value.month} năm ${selectedContribution.value.year}`,
         };
+        console.log(paymentData);
+
 
         await axios.post(`${baseURL}/contributions`, paymentData, {
             headers: { Authorization: `Bearer ${token}` },

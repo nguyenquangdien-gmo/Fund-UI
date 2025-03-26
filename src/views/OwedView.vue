@@ -5,13 +5,14 @@
         <p v-if="error" class="text-red-500">{{ error }}</p>
         <p v-if="loading">Đang tải dữ liệu...</p>
 
-        <div v-if="filteredContributions.length > 0">
+        <div v-if="contributions.length > 0">
             <div class="mb-4 flex items-center gap-4">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm, mô tả..."
                     class="p-inputtext w-64" />
             </div>
 
-            <DataTable :value="paginatedContributions" class="p-datatable-striped">
+            <DataTable :value="paginatedContributions" class="p-datatable-striped" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]">
                 <Column field="periodName" header="Kỳ hạn" />
                 <Column field="deadline" header="Hạn chót">
                     <template #body="slotProps">
@@ -21,7 +22,11 @@
                     </template>
                 </Column>
                 <Column field="note" header="Mô tả" />
-                <Column field="owedAmount" header="Số tiền còn nợ" />
+                <Column field="owedAmount" header="Tiền nợ">
+                    <template #body="slotProps">
+                        {{ formatCurrency(slotProps.data.owedAmount) }}
+                    </template>
+                </Column>
                 <Column header="Hành động">
                     <template #body="slotProps">
                         <Button label="Đóng quỹ" @click="openUpdateDialog(slotProps.data)"
@@ -30,7 +35,6 @@
                 </Column>
             </DataTable>
 
-            <Paginator :rows="rowsPerPage" :totalRecords="filteredContributions.length" @page="onPageChange" />
         </div>
         <div v-else>
             <p class="text-red-500">Bạn đang không có nợ quỹ!</p>
@@ -58,6 +62,7 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import Paginator from "primevue/paginator";
 import axios from "axios";
+import formatCurrency from "@/utils/FormatCurrency";
 
 const contributions = ref([]);
 const loading = ref(true);

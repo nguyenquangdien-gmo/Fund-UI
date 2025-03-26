@@ -18,9 +18,9 @@
             </div>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
-                <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" />
+                <!-- <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
-            <DataTable :value="filteredFunds" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
+            <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
                 <Column field="user.id" header="ID" sortable></Column>
                 <Column field="user.email" header="Email" sortable></Column>
@@ -53,7 +53,7 @@
         </div>
     </Dialog>
 
-    <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
+    <!-- <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
             <label for="title" class="fw-bold">Title</label>
@@ -70,7 +70,7 @@
             <Button type="button" label="Cancel" severity="secondary" @click="showReminderDialog = false"></Button>
             <Button type="button" label="Save" severity="primary" @click="saveReminder"></Button>
         </div>
-    </Dialog>
+    </Dialog> -->
 </template>
 
 <script setup lang="ts">
@@ -104,7 +104,7 @@ const router = useRouter();
 // ]);
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
-const isAdmin = computed(() => user.value?.role === "ADMIN");
+// const isAdmin = computed(() => user.value?.role === "ADMIN");
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
@@ -156,43 +156,43 @@ const filteredFunds = computed(() => {
     return users.value.filter(user => user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
 
-const openCreateDialog = () => {
-    form.value = { id: 0, title: "", description: "", type: "", status: "", created_at: "" };
-    showReminderDialog.value = true;
-};
-const confirmDeleteFund = (user: User) => {
-    userToDelete.value = user;
-    showConfirmDialog.value = true;
-};
+// const openCreateDialog = () => {
+//     form.value = { id: 0, title: "", description: "", type: "", status: "", created_at: "" };
+//     showReminderDialog.value = true;
+// };
+// const confirmDeleteFund = (user: User) => {
+//     userToDelete.value = user;
+//     showConfirmDialog.value = true;
+// };
 
 
 
-const validateForm = () => {
-    errors.value = { name: "", description: "" };
-    if (!form.value.title) errors.value.name = "Name is required!";
-    if (!form.value.description) errors.value.name = "Description is required!";
+// const validateForm = () => {
+//     errors.value = { name: "", description: "" };
+//     if (!form.value.title) errors.value.name = "Name is required!";
+//     if (!form.value.description) errors.value.name = "Description is required!";
 
-    return Object.values(errors.value).every(err => err === "");
-};
-const saveReminder = async () => {
-    if (!validateForm()) return;
-    try {
+//     return Object.values(errors.value).every(err => err === "");
+// };
+// const saveReminder = async () => {
+//     if (!validateForm()) return;
+//     try {
 
-        await axios.post(`${baseURL}/reminders/create/other`, form.value, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log(form.value);
+//         await axios.post(`${baseURL}/reminders/create/other`, form.value, {
+//             headers: { Authorization: `Bearer ${token}` }
+//         });
+//         console.log(form.value);
 
-        showReminderDialog.value = false;
+//         showReminderDialog.value = false;
 
-        fetchUsers();
-    } catch (error) {
-        console.error('Error saving reminder:', error);
-    }
-};
-const resetErrors = () => {
-    errors.value = { name: "", description: "" };
-}
+//         fetchUsers();
+//     } catch (error) {
+//         console.error('Error saving reminder:', error);
+//     }
+// };
+// const resetErrors = () => {
+//     errors.value = { name: "", description: "" };
+// }
 
 
 const deleteUser = async () => {

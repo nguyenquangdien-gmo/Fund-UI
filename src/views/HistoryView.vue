@@ -1,137 +1,185 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Tag from "primevue/tag";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
 import axios from "axios";
+import formatDate from "@/utils/FormatDate";
+import Button from "primevue/button";
 
-const contributions = ref([]);
+const token = localStorage.getItem("accessToken");
+const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
 const error = ref(null);
 const user = JSON.parse(sessionStorage.getItem("user"));
 const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
-const rowsPerPage = ref(5); // Số dòng mỗi trang
+const rowsPerPage = ref(5);
 const currentPage = ref(0);
-const baseURL = "http://localhost:8080/api/v1";
+const selectedListType = ref("contributions"); // Mặc định hiển thị danh sách đóng quỹ
+const listOptions = ref([
+    { label: "Lịch sử đóng quỹ", value: "contributions" },
+    { label: "Lịch sử nộp phạt", value: "penBills" }
+]);
 
+const contributions = ref([]);
+const penBills = ref([]);
 
+// Fetch dữ liệu Contributions
 const fetchContributions = async () => {
     try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            throw new Error("Unauthorized");
-        }
+        if (!token) throw new Error("Unauthorized");
 
         const response = await axios.get(`${baseURL}/contributions/user/${userId.value}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` }
         });
+
         contributions.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu";
+        error.value = "Không thể tải dữ liệu đóng quỹ";
         console.error(err);
     } finally {
         loading.value = false;
     }
 };
-onMounted(fetchContributions);
 
-const formatCurrency = (value) => {
-    return value.toLocaleString() + " VND";
-};
+// Fetch dữ liệu Pen Bills
+const fetchPenBills = async () => {
+    try {
 
-const getStatusSeverity = (status) => {
-    switch (status) {
-        case "PAID":
-            return "success";
-        case "PENDING":
-            return "info";
-        case "OVERDUE":
-            return "danger";
-        case "PARTIAL":
-            return "warn";
-        default:
-            return "secondary";
+        if (!token) throw new Error("Unauthorized");
+
+        const response = await axios.get(`${baseURL}/pen-bills/user/${userId.value}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        penBills.value = response.data;
+    } catch (err) {
+        error.value = "Không thể tải dữ liệu nộp phạt";
+        console.error(err);
+    } finally {
+        loading.value = false;
     }
 };
 
+// Gọi API khi mounted hoặc khi thay đổi danh sách
+onMounted(() => {
+    fetchContributions();
+    fetchPenBills();
+});
+
+watch(selectedListType, () => {
+    loading.value = true;
+    if (selectedListType.value === "contributions") {
+        fetchContributions();
+    } else {
+        fetchPenBills();
+    }
+});
+
+// Filter và Pagination
 const filteredContributions = computed(() => {
-    if (!searchQuery.value) {
-        return contributions.value;
-    }
-    return contributions.value.filter((contribution) =>
-        (contribution.id && contribution.id.toString().includes(searchQuery.value)) ||
-        (contribution.periodName && contribution.periodName.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-        (contribution.paymentStatus && contribution.paymentStatus.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    if (!searchQuery.value) return contributions.value;
+    return contributions.value.filter(item =>
+        item.id.toString().includes(searchQuery.value) ||
+        item.periodName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        item.paymentStatus.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
 });
 
-const paginatedContributions = computed(() => {
-    const start = currentPage.value * rowsPerPage.value;
-    const end = start + rowsPerPage.value;
-    return filteredContributions.value.slice(start, end);
-});
 
-const onPageChange = (event) => {
-    currentPage.value = event.page;
+
+const filteredPenBills = computed(() => penBills.value);
+
+
+const formatCurrency = (value) => value.toLocaleString() + " VND";
+
+const getStatusSeverity = (status) => {
+    return { PAID: "success", PENDING: "info", OVERDUE: "danger", PARTIAL: "warn" }[status] || "secondary";
 };
 </script>
 
 <template>
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">Lịch sử đóng quỹ</h2>
+        <h2 class="text-xl font-bold mb-4">Quản lý đóng quỹ</h2>
 
-        <div v-if="filteredContributions.length > 0">
-            <div class="mb-4 flex items-center gap-4">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-                    class="p-inputtext w-64" />
-                <Dropdown v-model="rowsPerPage" :options="[5, 10, 15]" placeholder="Số dòng/trang" class="w-32" />
-            </div>
+        <div class="mb-4 flex items-center gap-4">
+            <Dropdown v-model="selectedListType" :options="listOptions" optionLabel="label" optionValue="value"
+                placeholder="Chọn danh sách" class="w-64" />
 
-            <p v-if="error" class="text-red-500">{{ error }}</p>
-            <p v-if="loading">Đang tải dữ liệu...</p>
+            <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
+                class="p-inputtext w-64" />
 
-            <DataTable v-else :value="paginatedContributions" class="p-datatable-striped" paginator :rows="rowsPerPage"
-                :totalRecords="filteredContributions.length" :first="currentPage * rowsPerPage" @page="onPageChange">
-                <Column field="id" header="Id" />
-                <Column field="periodName" header="Kỳ đóng" />
-                <Column field="totalAmount" header="Số tiền">
-                    <template #body="slotProps">
-                        {{ formatCurrency(slotProps.data.totalAmount) }}
-                    </template>
-                </Column>
-                <Column field="paymentStatus" header="Trạng thái">
-                    <template #body="slotProps">
-                        <Tag :value="slotProps.data.paymentStatus"
-                            :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
-                    </template>
-                </Column>
-                <Column field="note" header="Ghi chú" />
-                <Column field="deadline" header="Hạn chót">
-                    <template #body="slotProps">
-                        <span :class="{ 'text-red-500': slotProps.data.isLate }">
-                            {{ slotProps.data.deadline }}
-                        </span>
-                    </template>
-                </Column>
-                <Column field="owedAmount" header="Thiếu">
-                    <template #body="slotProps">
-                        {{ formatCurrency(slotProps.data.owedAmount) }}
-                    </template>
-                </Column>
-                <Column field="overpaidAmount" header="Dư">
-                    <template #body="slotProps">
-                        {{ formatCurrency(slotProps.data.overpaidAmount) }}
-                    </template>
-                </Column>
-            </DataTable>
         </div>
-        <p v-else>Bạn chưa đóng bất kì quỹ nào</p>
 
+        <p v-if="error" class="text-red-500">{{ error }}</p>
+        <p v-if="loading">Đang tải dữ liệu...</p>
+
+        <!-- Hiển thị danh sách Contributions -->
+        <DataTable v-if="selectedListType === 'contributions'" :value="filteredContributions" paginator :rows="15"
+            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+            <Column field="id" header="Id" />
+            <Column field="periodName" header="Kỳ đóng" />
+            <Column field="totalAmount" header="Số tiền">
+                <template #body="slotProps">
+                    {{ formatCurrency(slotProps.data.totalAmount) }}
+                </template>
+            </Column>
+            <Column field="paymentStatus" header="Trạng thái">
+                <template #body="slotProps">
+                    <Tag :value="slotProps.data.paymentStatus"
+                        :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
+                </template>
+            </Column>
+            <Column field="note" header="Ghi chú" />
+            <Column field="deadline" header="Hạn chót">
+                <template #body="slotProps">
+                    <span :class="{ 'text-red-500': slotProps.data.isLate }">
+                        {{ formatDate(slotProps.data.deadline) }}
+                    </span>
+                </template>
+            </Column>
+            <Column field="owedAmount" header="Thiếu">
+                <template #body="slotProps">
+                    {{ formatCurrency(slotProps.data.owedAmount) }}
+                </template>
+            </Column>
+            <Column field="overpaidAmount" header="Dư">
+                <template #body="slotProps">
+                    {{ formatCurrency(slotProps.data.overpaidAmount) }}
+                </template>
+            </Column>
+        </DataTable>
+
+        <!-- Hiển thị danh sách Pen Bills -->
+        <DataTable v-else-if="selectedListType === 'penBills'" :value="filteredPenBills" paginator :rows="15"
+            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+            <Column field="description" header="Mô Tả" sortable></Column>
+            <Column field="amount" header="Tổng cộng" sortable>
+                <template #body="{ data }">
+                    {{ formatCurrency(data.amount) }}
+                </template>
+            </Column>
+
+            <Column field="created" header="Ngày tạo" sortable>
+                <template #body="{ data }">
+                    {{ formatDate(data.dueDate) }}
+                </template>
+            </Column>
+            <Column header="Trạng thái">
+                <template #body="{ data }">
+                    <Button v-if="data.paymentStatus === 'PAID'" label="Đã đóng phạt" icon="pi pi-wallet"
+                        @click="confirmPay(data)" severity="success" />
+                    <Button v-if="data.paymentStatus === 'PENDING'" label="Chờ xác nhận" icon="pi pi-hourglass"
+                        severity="info" disabled />
+                    <!-- <Button v-else label="Đã đóng phạt" icon="pi pi-check-square" severity="success" disabled /> -->
+                </template>
+            </Column>
+        </DataTable>
+
+        <p v-else>Bạn chưa có dữ liệu</p>
     </div>
 </template>
 

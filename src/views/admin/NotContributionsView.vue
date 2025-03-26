@@ -21,7 +21,7 @@
                     class="w-full p-inputtext-sm" />
                 <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" />
             </div>
-            <DataTable :value="filteredUsers" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]"
+            <DataTable :value="filteredUsers" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
                 <Column field="user.id" header="ID" sortable></Column>
                 <Column field="user.email" header="Email" sortable></Column>

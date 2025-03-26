@@ -17,6 +17,7 @@ import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
 import LateContributions from '@/views/admin/LateContributions.vue'
 import LateListView from '@/views/admin/LateListView.vue'
+import ApprovingView from '@/views/admin/ApprovingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -77,6 +78,12 @@ const router = createRouter({
       path: '/expenses',
       name: 'expenses',
       component: ExpenseView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/approvals',
+      name: 'approvals',
+      component: ApprovingView,
       meta: { requiresAuth: true },
     },
     {

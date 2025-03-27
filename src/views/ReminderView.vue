@@ -1,11 +1,11 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Thông báo nhắc nhở</h2>
+            <h2 class="text-center text-xl">Thông báo nhắc nhở</h2>
             <div class="mb-3">
                 <InputText v-if="reminders.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
                     class="w-full p-inputtext-sm" />
-                <Button v-if="isAdmin" label="Create" severity="success" raised size="small"
+                <Button v-if="isAdmin" label="Tạo nhắc nhở" severity="success" raised size="small"
                     @click="openCreateDialog" />
 
             </div>
@@ -32,22 +32,24 @@
     </div>
 
 
-    <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
+    <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Tạo'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
-            <label for="title" class="fw-bold">Title</label>
-            <InputText id="title" v-model="form.title" class="w-100" autocomplete="off" />
+            <label for="title" class="fw-bold">Tên</label>
+            <InputText id="title" v-model="form.title" class="w-100" autocomplete="off"
+                placeholder="Vui lòng nhập tên..." />
             <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
         </div>
         <div class="mb-3">
-            <label for="description" class="fw-bold">Description</label>
-            <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
+            <label for="description" class="fw-bold">Nội dung</label>
+            <Textarea id="description" v-model="form.description" class="w-100" autocomplete="off"
+                placeholder="Vui lòng nhập nội dung..." />
             <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
         </div>
 
         <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showReminderDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="saveReminder"></Button>
+            <Button type="button" label="Hủy" severity="secondary" @click="showReminderDialog = false"></Button>
+            <Button type="button" label="Lưu" severity="primary" @click="saveReminder"></Button>
         </div>
     </Dialog>
 </template>
@@ -55,6 +57,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import InputText from 'primevue/inputtext';
+import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
@@ -94,14 +97,14 @@ onMounted(() => {
     if (!token) {
         router.push('/');
     } else {
-        fetchFunds();
+        fetchReminders();
         checkIsAdmin(); // Gọi API kiểm tra quyền admin
     }
 });
 
 
 
-const fetchFunds = async () => {
+const fetchReminders = async () => {
     try {
         const response = await axios.get(`${baseURL}/reminders`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -140,7 +143,7 @@ const saveReminder = async () => {
         console.log(form.value);
 
         showReminderDialog.value = false;
-        fetchFunds();
+        fetchReminders();
     } catch (error) {
         console.error('Error saving reminder:', error);
     }
@@ -155,7 +158,7 @@ onMounted(() => {
     if (!token) {
         router.push('/');
     } else {
-        fetchFunds();
+        fetchReminders();
     }
 });
 </script>
@@ -163,5 +166,10 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.text-xl {
+    text-align: center;
+    font: 2em sans-serif;
 }
 </style>

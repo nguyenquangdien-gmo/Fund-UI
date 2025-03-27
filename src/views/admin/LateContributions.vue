@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách thành viên đóng quỹ muộn</h2>
+            <h2 class="text-xl">Danh Sách thành viên đóng quỹ muộn</h2>
             <div class="mb-3">
                 <select v-model="selectedMonth" @change="onMonthChange"
                     class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year">

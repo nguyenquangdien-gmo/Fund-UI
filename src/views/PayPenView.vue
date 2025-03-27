@@ -132,4 +132,9 @@ onMounted(() => {
 .p-datatable-sm {
     font-size: 14px;
 }
+
+.text-xl {
+    text-align: center;
+    font: 2em sans-serif;
+}
 </style>

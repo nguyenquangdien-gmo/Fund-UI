@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách quỹ chi</h2>
+            <h2 class="text-xl">Danh Sách quỹ chi</h2>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
                 <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->

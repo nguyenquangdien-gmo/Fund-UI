@@ -1,10 +1,11 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách quỹ phạt</h2>
+            <h2 class="text-xl">Danh Sách quỹ phạt</h2>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo id, tên..." class="w-full p-inputtext-sm" />
-                <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+                <Button label="Tạo quỹ phạt" severity="success" class="left-10" raised size="small"
+                    @click="openCreateDialog" />
             </div>
             <DataTable :value="filteredPeriods" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
@@ -24,8 +25,8 @@
                 <Column field="slug" header="Slug" sortable></Column>
                 <Column header="Actions">
                     <template #body="{ data }">
-                        <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
-                        <Button label="Delete" icon="pi pi-trash" severity="danger"
+                        <Button label="Sửa" icon="pi pi-pencil" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Xóa" icon="pi pi-trash" class="left-10" severity="danger"
                             @click="confirmDeletePenalty(data)" />
                     </template>
                 </Column>
@@ -41,24 +42,31 @@
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showPenaltyDialog" modal :header="isUpdate ? 'Update Period' : 'Create Period'"
-        @hide="resetErrors" :style="{ width: '30rem' }">
+    <Dialog v-model:visible="showPenaltyDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
+        :style="{ width: '30rem' }">
         <div class="mb-3">
             <label for="id" class="fw-bold">Tên quỹ</label>
             <InputText id="name" type="text" v-model="form.name" class="w-100" autocomplete="off" />
-
+            <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
         </div>
         <div class="mb-3">
             <label for="description" class="fw-bold">Mô tả</label>
             <InputText id="description" type="text" v-model="form.description" class="w-100" autocomplete="off" />
+            <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
+        </div>
+        <div class="mb-3">
+            <label for="slug" class="fw-bold">Slug</label>
+            <InputText id="slug" type="text" v-model="form.slug" class="w-100" autocomplete="off" />
+            <small class="text-danger" v-if="errors.slug">{{ errors.description }}</small>
         </div>
         <div class="mb-3">
             <label for="amount" class="fw-bold">Tổng tiền</label>
             <InputText id="amount" v-model="form.amount" class="w-100" autocomplete="off" />
+            <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
             <Button type="button" label="Cancel" severity="secondary" @click="showPenaltyDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button>
+            <Button type="button" label="Save" severity="primary" @click="savePenalty"></Button>
         </div>
     </Dialog>
 </template>
@@ -70,11 +78,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import Calendar from 'primevue/calendar';
-import Dropdown from 'primevue/dropdown';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import months from '@/utils/Months';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Penalty from '@/types/Penalty';
 
@@ -86,11 +91,11 @@ const penalties = ref<Penalty[]>([]);
 const searchQuery = ref("");
 const showPenaltyDialog = ref(false);
 const isUpdate = ref(false);
-const form = ref({ id: 0, name: "", description: "", amount: "" });
+const form = ref({ id: 0, name: "", description: "", amount: "", slug: "" });
 const router = useRouter();
-const errors = ref({ name: "", description: "", amount: 0 });
+const errors = ref({ name: "", description: "", amount: "", slug: "" });
 
-const fetchPeriods = async () => {
+const fetchPenalties = async () => {
     try {
         const response = await axios.get(`${baseURL}/penalties`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -101,8 +106,19 @@ const fetchPeriods = async () => {
     }
 };
 
+const validateForm = () => {
+    errors.value = { name: "", description: "", amount: "", slug: "" };
+
+    if (!form.value.name) errors.value.name = "Vui lòng nhập tên quỹ phạt!";
+    if (!form.value.description) errors.value.description = "Vui lòng nhập mô tả!";
+    if (!form.value.amount || isNaN(Number(form.value.amount))) errors.value.amount = "Vui lòng nhập số tiền hợp lệ!";
+    if (!form.value.slug) errors.value.slug = "Vui lòng nhập slug!";
+
+    return Object.values(errors.value).every(err => err === "");
+};
+
 const resetErrors = () => {
-    errors.value = { name: "", description: "", amount: 0 };
+    errors.value = { name: "", description: "", amount: "", slug: "" };
 };
 
 const filteredPeriods = computed(() => {
@@ -111,13 +127,13 @@ const filteredPeriods = computed(() => {
 });
 
 const openCreateDialog = () => {
-    form.value = { id: 0, name: "", description: "", amount: "" };
+    form.value = { id: 0, name: "", description: "", amount: "", slug: "", };
     isUpdate.value = false;
     showPenaltyDialog.value = true;
 };
 
 const openUpdateDialog = (penalty: Penalty) => {
-    form.value = { id: penalty.id, name: penalty.name, description: penalty.description, amount: penalty.amount.toString() };
+    form.value = { id: penalty.id, name: penalty.name, description: penalty.description, slug: penalty.slug, amount: penalty.amount.toString() };
     isUpdate.value = true;
     showPenaltyDialog.value = true;
 };
@@ -127,7 +143,8 @@ const confirmDeletePenalty = (pen: Penalty) => {
     showConfirmDialog.value = true;
 };
 
-const savePeriod = async () => {
+const savePenalty = async () => {
+    if (!validateForm()) return;
     try {
         const penaltyData = { ...form.value };
         if (isUpdate.value) {
@@ -135,14 +152,14 @@ const savePeriod = async () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post('${baseURL}/penalties', penaltyData, {
+            await axios.post(`${baseURL}/penalties`, penaltyData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
         showPenaltyDialog.value = false;
-        fetchPeriods();
+        fetchPenalties();
     } catch (error) {
-        console.error('Error saving period:', error);
+        console.error('Error saving penalty:', error);
     }
 };
 
@@ -152,7 +169,7 @@ const deletePenalty = async () => {
         await axios.delete(`${baseURL}/penalties/${penaltyDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        fetchPeriods();
+        fetchPenalties();
     } catch (error) {
         console.error('Error deleting period:', error);
     } finally {
@@ -171,7 +188,7 @@ onMounted(() => {
     if (!token) {
         router.push('/');
     } else {
-        fetchPeriods();
+        fetchPenalties();
     }
 });
 </script>
@@ -179,5 +196,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.left-10 {
+    margin-left: 10px;
 }
 </style>

@@ -1,13 +1,15 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách quỹ chi</h2>
+            <h2 class="text-center text-xl">Danh Sách quỹ chi</h2>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
-                <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+                <InputText v-if="expenses.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
+                    class="w-full p-inputtext-sm" />
+                <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small"
+                    @click="openCreateDialog" />
             </div>
-            <DataTable :value="filteredExpense" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-                class="p-datatable-sm">
+            <DataTable v-if="expenses.length > 0" :value="filteredExpense" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column field="id" header="ID" sortable></Column>
                 <Column field="name" header="Tên" sortable></Column>
                 <Column field="expenseType" header="Mã Quỹ" sortable></Column>
@@ -25,12 +27,15 @@
                 </Column>
                 <Column header="Actions">
                     <template #body="{ data }">
-                        <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
                         <!-- <Button label="Delete" icon="pi pi-trash" severity="danger"
                             @click="confirmDeleteExpense(data)" /> -->
                     </template>
                 </Column>
             </DataTable>
+            <div v-else>
+                <p class="text-center">Không tìm thấy phiếu chi nào</p>
+            </div>
         </div>
     </div>
     <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
@@ -55,7 +60,7 @@
         </div>
         <div class="mb-3">
             <label for="amount" class="fw-bold">Tổng tiền</label>
-            <InputText id="amount" type="number" v-model="form.amount" class="w-100" autocomplete="off" />
+            <InputText id="amount" type="number" v-model="amount" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
         </div>
         <div class="mb-3">
@@ -94,11 +99,12 @@ const expenses = ref<Expense[]>([]);
 const searchQuery = ref("");
 const showExpense = ref(false);
 const isUpdate = ref(false);
-const form = ref({ id: 0, name: "", expenseType: "", description: "", userId: 0, amount: "" });
+const form = ref({ id: 0, name: "", expenseType: "", description: "", userId: 0, amount: 0 });
 const errors = ref({ name: "", description: "", type: "", amount: "" });
 const router = useRouter();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
+const amount = ref('');
 
 const selectedType = ref<FundType | null>(null);
 const types = ref([
@@ -124,7 +130,7 @@ const filteredExpense = computed(() => {
 });
 
 const openCreateDialog = () => {
-    form.value = { id: 0, name: "", userId: 0, description: "", expenseType: "", amount: "" };
+    form.value = { id: 0, name: "", userId: 0, description: "", expenseType: "", amount: 0 };
     isUpdate.value = false;
     showExpense.value = true;
 };
@@ -136,8 +142,9 @@ const openUpdateDialog = (expense: Expense) => {
         userId: user.value.id,
         description: expense.description,
         expenseType: expense.expenseType.toString(),
-        amount: expense.amount.toString()
+        amount: expense.amount
     };
+    amount.value = expense.amount.toString();
     selectedType.value = types.value.find(t => t.value === expense.expenseType)?.value || null;
     isUpdate.value = true;
     showExpense.value = true;
@@ -152,7 +159,7 @@ const validateForm = () => {
     if (!form.value.name) errors.value.name = "Name is required!";
     if (!form.value.description) errors.value.name = "Description is required!";
     if (!selectedType.value) errors.value.type = "Type is required!";
-    if (!form.value.amount || Number(form.value.amount) < 0)
+    if (!amount.value || Number(amount.value) < 0)
         errors.value.amount = "Amount is required and must be greater than 0!";
     return Object.values(errors.value).every(err => err === "");
 };
@@ -164,6 +171,7 @@ const saveExpense = async () => {
             if (selectedType.value) {
                 form.value.expenseType = selectedType.value;
             }
+            form.value.amount = Number(amount.value);
             console.log(form.value.expenseType);
 
             await axios.put(`${baseURL}/expenses/${form.value.id}`, form.value, {
@@ -175,6 +183,7 @@ const saveExpense = async () => {
             if (selectedType.value) {
                 form.value.expenseType = selectedType.value;
                 form.value.userId = user.value.id;
+                form.value.amount = Number(form.value.amount);
                 console.log(form.value);
                 await axios.post(`${baseURL}/expenses`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -225,5 +234,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.btn-create {
+    margin-left: 10px;
 }
 </style>

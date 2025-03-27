@@ -12,12 +12,7 @@ import Button from "primevue/button";
 const token = localStorage.getItem("accessToken");
 const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
-const error = ref(null);
-const user = JSON.parse(sessionStorage.getItem("user"));
-const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
-const rowsPerPage = ref(5);
-const currentPage = ref(0);
 const selectedListType = ref("contributions");
 const listOptions = ref([
     { label: "Phê duyệt đóng quỹ", value: "contributions" },
@@ -42,7 +37,6 @@ const fetchContributions = async () => {
         });
         contributions.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu đóng quỹ";
         console.error(err);
     } finally {
         loading.value = false;
@@ -58,8 +52,6 @@ const fetchPenBills = async () => {
         });
         penBills.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu nộp phạt";
-        console.error(err);
     } finally {
         loading.value = false;
     }
@@ -101,7 +93,6 @@ const handleContributionAction = async (action) => {
 
 
     } catch (err) {
-        error.value = `Không thể ${action === 'confirm' ? 'phê duyệt' : 'hủy'} đóng quỹ`;
         console.error(err);
     } finally {
         loading.value = false;
@@ -128,7 +119,6 @@ const handlePenBillAction = async (action) => {
 
 
     } catch (err) {
-        error.value = `Không thể ${action === 'confirm' ? 'phê duyệt' : 'hủy'} nộp phạt`;
         console.error(err);
     } finally {
         loading.value = false;
@@ -156,20 +146,7 @@ const filteredContributions = computed(() => {
     );
 });
 
-const paginatedContributions = computed(() => {
-    const start = currentPage.value * rowsPerPage.value;
-    return filteredContributions.value.slice(start, start + rowsPerPage.value);
-});
-
 const filteredPenBills = computed(() => penBills.value);
-const paginatedPenBills = computed(() => {
-    const start = currentPage.value * rowsPerPage.value;
-    return filteredPenBills.value.slice(start, start + rowsPerPage.value);
-});
-
-const onPageChange = (event) => {
-    currentPage.value = event.page;
-};
 
 const formatCurrency = (value) => value.toLocaleString() + " VND";
 
@@ -187,16 +164,16 @@ const getStatusSeverity = (status) => {
                 placeholder="Chọn danh sách" class="w-64" />
 
             <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-                class="p-inputtext w-64" />
+                class="p-inputtext w-64 left-10" />
 
         </div>
 
         <p v-if="error" class="text-red-500">{{ error }}</p>
         <p v-if="loading">Đang tải dữ liệu...</p>
 
-        <DataTable v-if="selectedListType === 'contributions'" :value="filteredContributions"
-            class="p-datatable-striped" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-            responsiveLayout=" scroll">
+        <DataTable v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
+            :value="filteredContributions" class="p-datatable-striped" paginator :rows="15"
+            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
             <Column field="id" header="Id" />
             <Column field="periodName" header="Kỳ đóng" />
             <Column field="totalAmount" header="Số tiền">
@@ -214,14 +191,15 @@ const getStatusSeverity = (status) => {
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
                         @click="openConfirmDialog(data, 'confirm')" />
-                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2"
+                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
                         @click="openConfirmDialog(data, 'cancel')" />
                 </template>
             </Column>
         </DataTable>
 
-        <DataTable v-else-if="selectedListType === 'penBills'" :value="filteredPenBills" class="p-datatable-striped"
-            paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+        <DataTable v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0" :value="filteredPenBills"
+            class="p-datatable-striped" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
+            responsiveLayout=" scroll">
             <Column field="description" header="Mô Tả" sortable></Column>
             <Column field="amount" header="Tổng cộng" sortable>
                 <template #body="{ data }">
@@ -232,12 +210,15 @@ const getStatusSeverity = (status) => {
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
                         @click="openConfirmDialog(data, 'confirm')" />
-                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2"
+                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
                         @click="openConfirmDialog(data, 'cancel')" />
 
                 </template>
             </Column>
         </DataTable>
+        <div v-else>
+            <p class="text-center">Chưa có bất kỳ đơn nào cần phê duyệt.</p>
+        </div>
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '350px' }">
@@ -254,3 +235,12 @@ const getStatusSeverity = (status) => {
         </Dialog>
     </div>
 </template>
+<style>
+:global(.p-button) {
+    margin-left: 10px;
+}
+
+.left-10 {
+    margin-left: 10px;
+}
+</style>

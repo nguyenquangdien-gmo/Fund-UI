@@ -72,7 +72,7 @@ const filteredRecords = computed(() => {
 
 <template>
     <div class="p-4">
-        <h2 class="text-2xl font-bold mb-4">📋 Danh sách đi muộn</h2>
+        <h2 class="text-xl font-bold mb-4">Danh sách đi muộn</h2>
 
         <div class="flex gap-4 mb-4">
             Từ
@@ -83,8 +83,8 @@ const filteredRecords = computed(() => {
             <InputText v-model="searchTerm" placeholder="🔍 Tìm theo tên hoặc ID" class="p-inputtext-sm" />
         </div>
 
-        <DataTable :value="filteredRecords" :paginator="true" :rows="15" :rowsPerPageOptions="[15, 20, 25]" stripedRows
-            responsiveLayout="scroll">
+        <DataTable v-if="filteredRecords.length > 0" :value="filteredRecords" :paginator="true" :rows="15"
+            :rowsPerPageOptions="[15, 20, 25]" stripedRows responsiveLayout="scroll">
             <Column field="user.id" header="Mã nhân viên">
                 <template #body="{ data }">
                     {{ data.user?.id || '-' }}
@@ -112,7 +112,7 @@ const filteredRecords = computed(() => {
             </Column>
         </DataTable>
 
-        <div v-if="filteredRecords.length === 0" class="text-center text-gray-500">
+        <div v-else="filteredRecords.length === 0" class="text-center text-gray-500">
             Không có dữ liệu để hiển thị.
         </div>
     </div>

@@ -1,38 +1,36 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách Kỳ Hạn</h2>
-            <div v-if="periods.length > 0" class="mb-3">
-                <div class="mb-3">
-                    <InputText v-model="searchQuery" placeholder="Tìm kiếm theo năm..." class="w-full p-inputtext-sm" />
-                    <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
-                </div>
-                <DataTable :value="filteredPeriods" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-                    class="p-datatable-sm">
-                    <Column field="id" header="ID" sortable></Column>
-                    <Column field="month" header="Tháng" sortable></Column>
-                    <Column field="year" header="Năm" sortable></Column>
-                    <Column field="totalAmount" header="Tổng cộng" sortable>
-                        <template #body="{ data }">
-                            {{ formatCurrency(data.totalAmount) }}
-                        </template>
-                    </Column>
-                    <Column field="deadline" header="Hạn Chót" sortable>
-                        <template #body="{ data }">
-                            {{ formatDate(data.deadline) }}
-                        </template>
-                    </Column>
-                    <Column field="description" header="Mô Tả" sortable></Column>
-                    <Column header="Actions">
-                        <template #body="{ data }">
-                            <Button label="Update" icon="pi pi-refresh" severity="info"
-                                @click="openUpdateDialog(data)" />
-                            <Button label="Delete" icon="pi pi-trash" severity="danger"
-                                @click="confirmDeletePeriod(data)" />
-                        </template>
-                    </Column>
-                </DataTable>
+            <h2 class="text-xl">Danh Sách Kỳ Hạn</h2>
+            <div class="mb-3">
+                <InputText v-if="periods.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo năm..."
+                    class="w-full p-inputtext-sm" />
+                <Button class="left-10" label="Tạo phiếu thu" severity="success" raised size="small"
+                    @click="openCreateDialog" />
             </div>
+            <DataTable v-if="periods.length > 0" :value="filteredPeriods" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
+                <Column field="id" header="ID" sortable></Column>
+                <Column field="month" header="Tháng" sortable></Column>
+                <Column field="year" header="Năm" sortable></Column>
+                <Column field="totalAmount" header="Tổng cộng" sortable>
+                    <template #body="{ data }">
+                        {{ formatCurrency(data.totalAmount) }}
+                    </template>
+                </Column>
+                <Column field="deadline" header="Hạn Chót" sortable>
+                    <template #body="{ data }">
+                        {{ formatDate(data.deadline) }}
+                    </template>
+                </Column>
+                <Column field="description" header="Mô Tả" sortable></Column>
+                <Column header="Actions">
+                    <template #body="{ data }">
+                        <Button label="Sửa" icon="pi pi-pencil" severity="info" @click="openUpdateDialog(data)" />
+                        <!-- <Button label="Xóa" icon="pi pi-trash" severity="danger" @click="confirmDeletePeriod(data)" /> -->
+                    </template>
+                </Column>
+            </DataTable>
             <div v-else>
                 <h4 class="text-center">Không tìm thấy kỳ hạn nào.</h4>
             </div>
@@ -41,24 +39,28 @@
 
 
 
-    <Dialog v-model:visible="showPeriodDialog" modal :header="isUpdate ? 'Update Period' : 'Create Period'"
-        @hide="resetErrors" :style="{ width: '30rem' }">
+    <Dialog v-model:visible="showPeriodDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" :style="{ width: '30rem' }"
+        @hide="resetErrors">
         <div class="mb-3">
             <label for="month" class="fw-bold">Tháng</label>
             <Dropdown id="month" v-model="form.month" :options="months" optionLabel="label" optionValue="value"
                 class="w-100" />
+            <small class="text-danger" v-if="errors.month">{{ errors.month }}</small>
         </div>
         <div class="mb-3">
             <label for="year" class="fw-bold">Năm</label>
             <InputText id="year" type="number" v-model="form.year" class="w-100" autocomplete="off" disabled />
+            <small class="text-danger" v-if="errors.year">{{ errors.year }}</small>
         </div>
         <div class="mb-3">
-            <label for="deadline" class="fw-bold">Hạn Chót</label>
+            <label for="deadline" class="fw-bold">Thời hạn</label>
             <Calendar id="deadline" v-model="form.deadline" class="w-100" showIcon />
+            <small class="text-danger" v-if="errors.deadline">{{ errors.deadline }}</small>
         </div>
         <div class="mb-3">
             <label for="description" class="fw-bold">Mô Tả</label>
             <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
+            <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
             <Button type="button" label="Cancel" severity="secondary" @click="showPeriodDialog = false"></Button>
@@ -99,7 +101,7 @@ const showPeriodDialog = ref(false);
 const isUpdate = ref(false);
 const form = ref({ id: 0, month: 1, year: new Date().getFullYear().toString(), deadline: new Date(), description: "" });
 const router = useRouter();
-const errors = ref({ month: 0, year: 0, description: "", dealdline: "" });
+const errors = ref({ month: "", year: "", description: "", deadline: "" });
 
 const fetchPeriods = async () => {
     try {
@@ -111,9 +113,18 @@ const fetchPeriods = async () => {
         console.error('Error fetching periods:', error);
     }
 };
+const validateForm = () => {
+    errors.value = { month: "", year: "", description: "", deadline: "" };
+    if (!form.value.month) errors.value.month = "Vui lòng chọn tháng!";
+    if (!form.value.year) errors.value.year = "Vui lòng chọn năm!";
+    if (!form.value.description) errors.value.description = "Vui lòng nhập mô tả!";
+    if (!form.value.deadline) errors.value.description = "Vui lòng chọn hạn nộp!";;
+
+    return Object.values(errors.value).every(err => err === "");
+};
 
 const resetErrors = () => {
-    errors.value = { month: 0, year: 0, description: "", dealdline: "" };
+    errors.value = { month: "", year: "", description: "", deadline: "" };
 };
 
 const filteredPeriods = computed(() => {
@@ -140,6 +151,7 @@ const confirmDeletePeriod = (period: Period) => {
 
 const savePeriod = async () => {
     try {
+        if (!validateForm()) return;
         const periodData = { ...form.value, deadline: form.value.deadline.toISOString().split('T')[0] };
         if (isUpdate.value) {
             await axios.put(`${baseURL}/periods/${form.value.id}`, periodData, {
@@ -190,5 +202,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.left-10 {
+    margin-left: 10px;
 }
 </style>

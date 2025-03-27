@@ -3,7 +3,6 @@ import RegisterView from '@/views/auth/RegisterView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import ContributionsView from '@/views/ContributionsView.vue'
-import OwedView from '@/views/OwedView.vue'
 import FundView from '@/views/admin/FundView.vue'
 import PeriodView from '@/views/admin/PeriodView.vue'
 import PenaltyView from '@/views/admin/PenaltyView.vue'
@@ -18,6 +17,7 @@ import NotContributionsView from '@/views/admin/NotContributionsView.vue'
 import LateContributions from '@/views/admin/LateContributions.vue'
 import LateListView from '@/views/admin/LateListView.vue'
 import ApprovingView from '@/views/admin/ApprovingView.vue'
+import EventView from '@/views/EventView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,14 +45,14 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/events',
+      name: 'events',
+      component: EventView,
+    },
+    {
       path: '/contributions',
       name: 'contributions',
       component: ContributionsView,
-    },
-    {
-      path: '/contributions/owed',
-      name: 'owed',
-      component: OwedView,
     },
     {
       path: '/bills',
@@ -74,6 +74,7 @@ const router = createRouter({
       name: 'late-checkin',
       component: LateListView,
     },
+
     {
       path: '/expenses',
       name: 'expenses',

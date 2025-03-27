@@ -1,10 +1,10 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách Quỹ</h2>
+            <h2 class="text-xl">Danh Sách Quỹ</h2>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
-                <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+                <Button label="Tạo quỹ" severity="success" class="btn" raised size="small" @click="openCreateDialog" />
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
@@ -23,8 +23,9 @@
                 </Column>
                 <Column header="Actions">
                     <template #body="{ data }">
-                        <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
-                        <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteFund(data)" />
+                        <Button label="Sửa" icon="pi pi-pencil" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Xóa" icon="pi pi-trash" severity="danger" style="margin-left: 10px;"
+                            @click="confirmDeleteFund(data)" />
                     </template>
                 </Column>
             </DataTable>
@@ -206,5 +207,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.btn {
+    margin-left: 10px;
 }
 </style>

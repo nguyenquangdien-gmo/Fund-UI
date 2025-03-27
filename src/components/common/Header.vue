@@ -21,7 +21,7 @@
 
                     <!-- Popup Reminders -->
                     <OverlayPanel ref="reminderPanel">
-                        <div v-if="reminders.length > 0">
+                        <div v-if="reminders.length > 0" class="remainder-panel">
                             <ul class="reminder-list">
                                 <li v-for="reminder in reminders" :key="reminder.id"
                                     @click="markAsReadAndGo(reminder.id)" class="reminder-item">
@@ -112,8 +112,10 @@ const markAllAsRead = async () => {
 
     try {
         const reminderIds = reminders.value.map(reminder => reminder.id);
+        console.log("Reminder IDs:", reminderIds);
 
-        await axios.put(`http://localhost:8080/api/v1/reminders/mark-reads`, { reminderIds }, {
+
+        await axios.post(`http://localhost:8080/api/v1/reminders/mark-reads`, reminderIds, {
             headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
         });
 
@@ -156,12 +158,14 @@ const baseItems = [
         icon: "pi pi-list",
         items: [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
-            { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
+            // { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
             { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
             { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") },
         ]
     },
-    { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") }
+    { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") },
+    { label: "Sự kiện", icon: "pi pi-sparkles", command: () => router.push("/events") },
+
 ];
 
 const adminItems = [
@@ -242,6 +246,11 @@ const handleLogout = async () => {
     padding: 0.3rem 0.5rem;
     top: 18px;
     right: 130px;
+}
+
+.remainder-panel {
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 /* Reminder Popup */

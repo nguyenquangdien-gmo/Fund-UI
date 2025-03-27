@@ -12,7 +12,7 @@
             </div>
 
             <!-- DataTable với phân trang -->
-            <DataTable :value="paginatedContributions" class="p-datatable-striped" paginator :rows="15"
+            <DataTable :value="filteredContributions" class="p-datatable-striped" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
                 <Column field="month" header="Tháng" />
                 <Column field="year" header="Năm" />
@@ -31,8 +31,9 @@
                 <Column field="description" header="Mô tả" />
                 <Column header="Hành động">
                     <template #body="slotProps">
-                        <Button label="Đóng quỹ" @click="openPaymentDialog(slotProps.data)"
-                            class="p-button-success p-button-sm" />
+                        <Button v-if="slotProps.data.paymentStatus !== 'PENDING'" label="Đóng quỹ"
+                            @click="openPaymentDialog(slotProps.data)" class="p-button-success p-button-sm" />
+                        <Button v-else label="Chờ xác nhận" icon="pi pi-hourglass" severity="info" disabled />
                     </template>
                 </Column>
             </DataTable>
@@ -44,8 +45,9 @@
         <!-- Dialog Thanh Toán -->
         <Dialog v-model:visible="showDialog" header="Đóng Quỹ" :modal="true">
             <div class="p-fluid">
-                <p class="mb-2">Nhập số tiền cần đóng:</p>
-                <InputText v-model="paymentAmount" type="number" class="p-inputtext w-full" />
+                <p class="mb-2">Bạn có chắc muốn đóng quỹ?</p>
+                <InputText :value="formatCurrency(paymentAmount)" type="text" class="p-inputtext w-full" disabled />
+
                 <div class="flex justify-end gap-2 mt-4">
                     <Button label="Hủy" class="p-button-text" @click="showDialog = false" />
                     <Button label="Xác nhận" class="p-button-primary" @click="confirmPayment" />
@@ -76,10 +78,8 @@ const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
 const selectedContribution = ref(null);
 const showDialog = ref(false);
-const paymentAmount = ref(0);
+const paymentAmount = ref(150000);
 
-const rowsPerPage = ref(5);
-const currentPage = ref(0);
 
 const fetchPendingContributions = async () => {
     try {
@@ -101,7 +101,9 @@ const fetchPendingContributions = async () => {
     }
 };
 
-onMounted(fetchPendingContributions);
+onMounted(() => {
+    fetchPendingContributions();
+});
 
 const filteredContributions = computed(() => {
     if (!searchQuery.value) return contributions.value;
@@ -113,18 +115,10 @@ const filteredContributions = computed(() => {
     );
 });
 
-const paginatedContributions = computed(() => {
-    const start = currentPage.value * rowsPerPage.value;
-    return filteredContributions.value.slice(start, start + rowsPerPage.value);
-});
-
-const onPageChange = (event) => {
-    currentPage.value = event.page;
-};
 
 const openPaymentDialog = (contribution) => {
     selectedContribution.value = contribution;
-    paymentAmount.value = 0;
+    paymentAmount.value = 150000;
     showDialog.value = true;
 };
 
@@ -160,5 +154,10 @@ const confirmPayment = async () => {
 .p-datatable th {
     background-color: #f4f4f4;
     text-align: left;
+}
+
+.text-xl {
+    text-align: center;
+    font: 2em sans-serif;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách thành viên chưa đóng quỹ hoặc nợ quỹ</h2>
+            <h2 class="text-xl">Danh Sách thành viên chưa đóng quỹ hoặc nợ quỹ</h2>
             <div class="mb-3">
                 <select v-model="selectedMonth" @change="onMonthChange"
                     class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year">
@@ -10,7 +10,7 @@
                     </option>
                 </select>
                 <select v-model="selectedYear" @change="onYearChange"
-                    class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year">
+                    class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year left-10">
                     <option v-for="year in availableYears" :key="year" :value="year">
                         {{ year }}
                     </option>
@@ -19,7 +19,8 @@
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã thành viên or tên..."
                     class="w-full p-inputtext-sm" />
-                <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" />
+                <Button label="Create reminder" severity="success" class="left-10" raised size="small"
+                    @click="openCreateDialog" />
             </div>
             <DataTable :value="filteredUsers" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
@@ -47,13 +48,13 @@
             </DataTable>
         </div>
     </div>
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa thành viên này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
             <Button label="Xóa" severity="danger" @click="deleteUser" />
         </div>
-    </Dialog>
+    </Dialog> -->
 
     <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
         :style="{ width: '30rem' }">
@@ -147,7 +148,7 @@ const onMonthChange = () => {
 
 const fetchUsers = async () => {
     try {
-        const response = await axios.get(`${baseURL}/users/debt-or-no-contribution/period`, {
+        const response = await axios.get(`${baseURL}/users/no-contribution/period`, {
             params: {
                 year: selectedYear.value,
                 month: selectedMonth.value
@@ -174,10 +175,10 @@ const openCreateDialog = () => {
     form.value = { id: 0, title: "", description: "", type: "", status: "", created_at: "" };
     showReminderDialog.value = true;
 };
-const confirmDeleteFund = (user: User) => {
-    userToDelete.value = user;
-    showConfirmDialog.value = true;
-};
+// const confirmDeleteFund = (user: User) => {
+//     userToDelete.value = user;
+//     showConfirmDialog.value = true;
+// };
 
 
 const validateForm = () => {
@@ -216,7 +217,7 @@ const saveReminder = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
 
-        message.value = "@all **Các anh/chị/em chưa đóng quỹ**\n\n";
+        message.value = `@all **Các anh/chị/em chưa đóng quỹ tháng ${selectedMonth.value}**\n\n`;
         message.value += formatDebtMessageForExcel(users.value);
 
         await post(message.value);
@@ -234,27 +235,22 @@ const resetErrors = () => {
 }
 
 
-const deleteUser = async () => {
-    if (!userToDelete.value) return;
-    try {
-        await axios.delete(`${baseURL} /users/${userToDelete.value.id} `, {
-            headers: { Authorization: `Bearer ${token} ` }
-        });
-        fetchUsers();
-    } catch (error) {
-        console.error('Error deleting user:', error);
-    } finally {
-        showConfirmDialog.value = false;
-        userToDelete.value = null;
-    }
-};
+// const deleteUser = async () => {
+//     if (!userToDelete.value) return;
+//     try {
+//         await axios.delete(`${baseURL} /users/${userToDelete.value.id} `, {
+//             headers: { Authorization: `Bearer ${token} ` }
+//         });
+//         fetchUsers();
+//     } catch (error) {
+//         console.error('Error deleting user:', error);
+//     } finally {
+//         showConfirmDialog.value = false;
+//         userToDelete.value = null;
+//     }
+// };
 
 
-const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, '0')} /${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} `;
-};
 
 onMounted(() => {
     if (!token) {
@@ -269,5 +265,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.left-10 {
+    margin-left: 10px;
 }
 </style>

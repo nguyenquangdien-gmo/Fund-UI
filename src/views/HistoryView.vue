@@ -16,8 +16,6 @@ const error = ref(null);
 const user = JSON.parse(sessionStorage.getItem("user"));
 const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
-const rowsPerPage = ref(5);
-const currentPage = ref(0);
 const selectedListType = ref("contributions"); // Mặc định hiển thị danh sách đóng quỹ
 const listOptions = ref([
     { label: "Lịch sử đóng quỹ", value: "contributions" },
@@ -97,7 +95,7 @@ const filteredPenBills = computed(() => penBills.value);
 const formatCurrency = (value) => value.toLocaleString() + " VND";
 
 const getStatusSeverity = (status) => {
-    return { PAID: "success", PENDING: "info", OVERDUE: "danger", PARTIAL: "warn" }[status] || "secondary";
+    return { PAID: "success", PENDING: "info" }[status] || "secondary";
 };
 </script>
 
@@ -129,26 +127,21 @@ const getStatusSeverity = (status) => {
             </Column>
             <Column field="paymentStatus" header="Trạng thái">
                 <template #body="slotProps">
-                    <Tag :value="slotProps.data.paymentStatus"
-                        :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
+
+                    <Button class="status" v-if="slotProps.data.paymentStatus === 'PAID'" label="Đã đóng phạt"
+                        icon="pi pi-check-square" severity="success" disabled />
+                    <Button class="status" v-if="slotProps.data.paymentStatus === 'PENDING'" label="Chờ xác nhận"
+                        icon="pi pi-hourglass" severity="info" disabled />
+                    <Button class="status" v-if="slotProps.data.paymentStatus === 'CANCELED'" label="Bị hủy"
+                        icon="pi pi-times-circle" severity="secondary" disabled />
                 </template>
             </Column>
             <Column field="note" header="Ghi chú" />
-            <Column field="deadline" header="Hạn chót">
+            <Column field="deadline" header="Thời hạn">
                 <template #body="slotProps">
                     <span :class="{ 'text-red-500': slotProps.data.isLate }">
                         {{ formatDate(slotProps.data.deadline) }}
                     </span>
-                </template>
-            </Column>
-            <Column field="owedAmount" header="Thiếu">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.owedAmount) }}
-                </template>
-            </Column>
-            <Column field="overpaidAmount" header="Dư">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.overpaidAmount) }}
                 </template>
             </Column>
         </DataTable>
@@ -170,11 +163,12 @@ const getStatusSeverity = (status) => {
             </Column>
             <Column header="Trạng thái">
                 <template #body="{ data }">
-                    <Button v-if="data.paymentStatus === 'PAID'" label="Đã đóng phạt" icon="pi pi-wallet"
-                        @click="confirmPay(data)" severity="success" />
-                    <Button v-if="data.paymentStatus === 'PENDING'" label="Chờ xác nhận" icon="pi pi-hourglass"
-                        severity="info" disabled />
-                    <!-- <Button v-else label="Đã đóng phạt" icon="pi pi-check-square" severity="success" disabled /> -->
+                    <Button class="status" v-if="data.paymentStatus === 'PAID'" label="Đã đóng phạt"
+                        icon="pi pi-check-square" @click="confirmPay(data)" severity="success" disabled />
+                    <Button class="status" v-if="data.paymentStatus === 'PENDING'" label="Chờ xác nhận"
+                        icon="pi pi-hourglass" severity="info" disabled />
+                    <Button class="status" v-if="data.paymentStatus === 'CANCELED'" label="Bị hủy "
+                        icon="pi pi-times-circle" severity="warn" disabled />
                 </template>
             </Column>
         </DataTable>
@@ -186,6 +180,16 @@ const getStatusSeverity = (status) => {
 <style scoped>
 .p-datatable th {
     background-color: #f4f4f4;
-    text-align: left;
+    text-align: center;
+}
+
+.text-xl {
+    text-align: center;
+    font: 2em sans-serif;
+}
+
+.status {
+    width: 80%;
+
 }
 </style>

@@ -1,10 +1,11 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center">Danh Sách Thành viên</h2>
+            <h2 class="text-xl">Danh Sách Thành viên</h2>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
-                <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" />
+                <Button class="left-10" label="Thêm thành viên" severity="success" raised size="small"
+                    @click="openCreateDialog" />
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
@@ -20,8 +21,9 @@
                 </Column>
                 <Column header="Actions">
                     <template #body="{ data }">
-                        <Button label="Update" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
-                        <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteFund(data)" />
+                        <Button label="Sửa" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Xóa" class="left-10" icon="pi pi-trash" severity="danger"
+                            @click="confirmDeleteFund(data)" />
                     </template>
                 </Column>
             </DataTable>
@@ -35,8 +37,13 @@
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showUserDialog" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
+    <Dialog v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'" @hide="resetErrors"
         :style="{ width: '30rem' }">
+        <div class="mb-3">
+            <label for="id" class="fw-bold">Mã nhân viên</label>
+            <InputText id="id" v-model="userId" class="w-100" autocomplete="off" />
+            <small class="text-danger" v-if="errors.fullName">{{ errors.fullName }}</small>
+        </div>
         <div class="mb-3">
             <label for="fullName" class="fw-bold">Tên</label>
             <InputText id="fullName" v-model="form.fullName" class="w-100" autocomplete="off" />
@@ -44,8 +51,7 @@
         </div>
         <div class="mb-3">
             <label for="email" class="fw-bold">Email</label>
-            <InputText id="email" v-model="form.email" class="w-100" type="email" autocomplete="off"
-                :disabled="isUpdate" />
+            <InputText id="email" v-model="form.email" class="w-100" type="email" autocomplete="off" />
             <small class="text-danger" v-if="errors.email">{{ errors.email }}</small>
         </div>
         <div class="mb-3" v-if="!isUpdate">
@@ -55,14 +61,14 @@
         </div>
         <div class="mb-3">
             <label for="type" class="fw-bold">Vai trò</label>
-            <Dropdown v-model="selectedRole" :options="roles" optionLabel="label" optionValue="value"
-                placeholder="Chọn vai trò" class="w-100 md:w-56" />
+            <Dropdown :disabled="isUpdate" v-model="selectedRole" :options="roles" optionLabel="label"
+                optionValue="value" placeholder="Chọn vai trò" class="w-100 md:w-56" />
 
             <small class="text-danger" v-if="errors.role">{{ errors.role }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showUserDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="saveUser"></Button>
+            <Button type="button" label="Hủy" severity="secondary" @click="showUserDialog = false"></Button>
+            <Button type="button" label="Lưu" severity="primary" @click="saveUser"></Button>
         </div>
     </Dialog>
 </template>
@@ -89,8 +95,9 @@ const searchQuery = ref("");
 const showUserDialog = ref(false);
 const isUpdate = ref(false);
 const form = ref({ id: 0, email: "", password: "", fullName: "", role: "" });
-const errors = ref({ email: "", fullName: "", role: "" });
+const errors = ref({ id: "", email: "", fullName: "", role: "" });
 const router = useRouter();
+const userId = ref('');
 
 const selectedRole = ref<UserRole | null>(null);
 const roles = ref([
@@ -116,6 +123,7 @@ const filteredFunds = computed(() => {
 
 const openCreateDialog = () => {
     form.value = { id: 0, email: "", password: "", fullName: "", role: "" };
+    userId.value = '';
     isUpdate.value = false;
     showUserDialog.value = true;
 };
@@ -123,6 +131,7 @@ const openCreateDialog = () => {
 const openUpdateDialog = (user: User) => {
     form.value = { id: user.id, email: user.email, fullName: user.fullName, role: user.role, password: "" };
     selectedRole.value = roles.value.find(r => r.value === user.role)?.value || null;
+    userId.value = user.id.toString();
     isUpdate.value = true;
     showUserDialog.value = true;
 };
@@ -133,10 +142,11 @@ const confirmDeleteFund = (user: User) => {
 
 
 const validateForm = () => {
-    errors.value = { email: "", fullName: "", role: "" };
-    if (!form.value.email) errors.value.email = "Email is required!";
-    if (!form.value.fullName) errors.value.fullName = "Fullname is required!";
-    if (!selectedRole) errors.value.role = "Role is required!";
+    errors.value = { id: "", email: "", fullName: "", role: "" };
+    if (!userId.value) errors.value.id = "Vui lòng nhập mã nhân viên!";
+    if (!form.value.email) errors.value.email = "Vui lòng nhập email!";
+    if (!form.value.fullName) errors.value.fullName = "Vui lòng nhập họ tên!";
+    if (!selectedRole) errors.value.role = "Vui lòng chọn vai trò!";
 
     return Object.values(errors.value).every(err => err === "");
 };
@@ -145,14 +155,16 @@ const saveUser = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
+            form.value.id = parseInt(userId.value);
             await axios.put(`${baseURL}/users/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
             if (selectedRole.value) {
                 form.value.role = selectedRole.value;
+                form.value.id = Number(userId.value);
                 console.log(form.value);
-                await axios.post('${baseURL}/auth/register', form.value, {
+                await axios.post(`${baseURL}/auth/register`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log(form.value);
@@ -164,7 +176,7 @@ const saveUser = async () => {
         console.error('Error saving user:', error);
     }
 }; const resetErrors = () => {
-    errors.value = { email: "", fullName: "", role: "" };
+    errors.value = { id: "", email: "", fullName: "", role: "" };
 };
 
 const deleteUser = async () => {
@@ -201,5 +213,9 @@ onMounted(() => {
 <style scoped>
 .p-datatable-sm {
     font-size: 14px;
+}
+
+.left-10 {
+    margin-left: 10px;
 }
 </style>

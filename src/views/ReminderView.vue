@@ -6,7 +6,7 @@
                 <InputText v-if="reminders.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
                     class="w-full p-inputtext-sm" />
                 <Button v-if="isAdmin" label="Tạo nhắc nhở" severity="success" raised size="small"
-                    @click="openCreateDialog" />
+                    @click="openCreateDialog" style="margin-left: 10px;" />
 
             </div>
             <DataTable v-if="reminders.length > 0" :value="filteredFunds" paginator :rows="15"

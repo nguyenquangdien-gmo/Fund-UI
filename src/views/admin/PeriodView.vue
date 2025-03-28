@@ -3,8 +3,8 @@
         <div class="p-4">
             <h2 class="text-xl">Danh Sách Kỳ Hạn</h2>
             <div class="mb-3">
-                <InputText v-if="periods.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo năm..."
-                    class="w-full p-inputtext-sm" />
+                <InputText v-if="periods.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm..."
+                    class="w-full p-inputtext-sm" style="width: 20%;" />
                 <Button class="left-10" label="Tạo phiếu thu" severity="success" raised size="small"
                     @click="openCreateDialog" />
             </div>

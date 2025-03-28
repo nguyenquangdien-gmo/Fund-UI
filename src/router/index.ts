@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import RegisterView from '@/views/auth/RegisterView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import HistoryView from '@/views/HistoryView.vue'
 import ContributionsView from '@/views/ContributionsView.vue'
@@ -18,6 +17,7 @@ import LateContributions from '@/views/admin/LateContributions.vue'
 import LateListView from '@/views/admin/LateListView.vue'
 import ApprovingView from '@/views/admin/ApprovingView.vue'
 import EventView from '@/views/EventView.vue'
+import LateHistories from '@/views/LateHistories.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,99 +34,107 @@ const router = createRouter({
       component: LoginView,
     },
     {
-      path: '/register',
-      name: 'register',
-      component: RegisterView,
-    },
-    {
       path: '/histories',
       name: 'histories',
       component: HistoryView,
       meta: { requiresAuth: true },
     },
     {
+      path: '/user/late',
+      name: 'user-late',
+      component: LateHistories,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/events',
       name: 'events',
       component: EventView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/contributions',
       name: 'contributions',
       component: ContributionsView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/bills',
       name: 'bills',
       component: PayPenView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/users/not-paid',
       name: 'not-paid',
       component: NotContributionsView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/users/late-contributions',
       name: 'late-contributions',
       component: LateContributions,
+      meta: { requiresAuth: true },
     },
     {
       path: '/users/late-checkin',
       name: 'late-checkin',
       component: LateListView,
+      meta: { requiresAuth: true },
     },
 
     {
       path: '/expenses',
       name: 'expenses',
       component: ExpenseView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/approvals',
       name: 'approvals',
       component: ApprovingView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/funds',
       name: 'funds',
       component: FundView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/periods',
       name: 'periods',
       component: PeriodView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/logs',
       name: 'logs',
       component: TransactionView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/reminders',
       name: 'reminders',
       component: ReminderView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/penalties',
       name: 'penalties',
       component: PenaltyView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, requiresAuth: true },
     },
     {
       path: '/users',
       name: 'users',
       component: UserView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, requiresAuth: true },
     },
     {
       path: '/stats',
       name: 'stats',
       component: StatsView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, requiresAuth: true },
     },
 
     {

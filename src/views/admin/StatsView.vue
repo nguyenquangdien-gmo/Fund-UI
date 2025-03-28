@@ -34,7 +34,7 @@
                 <div class="icon bg-teal-100 text-teal-600"><i class="pi pi-wallet"></i></div>
                 <div>
                     <h3 class="text-gray">Tiền thu</h3>
-                    <p class="text-2xl font-semibold">$ {{ formatCurrency(amountCharge) }}</p>
+                    <p class="text-2xl font-semibold">$ {{ formatCurrency(amountCharge + amountBillCharge) }}</p>
                     <p class="text-green-500 text-sm">Tiền thu vào của nhóm</p>
                 </div>
             </div>
@@ -49,7 +49,7 @@
         </div>
 
         <!-- Biểu đồ -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts" style="margin-bottom: 15px;">
             <div class="bg-white shadow-lg rounded-lg p-5 line">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-xl font-semibold text-gray-700">Quỹ hàng tháng</p>
@@ -62,6 +62,23 @@
                 <p class="text-xl font-semibold text-gray-700 mb-4">Quỹ hàng năm</p>
                 <Chart type="bar" :data="chartDataYears" :options="chartYearOptions" class="h-[20rem]" />
             </div>
+
+        </div>
+        <!-- quy phat hang thang -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts">
+            <div class="bg-white shadow-lg rounded-lg p-5 line">
+                <div class="flex items-center justify-between mb-4">
+                    <p class="text-xl font-semibold text-gray-700">Quỹ phạt hàng tháng</p>
+
+                </div>
+                <Chart type="line" :data="chartBillDataMonths" :options="chartMonthOptions" class="h-[20rem]" />
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-5 column">
+                <p class="text-xl font-semibold text-gray-700 mb-4">Quỹ phạt hàng năm</p>
+                <Chart type="bar" :data="chartBillDataYears" :options="chartYearOptions" class="h-[20rem]" />
+            </div>
+
         </div>
     </div>
 </template>
@@ -95,15 +112,20 @@ for (let year = 2020; year <= currentYear; year++) {
 }
 
 const fundMonths = ref([]);
+const billMonthly = ref([]);
 const months = ref([]);
+const billMonths = ref([]);
 const amountsMonths = ref([]);
+const amountsBillMonths = ref([]);
 const fundYears = ref([]);
 const balance = ref([]);
 
 
 const chartDataMonths = ref({});
+const chartBillDataMonths = ref({});
 const chartMonthOptions = ref({});
 const chartDataYears = ref({});
+const chartBillDataYears = ref({});
 const chartYearOptions = ref({});
 
 
@@ -124,6 +146,35 @@ const fetchDataMonths = async (year) => {
                 {
                     label: 'Tổng số tiền',
                     data: amountsMonths.value,
+                    borderColor: '#42A5F5',
+                    fill: true,
+                    tension: 0.4,
+                    backgroundColor: 'rgba(66, 165, 245, 0.5)',
+                    borderWidth: 3
+                }
+            ]
+        };
+    } catch (error) {
+        console.error('Error fetching monthly data:', error.response?.data || error.message);
+    }
+};
+const fetchDataMonthsBill = async (year) => {
+    try {
+        const response = await axios.get(`${baseURL}/pen-bills/monthly-stats`, {
+            params: { year },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        billMonthly.value = response.data;
+        billMonths.value = response.data.map(item => `Tháng ${item.month}`);
+        amountsBillMonths.value = response.data.map(item => item.totalAmount);
+
+        chartBillDataMonths.value = {
+            labels: months.value,
+            datasets: [
+                {
+                    label: 'Tổng số tiền',
+                    data: amountsBillMonths.value,
                     borderColor: '#42A5F5',
                     fill: true,
                     tension: 0.4,
@@ -162,6 +213,7 @@ const fetchExpenseByYear = async () => {
     }
 }
 const amountCharge = ref({ value: 0 });
+const amountBillCharge = ref({ value: 0 });
 const fetchChargeByYear = async () => {
     try {
         const response = await axios.get(`${baseURL}/contributions/total`, {
@@ -170,6 +222,18 @@ const fetchChargeByYear = async () => {
         });
         amountCharge.value = response.data;
         console.log('charge' + amountCharge.value);
+    } catch (error) {
+        console.error('Error fetching expenses:', error.response?.data || error.message);
+    }
+}
+const fetchBillByYear = async () => {
+    try {
+        const response = await axios.get(`${baseURL}/pen-bills/total`, {
+            params: { year: selectedYear.value },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        amountBillCharge.value = response.data;
+        console.log('charge' + amountBillCharge.value);
     } catch (error) {
         console.error('Error fetching expenses:', error.response?.data || error.message);
     }
@@ -199,18 +263,47 @@ const fetchDataYears = async () => {
         console.error('Error fetching yearly data:', error.response?.data || error.message);
     }
 };
+const fetchBillDataYears = async () => {
+    try {
+        const response = await axios.get(`${baseURL}/pen-bills/yearly-stats`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        fundYears.value = response.data;
+
+        chartBillDataYears.value = {
+            labels: fundYears.value.map(item => `Năm ${item.year}`),
+            datasets: [
+                {
+                    label: 'Tổng số tiền',
+                    data: fundYears.value.map(item => item.totalAmount),
+                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                    borderColor: '#8B5CF6',
+                    borderWidth: 2
+                }
+            ]
+        };
+    } catch (error) {
+        console.error('Error fetching yearly data:', error.response?.data || error.message);
+    }
+};
 
 onMounted(() => {
     fetchDataMonths(selectedYear.value);
+    fetchDataMonthsBill(selectedYear.value);
     fetchDataYears();
+    fetchBillDataYears();
     fetchBalance();
     fetchExpenseByYear();
     fetchChargeByYear();
+    fetchBillByYear();
 });
 const onYearChange = () => {
     fetchDataMonths(selectedYear.value);
+    fetchDataMonthsBill(selectedYear.value);
     fetchExpenseByYear();
     fetchChargeByYear();
+    fetchBillByYear();
 };
 
 chartMonthOptions.value = {
@@ -305,5 +398,7 @@ chartYearOptions.value = {
 
 .text-xl {
     color: #6474a9;
+    font-weight: bold;
+    font-size: 20px;
 }
 </style>

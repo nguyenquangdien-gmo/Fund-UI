@@ -11,7 +11,9 @@ import 'primeicons/primeicons.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import ToastService from 'primevue/toastservice'
 import Chart from 'chart.js/auto'
+import { setupAxiosInterceptors } from './router/Interceptor'
 
 declare global {
   interface Window {
@@ -20,9 +22,10 @@ declare global {
 }
 window.Chart = Chart
 const app = createApp(App)
-
+setupAxiosInterceptors()
 app.use(createPinia())
 app.use(router)
+app.use(ToastService)
 
 app.use(PrimeVue, {
   theme: {

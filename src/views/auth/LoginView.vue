@@ -27,10 +27,7 @@
                     <Button label="Login" class="w-100 p-button-info text-white" type="submit" />
                     <small class="text-danger">{{ errorMessage }}</small>
                 </form>
-                <div class="text-center mt-3">
-                    <span>Don't have an account? <RouterLink to="/register" class="text-primary">Register</RouterLink>
-                    </span>
-                </div>
+
             </template>
         </Card>
     </div>

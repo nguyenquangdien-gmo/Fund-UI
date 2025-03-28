@@ -108,7 +108,7 @@ const getStatusSeverity = (status) => {
                 placeholder="Chọn danh sách" class="w-64" />
 
             <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-                class="p-inputtext w-64" />
+                style="margin-left: 10px; width: 28%;" class="p-inputtext w-64" />
 
         </div>
 
@@ -128,12 +128,12 @@ const getStatusSeverity = (status) => {
             <Column field="paymentStatus" header="Trạng thái">
                 <template #body="slotProps">
 
-                    <Button class="status" v-if="slotProps.data.paymentStatus === 'PAID'" label="Đã đóng phạt"
+                    <Button class="status" v-if="slotProps.data.paymentStatus === 'PAID'" label="Đã thu"
                         icon="pi pi-check-square" severity="success" disabled />
                     <Button class="status" v-if="slotProps.data.paymentStatus === 'PENDING'" label="Chờ xác nhận"
                         icon="pi pi-hourglass" severity="info" disabled />
                     <Button class="status" v-if="slotProps.data.paymentStatus === 'CANCELED'" label="Bị hủy"
-                        icon="pi pi-times-circle" severity="secondary" disabled />
+                        icon="pi pi-times-circle" severity="warn" disabled />
                 </template>
             </Column>
             <Column field="note" header="Ghi chú" />

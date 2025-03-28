@@ -18,7 +18,7 @@
             </div>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã thành viên or tên..."
-                    class="w-full p-inputtext-sm" />
+                    class="w-full p-inputtext-sm" style="width: 25%;" />
                 <Button label="Create reminder" severity="success" class="left-10" raised size="small"
                     @click="openCreateDialog" />
             </div>

@@ -8,7 +8,7 @@
         <div v-if="contributions.length > 0">
             <div class="mb-4 flex items-center gap-4">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm, mô tả..."
-                    class="p-inputtext w-64" />
+                    class="p-inputtext w-64" style="width: 25%;" />
             </div>
 
             <!-- DataTable với phân trang -->

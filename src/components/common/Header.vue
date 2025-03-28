@@ -204,16 +204,16 @@ const filteredItems = computed(() => {
     return baseItems;
 });
 
-axios.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response && error.response.status === 401) {
-            alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-            handleLogout();
-        }
-        return Promise.reject(error);
-    }
-);
+// axios.interceptors.response.use(
+//     response => response,
+//     error => {
+//         if (error.response && error.response.status === 401) {
+//             alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+//             handleLogout();
+//         }
+//         return Promise.reject(error);
+//     }
+// );
 // Logout
 const handleLogout = async () => {
     try {

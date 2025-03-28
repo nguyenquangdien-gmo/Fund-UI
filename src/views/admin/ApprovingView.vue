@@ -164,7 +164,7 @@ const getStatusSeverity = (status) => {
                 placeholder="Chọn danh sách" class="w-64" />
 
             <InputText v-model="searchQuery" placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-                class="p-inputtext w-64 left-10" />
+                class="p-inputtext w-64 left-10" style="width: 27%;" />
 
         </div>
 

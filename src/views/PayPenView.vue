@@ -39,9 +39,10 @@
         </div>
     </div>
 
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận đóng quỹ" :style="{ width: '25rem' }">
-        <div>Bạn có chắc chắn muốn đóng quỹ phạt này?</div>
-        <div class="d-flex justify-content-end gap-2 mt-3">
+    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận đóng quỹ" style="text-align: center;">
+        <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
+
+        <div class="d-flex justify-content-center gap-2">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
             <Button label="Đóng quỹ" severity="primary" @click="payBill" />
         </div>
@@ -82,6 +83,28 @@ const fetchBills = async () => {
     }
 };
 
+const qrCode = ref<string | undefined>(undefined);
+const fetchTeam = async () => {
+    try {
+        if (!token) {
+            throw new Error("Unauthorized");
+        }
+
+        const response = await axios.get(`${baseURL}/teams/${user.value.id}/team`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const qrResponse = await axios.get(`${baseURL}/teams/${response.data.slug}/qrcode`, {
+            headers: { Authorization: `Bearer ${token}` },
+            responseType: "blob",
+        });
+        const qrBlob = new Blob([qrResponse.data], { type: "image/png" });
+        qrCode.value = URL.createObjectURL(qrBlob);
+        // team.value = response.data;
+    } catch (err) {
+        console.error(err);
+    }
+
+}
 
 const filteredBills = computed(() => {
     if (!searchQuery.value) return bills.value;
@@ -124,6 +147,7 @@ onMounted(() => {
         router.push('/');
     } else {
         fetchBills();
+        fetchTeam();
     }
 });
 </script>

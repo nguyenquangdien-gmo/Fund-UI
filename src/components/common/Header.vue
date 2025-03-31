@@ -175,6 +175,7 @@ const adminItems = [
         label: "Quản lý",
         icon: "pi pi-list",
         items: [
+            { label: "Nhóm", icon: "pi pi-user", command: () => router.push("/teams") },
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
             { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/expenses") },
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },

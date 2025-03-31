@@ -18,6 +18,7 @@ import LateListView from '@/views/admin/LateListView.vue'
 import ApprovingView from '@/views/admin/ApprovingView.vue'
 import EventView from '@/views/EventView.vue'
 import LateHistories from '@/views/LateHistories.vue'
+import TeamView from '@/views/admin/TeamView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,7 +82,12 @@ const router = createRouter({
       component: LateListView,
       meta: { requiresAuth: true },
     },
-
+    {
+      path: '/teams',
+      name: 'teams',
+      component: TeamView,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
     {
       path: '/expenses',
       name: 'expenses',

@@ -45,9 +45,9 @@
         <!-- Dialog Thanh Toán -->
         <Dialog v-model:visible="showDialog" header="Đóng Quỹ" :modal="true">
             <div class="p-fluid">
-                <p class="mb-2">Bạn có chắc muốn đóng quỹ?</p>
+                <!-- <p class="mb-2">Bạn có chắc muốn đóng quỹ?</p> -->
+                <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
                 <InputText :value="formatCurrency(paymentAmount)" type="text" class="p-inputtext w-full" disabled />
-
                 <div class="flex justify-end gap-2 mt-4">
                     <Button label="Hủy" class="p-button-text" @click="showDialog = false" />
                     <Button label="Xác nhận" class="p-button-primary" @click="confirmPayment" />
@@ -79,11 +79,10 @@ const searchQuery = ref("");
 const selectedContribution = ref(null);
 const showDialog = ref(false);
 const paymentAmount = ref(150000);
-
+const token = localStorage.getItem("accessToken");
 
 const fetchPendingContributions = async () => {
     try {
-        const token = localStorage.getItem("accessToken");
         if (!token) {
             throw new Error("Unauthorized");
         }
@@ -100,11 +99,36 @@ const fetchPendingContributions = async () => {
         loading.value = false;
     }
 };
+const qrCode = ref(null);
+const fetchTeam = async () => {
+    try {
+        if (!token) {
+            throw new Error("Unauthorized");
+        }
 
+        const response = await axios.get(`${baseURL}/teams/${user.id}/team`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const qrResponse = await axios.get(`${baseURL}/teams/${response.data.slug}/qrcode`, {
+            headers: { Authorization: `Bearer ${token}` },
+            responseType: "blob",
+        });
+        const qrBlob = new Blob([qrResponse.data], { type: "image/png" });
+        qrCode.value = URL.createObjectURL(qrBlob);
+        // team.value = response.data;
+        // console.log(team.value);
+    } catch (err) {
+        error.value = "Không thể tải dữ liệu";
+        // console.error(err);
+    } finally {
+        loading.value = false;
+    }
+
+}
 onMounted(() => {
+    fetchTeam();
     fetchPendingContributions();
 });
-
 const filteredContributions = computed(() => {
     if (!searchQuery.value) return contributions.value;
 
@@ -159,5 +183,9 @@ const confirmPayment = async () => {
 .text-xl {
     text-align: center;
     font: 2em sans-serif;
+}
+
+.p-fluid {
+    text-align: center;
 }
 </style>

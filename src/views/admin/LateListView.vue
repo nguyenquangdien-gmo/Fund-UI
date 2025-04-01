@@ -4,7 +4,7 @@ import Calendar from "primevue/calendar";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
-import axios from "axios";
+import axiosInstance from '@/router/Interceptor';
 import formatDate from "@/utils/FormatDate";
 
 interface User {
@@ -24,13 +24,13 @@ const fromDate = ref<Date | null>(new Date());
 const toDate = ref<Date | null>(new Date(new Date().getTime() + 24 * 60 * 60 * 1000));
 const lateRecords = ref<LateRecord[]>([]);
 const searchTerm = ref("");
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 
 const fetchLateRecords = async () => {
     if (!fromDate.value || !toDate.value) return;
 
     try {
-        const response = await axios.get(`${baseURL}/late/users`, {
+        const response = await axiosInstance.get(`/late/users`, {
             params: {
                 fromDate: fromDate.value.toISOString().split("T")[0],
                 toDate: toDate.value.toISOString().split("T")[0],

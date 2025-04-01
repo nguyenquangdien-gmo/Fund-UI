@@ -31,9 +31,9 @@
                         {{ formatCurrency(data.totalAmount) }}
                     </template>
                 </Column>
-                <Column field="user.created_at" header="Ngày Tạo" sortable>
+                <Column field="user.paymentDate" header="Ngày Tạo" sortable>
                     <template #body="{ data }">
-                        {{ formatDate(data.createdAt) }}
+                        {{ formatDate(data.paymentDate) }}
                     </template>
                 </Column>
                 <!-- <Column header="Actions">
@@ -80,14 +80,14 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type { User } from '@/types/User';
 import Textarea from 'primevue/textarea';
 import { useUserStore } from '@/pinia/userStore';
 import formatCurrency from '@/utils/FormatCurrency';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const userToDelete = ref<User | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -102,15 +102,15 @@ const router = useRouter();
 //     { label: "Admin", value: UserRole.ADMIN },
 //     { label: "Member", value: UserRole.MEMBER }
 // ]);
-const userStore = useUserStore();
-const user = computed(() => userStore.user);
+// const userStore = useUserStore();
+// const user = computed(() => userStore.user);
 // const isAdmin = computed(() => user.value?.role === "ADMIN");
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
 const availableYears = ref<number[]>([]);
 
-const showReminderDialog = ref(false);
+// const showReminderDialog = ref(false);
 
 for (let year = 2020; year <= currentYear; year++) {
     availableYears.value.push(year);
@@ -138,7 +138,7 @@ const onMonthChange = () => {
 
 const fetchUsers = async () => {
     try {
-        const response = await axios.get(`${baseURL}/users/late-payments`, {
+        const response = await axiosInstance.get(`/users/late-payments`, {
             params: {
                 year: selectedYear.value,
                 month: selectedMonth.value
@@ -146,6 +146,8 @@ const fetchUsers = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         users.value = response.data;
+        // console.log(users.value);
+
     } catch (error) {
         console.error('Error fetching users:', error);
     }
@@ -178,7 +180,7 @@ const filteredFunds = computed(() => {
 //     if (!validateForm()) return;
 //     try {
 
-//         await axios.post(`${baseURL}/reminders/create/other`, form.value, {
+//         await axiosInstance.post(`${baseURL}/reminders/create/other`, form.value, {
 //             headers: { Authorization: `Bearer ${token}` }
 //         });
 //         console.log(form.value);
@@ -198,7 +200,7 @@ const filteredFunds = computed(() => {
 const deleteUser = async () => {
     if (!userToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/users/${userToDelete.value.id}`, {
+        await axiosInstance.delete(`/users/${userToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();

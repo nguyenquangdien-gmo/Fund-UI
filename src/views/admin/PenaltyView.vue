@@ -78,12 +78,12 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Penalty from '@/types/Penalty';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const penaltyDelete = ref<Penalty | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -97,7 +97,7 @@ const errors = ref({ name: "", description: "", amount: "", slug: "" });
 
 const fetchPenalties = async () => {
     try {
-        const response = await axios.get(`${baseURL}/penalties`, {
+        const response = await axiosInstance.get(`/penalties`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         penalties.value = response.data;
@@ -148,11 +148,11 @@ const savePenalty = async () => {
     try {
         const penaltyData = { ...form.value };
         if (isUpdate.value) {
-            await axios.put(`${baseURL}/penalties/${form.value.id}`, penaltyData, {
+            await axiosInstance.put(`/penalties/${form.value.id}`, penaltyData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post(`${baseURL}/penalties`, penaltyData, {
+            await axiosInstance.post(`/penalties`, penaltyData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
@@ -166,7 +166,7 @@ const savePenalty = async () => {
 const deletePenalty = async () => {
     if (!penaltyDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/penalties/${penaltyDelete.value.id}`, {
+        await axiosInstance.delete(`/penalties/${penaltyDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchPenalties();

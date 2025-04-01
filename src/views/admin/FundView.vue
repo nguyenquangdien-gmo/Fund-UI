@@ -76,7 +76,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type Fund from '@/types/Fund';
 import formatCurrency from '@/utils/FormatCurrency';
@@ -84,7 +84,7 @@ import FundType from '@/types/FundType';
 import Dropdown from 'primevue/dropdown';
 
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const fundToDelete = ref<Fund | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -104,7 +104,7 @@ const types = ref([
 
 const fetchFunds = async () => {
     try {
-        const response = await axios.get(`${baseURL}/funds`, {
+        const response = await axiosInstance.get(`/funds`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         funds.value = response.data;
@@ -151,17 +151,17 @@ const saveFund = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
-            await axios.put(`${baseURL}/funds/${form.value.id}`, form.value, {
+            await axiosInstance.put(`/funds/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
             if (selectedFund.value) {
                 form.value.type = selectedFund.value;
-                console.log(form.value);
-                await axios.post(`${baseURL}/funds`, form.value, {
+                // console.log(form.value);
+                await axiosInstance.post(`/funds`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                console.log(form.value);
+                // console.log(form.value);
             }
         }
         showFundDialog.value = false;
@@ -176,7 +176,7 @@ const saveFund = async () => {
 const deleteFund = async () => {
     if (!fundToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/funds/${fundToDelete.value.id}`, {
+        await axiosInstance.delete(`/funds/${fundToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchFunds();

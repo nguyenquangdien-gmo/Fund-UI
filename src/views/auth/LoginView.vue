@@ -40,9 +40,9 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axiosInstance from '@/router/Interceptor';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 interface Error {
     email: string,
     password: string
@@ -86,14 +86,14 @@ const userStore = useUserStore();
 const handleLogin = async () => {
     if (validateForm()) {
         try {
-            const response = await axios.post(`${baseURL}/auth/login`, {
+            const response = await axiosInstance.post(`/auth/login`, {
                 email: email.value,
                 password: password.value
             });
             if (response.data) {
                 localStorage.setItem('accessToken', response.data.accessToken);
                 sessionStorage.setItem('user', JSON.stringify(response.data.user));
-                console.log('login successful');
+                // console.log('login successful');
                 const user = response.data.user;
                 // console.log('user', user);
                 userStore.setUser(user);

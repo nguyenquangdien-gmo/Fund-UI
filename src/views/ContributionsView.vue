@@ -64,12 +64,12 @@ import Column from "primevue/column";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import axios from "axios";
+import axiosInstance from '@/router/Interceptor';
 import formatCurrency from "@/utils/FormatCurrency";
 import formatDate from "@/utils/FormatDate";
 
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const contributions = ref([]);
 const loading = ref(true);
 const error = ref(null);
@@ -87,7 +87,7 @@ const fetchPendingContributions = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`${baseURL}/periods/unpaid/${user.id}`, {
+        const response = await axiosInstance.get(`/periods/unpaid/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -106,10 +106,10 @@ const fetchTeam = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`${baseURL}/teams/${user.id}/team`, {
+        const response = await axiosInstance.get(`/teams/${user.id}/team`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        const qrResponse = await axios.get(`${baseURL}/teams/${response.data.slug}/qrcode`, {
+        const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`, {
             headers: { Authorization: `Bearer ${token}` },
             responseType: "blob",
         });
@@ -159,10 +159,10 @@ const confirmPayment = async () => {
             totalAmount: paymentAmount.value,
             note: `Thanh toán quỹ tháng ${selectedContribution.value.month} năm ${selectedContribution.value.year}`,
         };
-        console.log(paymentData);
+        // console.log(paymentData);
 
 
-        await axios.post(`${baseURL}/contributions`, paymentData, {
+        await axiosInstance.post(`/contributions`, paymentData, {
             headers: { Authorization: `Bearer ${token}` },
         });
 

@@ -83,7 +83,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
@@ -91,7 +91,7 @@ import type Expense from '@/types/Expense';
 import { useUserStore } from '@/pinia/userStore';
 import Dropdown from 'primevue/dropdown';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const expeneseToDelete = ref<Expense | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -115,7 +115,7 @@ const types = ref([
 
 const fetchExpense = async () => {
     try {
-        const response = await axios.get(`${baseURL}/expenses`, {
+        const response = await axiosInstance.get(`/expenses`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         expenses.value = response.data;
@@ -148,7 +148,7 @@ const openUpdateDialog = (expense: Expense) => {
     selectedType.value = types.value.find(t => t.value === expense.expenseType)?.value || null;
     isUpdate.value = true;
     showExpense.value = true;
-    console.log(form.value);
+    // console.log(form.value);
 };
 
 
@@ -172,23 +172,23 @@ const saveExpense = async () => {
                 form.value.expenseType = selectedType.value;
             }
             form.value.amount = Number(amount.value);
-            console.log(form.value.expenseType);
+            // console.log(form.value.expenseType);
 
-            await axios.put(`${baseURL}/expenses/${form.value.id}`, form.value, {
+            await axiosInstance.put(`/expenses/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log(form.value);
+            // console.log(form.value);
 
         } else {
             if (selectedType.value) {
                 form.value.expenseType = selectedType.value;
                 form.value.userId = user.value.id;
                 form.value.amount = Number(form.value.amount);
-                console.log(form.value);
-                await axios.post(`${baseURL}/expenses`, form.value, {
+                // console.log(form.value);
+                await axiosInstance.post(`/expenses`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                console.log(form.value);
+                // console.log(form.value);
             }
         }
         showExpense.value = false;
@@ -203,7 +203,7 @@ const saveExpense = async () => {
 const deleteExpense = async () => {
     if (!expeneseToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/expenses/${expeneseToDelete.value.id}`, {
+        await axiosInstance.delete(`/expenses/${expeneseToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchExpense();

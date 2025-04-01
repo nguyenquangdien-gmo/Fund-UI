@@ -2,15 +2,14 @@
 import { ref, onMounted, computed, watch } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
-import Tag from "primevue/tag";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
-import axios from "axios";
+import axiosInstance from '@/router/Interceptor';
 import formatDate from "@/utils/FormatDate";
 import Button from "primevue/button";
 
 const token = localStorage.getItem("accessToken");
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
 const error = ref(null);
 const user = JSON.parse(sessionStorage.getItem("user"));
@@ -30,7 +29,7 @@ const fetchContributions = async () => {
     try {
         if (!token) throw new Error("Unauthorized");
 
-        const response = await axios.get(`${baseURL}/contributions/user/${userId.value}`, {
+        const response = await axiosInstance.get(`/contributions/user/${userId.value}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -49,7 +48,7 @@ const fetchPenBills = async () => {
 
         if (!token) throw new Error("Unauthorized");
 
-        const response = await axios.get(`${baseURL}/pen-bills/user/${userId.value}`, {
+        const response = await axiosInstance.get(`/pen-bills/user/${userId.value}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -101,7 +100,7 @@ const getStatusSeverity = (status) => {
 
 <template>
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">Quản lý đóng quỹ</h2>
+        <h2 class="text-xl font-bold mb-4">Lịch sử đóng quỹ</h2>
 
         <div class="mb-4 flex items-center gap-4">
             <Dropdown v-model="selectedListType" :options="listOptions" optionLabel="label" optionValue="value"
@@ -116,8 +115,9 @@ const getStatusSeverity = (status) => {
         <p v-if="loading">Đang tải dữ liệu...</p>
 
         <!-- Hiển thị danh sách Contributions -->
-        <DataTable v-if="selectedListType === 'contributions'" :value="filteredContributions" paginator :rows="15"
-            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+        <DataTable v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
+            :value="filteredContributions" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
+            responsiveLayout=" scroll">
             <Column field="id" header="Id" />
             <Column field="periodName" header="Kỳ đóng" />
             <Column field="totalAmount" header="Số tiền">
@@ -147,8 +147,8 @@ const getStatusSeverity = (status) => {
         </DataTable>
 
         <!-- Hiển thị danh sách Pen Bills -->
-        <DataTable v-else-if="selectedListType === 'penBills'" :value="filteredPenBills" paginator :rows="15"
-            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+        <DataTable v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0" :value="filteredPenBills"
+            paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
             <Column field="description" header="Mô Tả" sortable></Column>
             <Column field="amount" header="Tổng cộng" sortable>
                 <template #body="{ data }">

@@ -83,7 +83,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type { User } from '@/types/User';
 import Textarea from 'primevue/textarea';
@@ -96,9 +96,9 @@ interface UserData {
     user: User;
     amountToPay: number;
 }
-const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false);
-const userToDelete = ref<User | null>(null);
+// const baseURL = "http://localhost:8080/api/v1";
+// const showConfirmDialog = ref(false);
+// const userToDelete = ref<User | null>(null);
 const token = localStorage.getItem('accessToken');
 const users = ref<UserData[]>([]);
 const searchQuery = ref("");
@@ -148,7 +148,7 @@ const onMonthChange = () => {
 
 const fetchUsers = async () => {
     try {
-        const response = await axios.get(`${baseURL}/users/no-contribution/period`, {
+        const response = await axiosInstance.get(`/users/no-contribution/period`, {
             params: {
                 year: selectedYear.value,
                 month: selectedMonth.value
@@ -156,7 +156,7 @@ const fetchUsers = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         users.value = response.data;
-        console.log(users.value);
+        // console.log(users.value);
     } catch (error) {
         console.error('Error fetching users:', error);
     }
@@ -213,7 +213,7 @@ const formatDebtMessageForExcel = (users: UserData[]): string => {
 const saveReminder = async () => {
     if (!validateForm()) return;
     try {
-        await axios.post(`${baseURL}/reminders/create/other`, form.value, {
+        await axiosInstance.post(`/reminders/create/other`, form.value, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -238,7 +238,7 @@ const resetErrors = () => {
 // const deleteUser = async () => {
 //     if (!userToDelete.value) return;
 //     try {
-//         await axios.delete(`${baseURL} /users/${userToDelete.value.id} `, {
+//         await axiosInstance.delete(`${baseURL} /users/${userToDelete.value.id} `, {
 //             headers: { Authorization: `Bearer ${token} ` }
 //         });
 //         fetchUsers();

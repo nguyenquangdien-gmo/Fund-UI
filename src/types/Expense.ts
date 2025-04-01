@@ -1,4 +1,4 @@
-import type ExpenseType from './ExpenseType'
+import type FundType from './FundType'
 
 export default interface Expense {
   id: number
@@ -6,6 +6,6 @@ export default interface Expense {
   description: string
   userId: number
   amount: number
-  expenseType: ExpenseType
+  expenseType: FundType
   createdAt: string
 }

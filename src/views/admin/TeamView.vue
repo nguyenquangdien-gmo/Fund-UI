@@ -85,7 +85,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import InputText from 'primevue/inputtext';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -93,7 +93,7 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 const teams = ref([]);
 const searchQuery = ref("");
@@ -104,13 +104,13 @@ const qrPreview = ref(null);
 
 const fetchTeams = async () => {
     try {
-        const response = await axios.get(`${baseURL}/teams`, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await axiosInstance.get(`/teams`, { headers: { Authorization: `Bearer ${token}` } });
         teams.value = response.data;
 
         // Lấy ảnh QR code cho từng team
         for (const team of teams.value) {
             try {
-                const qrResponse = await axios.get(`${baseURL}/teams/${team.slug}/qrcode`, {
+                const qrResponse = await axiosInstance.get(`/teams/${team.slug}/qrcode`, {
                     headers: { Authorization: `Bearer ${token}` },
                     responseType: "blob",
                 });
@@ -198,13 +198,13 @@ const saveTeam = async () => {
 
         const headers = {
             Authorization: `Bearer ${token}`,
-            // Không cần set Content-Type, axios sẽ tự thêm đúng giá trị
+            // Không cần set Content-Type, axiosInstance sẽ tự thêm đúng giá trị
         };
 
         if (isUpdate.value) {
-            await axios.put(`${baseURL}/teams/${encodeURIComponent(form.value.slug)}`, formData, { headers });
+            await axiosInstance.put(`/teams/${encodeURIComponent(form.value.slug)}`, formData, { headers });
         } else {
-            await axios.post(`${baseURL}/teams`, formData, { headers });
+            await axiosInstance.post(`/teams`, formData, { headers });
         }
 
         showTeamDialog.value = false;
@@ -235,7 +235,7 @@ const confirmDeleteTeam = (team) => {
 const deleteTeam = async () => {
     if (!teamToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/teams/${teamToDelete.value.slug}`, {
+        await axiosInstance.delete(`/teams/${teamToDelete.value.slug}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 

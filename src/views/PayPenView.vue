@@ -39,12 +39,12 @@
         </div>
     </div>
 
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận đóng quỹ" style="text-align: center;">
+    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận đóng phạt" style="text-align: center;">
         <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
 
         <div class="d-flex justify-content-center gap-2">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-            <Button label="Đóng quỹ" severity="primary" @click="payBill" />
+            <Button label="Xác nhận" severity="primary" @click="payBill" />
         </div>
     </Dialog>
 
@@ -57,12 +57,12 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import formatCurrency from '@/utils/FormatCurrency';
 import type PenBill from '@/types/PenBill';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const token = localStorage.getItem('accessToken');
 const bills = ref<PenBill[]>([]);
@@ -72,12 +72,10 @@ const router = useRouter();
 const user = ref(JSON.parse(sessionStorage.getItem('user') || '{}'));
 const fetchBills = async () => {
     try {
-        const response = await axios.get(`${baseURL}/pen-bills/user/${user.value.id}/unpaid`, {
+        const response = await axiosInstance.get(`/pen-bills/user/${user.value.id}/unpaid`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         bills.value = response.data;
-        console.log(bills.value);
-
     } catch (error) {
         console.error('Error fetching periods:', error);
     }
@@ -90,10 +88,10 @@ const fetchTeam = async () => {
             throw new Error("Unauthorized");
         }
 
-        const response = await axios.get(`${baseURL}/teams/${user.value.id}/team`, {
+        const response = await axiosInstance.get(`/teams/${user.value.id}/team`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        const qrResponse = await axios.get(`${baseURL}/teams/${response.data.slug}/qrcode`, {
+        const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`, {
             headers: { Authorization: `Bearer ${token}` },
             responseType: "blob",
         });
@@ -126,7 +124,7 @@ const payBill = async () => {
         description: form.value.description
     }
     try {
-        await axios.put(`${baseURL}/pen-bills/${form.value.id}`, billData, {
+        await axiosInstance.put(`/pen-bills/${form.value.id}`, billData, {
             headers: { Authorization: `Bearer ${token}` }
         });
         showConfirmDialog.value = false;

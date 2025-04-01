@@ -55,7 +55,7 @@ import Message from "primevue/message";
 import Badge from "primevue/badge";
 import Button from "primevue/button";
 import OverlayPanel from "primevue/overlaypanel";
-import axios from "axios";
+import axiosInstance from '@/router/Interceptor';
 import type Reminder from "@/types/Reminder";
 import ReminderType from "@/types/ReminderType";
 
@@ -71,11 +71,11 @@ const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null);
 
 const fetchReminders = async () => {
     try {
-        const response = await axios.get(`http://localhost:8080/api/v1/reminders/user/${user.value.id}`, {
+        const response = await axiosInstance.get(`/reminders/user/${user.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         reminders.value = response.data;
-        console.log("Reminders:", reminders.value);
+        // console.log("Reminders:", reminders.value);
 
 
     } catch (error) {
@@ -88,7 +88,7 @@ const markAsReadAndGo = async (reminderId: number) => {
         const reminder = reminders.value.find(r => r.id === reminderId);
         if (!reminder) return;
 
-        await axios.put(`http://localhost:8080/api/v1/reminders/mark-read/${reminderId}`, {}, {
+        await axiosInstance.put(`/reminders/mark-read/${reminderId}`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -112,10 +112,10 @@ const markAllAsRead = async () => {
 
     try {
         const reminderIds = reminders.value.map(reminder => reminder.id);
-        console.log("Reminder IDs:", reminderIds);
+        // console.log("Reminder IDs:", reminderIds);
 
 
-        await axios.post(`http://localhost:8080/api/v1/reminders/mark-reads`, reminderIds, {
+        await axiosInstance.post(`/reminders/mark-reads`, reminderIds, {
             headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
         });
 
@@ -205,7 +205,7 @@ const filteredItems = computed(() => {
     return baseItems;
 });
 
-// axios.interceptors.response.use(
+// axiosInstance.interceptors.response.use(
 //     response => response,
 //     error => {
 //         if (error.response && error.response.status === 401) {
@@ -218,7 +218,7 @@ const filteredItems = computed(() => {
 // Logout
 const handleLogout = async () => {
     try {
-        await axios.post('http://localhost:8080/api/v1/auth/logout', {}, {
+        await axiosInstance.post('/auth/logout', {}, {
             headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
         });
         localStorage.removeItem("accessToken");

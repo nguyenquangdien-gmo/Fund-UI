@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 
 // PrimeVue Components
 import InputText from 'primevue/inputtext';
@@ -117,7 +117,7 @@ import formatTextWithLinks from '@/utils/FormateTextWithUrl';
 
 
 // Configuration
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+// const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
 
 // Composition Setup
 const router = useRouter();
@@ -135,9 +135,9 @@ const isAdmin = ref(false);
 
 const checkIsAdmin = async () => {
     if (!token) return;
-    console.log("Token gửi lên:", token); // Debug
+    // console.log("Token gửi lên:", token); // Debug
     try {
-        const response = await axios.get(`${baseURL}/tokens/is-admin?token=${token}`);
+        const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`);
         console.log("API response:", response.data); // Debug
         isAdmin.value = response.data;
     } catch (error) {
@@ -169,7 +169,7 @@ const errors = ref({
 const fetchUsers = async () => {
     try {
         const token = localStorage.getItem('accessToken');
-        const response = await axios.get<User[]>(`${baseURL}/users`, {
+        const response = await axiosInstance.get<User[]>(`/users`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         userOptions.value = response.data;
@@ -182,7 +182,7 @@ const fetchUsers = async () => {
 const fetchEvents = async () => {
     try {
         const token = localStorage.getItem('accessToken');
-        const response = await axios.get<Event[]>(`${baseURL}/events`, {
+        const response = await axiosInstance.get<Event[]>(`/events`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         events.value = response.data;
@@ -254,11 +254,11 @@ const saveEvent = async () => {
         };
 
         if (isUpdate.value) {
-            await axios.put(`${baseURL}/events/${form.value.id}`, eventData, {
+            await axiosInstance.put(`/events/${form.value.id}`, eventData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post(`${baseURL}/events`, eventData, {
+            await axiosInstance.post(`/events`, eventData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
@@ -275,7 +275,7 @@ const deleteEvent = async () => {
 
     try {
         const token = localStorage.getItem('accessToken');
-        await axios.delete(`${baseURL}/events/${eventToDelete.value.id}`, {
+        await axiosInstance.delete(`/events/${eventToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchEvents();

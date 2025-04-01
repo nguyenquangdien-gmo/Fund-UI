@@ -85,13 +85,13 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Calendar from 'primevue/calendar';
 import Dropdown from 'primevue/dropdown';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type Period from '@/types/Period';
 import months from '@/utils/Months';
 import formatCurrency from '@/utils/FormatCurrency';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const periodToDelete = ref<Period | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -105,7 +105,7 @@ const errors = ref({ month: "", year: "", description: "", deadline: "" });
 
 const fetchPeriods = async () => {
     try {
-        const response = await axios.get(`${baseURL}/periods`, {
+        const response = await axiosInstance.get(`/periods`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         periods.value = response.data;
@@ -144,21 +144,21 @@ const openUpdateDialog = (period: Period) => {
     showPeriodDialog.value = true;
 };
 
-const confirmDeletePeriod = (period: Period) => {
-    periodToDelete.value = period;
-    showConfirmDialog.value = true;
-};
+// const confirmDeletePeriod = (period: Period) => {
+//     periodToDelete.value = period;
+//     showConfirmDialog.value = true;
+// };
 
 const savePeriod = async () => {
     try {
         if (!validateForm()) return;
         const periodData = { ...form.value, deadline: form.value.deadline.toISOString().split('T')[0] };
         if (isUpdate.value) {
-            await axios.put(`${baseURL}/periods/${form.value.id}`, periodData, {
+            await axiosInstance.put(`/periods/${form.value.id}`, periodData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
-            await axios.post(`${baseURL}/periods`, periodData, {
+            await axiosInstance.post(`/periods`, periodData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         }
@@ -172,7 +172,7 @@ const savePeriod = async () => {
 const deletePeriod = async () => {
     if (!periodToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/periods/${periodToDelete.value.id}`, {
+        await axiosInstance.delete(`/periods/${periodToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchPeriods();

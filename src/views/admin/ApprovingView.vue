@@ -6,11 +6,11 @@ import Tag from "primevue/tag";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
 import Dialog from "primevue/dialog";
-import axios from "axios";
+import axiosInstance from '@/router/Interceptor';
 import Button from "primevue/button";
 
 const token = localStorage.getItem("accessToken");
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
 const searchQuery = ref("");
 const selectedListType = ref("contributions");
@@ -32,7 +32,7 @@ const penBills = ref([]);
 const fetchContributions = async () => {
     try {
         if (!token) throw new Error("Unauthorized");
-        const response = await axios.get(`${baseURL}/contributions/pending`, {
+        const response = await axiosInstance.get(`/contributions/pending`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         contributions.value = response.data;
@@ -47,7 +47,7 @@ const fetchContributions = async () => {
 const fetchPenBills = async () => {
     try {
         if (!token) throw new Error("Unauthorized");
-        const response = await axios.get(`${baseURL}/pen-bills/pending`, {
+        const response = await axiosInstance.get(`/pen-bills/pending`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         penBills.value = response.data;
@@ -76,10 +76,10 @@ const handleContributionAction = async (action) => {
     try {
         loading.value = true;
         const endpoint = action === 'confirm'
-            ? `${baseURL}/contributions/${selectedItemToConfirm.value.id}/approve`
-            : `${baseURL}/contributions/${selectedItemToConfirm.value.id}/reject`;
+            ? `/contributions/${selectedItemToConfirm.value.id}/approve`
+            : `/contributions/${selectedItemToConfirm.value.id}/reject`;
 
-        await axios.post(endpoint, {}, {
+        await axiosInstance.post(endpoint, {}, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -105,10 +105,10 @@ const handlePenBillAction = async (action) => {
     try {
         loading.value = true;
         const endpoint = action === 'confirm'
-            ? `${baseURL}/pen-bills/${selectedItemToConfirm.value.id}/approve`
-            : `${baseURL}/pen-bills/${selectedItemToConfirm.value.id}/reject`;
+            ? `/pen-bills/${selectedItemToConfirm.value.id}/approve`
+            : `/pen-bills/${selectedItemToConfirm.value.id}/reject`;
 
-        await axios.post(endpoint, {}, {
+        await axiosInstance.post(endpoint, {}, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'

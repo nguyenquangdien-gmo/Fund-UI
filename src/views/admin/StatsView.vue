@@ -85,11 +85,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import Chart from 'primevue/chart';
 import formatCurrency from '@/utils/FormatCurrency';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 
 // const stats = ref({
@@ -131,7 +131,7 @@ const chartYearOptions = ref({});
 
 const fetchDataMonths = async (year) => {
     try {
-        const response = await axios.get(`${baseURL}/contributions/monthly-stats`, {
+        const response = await axiosInstance.get(`/contributions/monthly-stats`, {
             params: { year },
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -160,7 +160,7 @@ const fetchDataMonths = async (year) => {
 };
 const fetchDataMonthsBill = async (year) => {
     try {
-        const response = await axios.get(`${baseURL}/pen-bills/monthly-stats`, {
+        const response = await axiosInstance.get(`/pen-bills/monthly-stats`, {
             params: { year },
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -190,11 +190,11 @@ const fetchDataMonthsBill = async (year) => {
 
 const fetchBalance = async () => {
     try {
-        const response = await axios.get(`${baseURL}/balances`, {
+        const response = await axiosInstance.get(`/balances`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         balance.value = response.data;
-        console.log(response.data);
+        // console.log(response.data);
     } catch (error) {
         console.error('Error fetching common funds:', error.response?.data || error.message);
     }
@@ -202,12 +202,12 @@ const fetchBalance = async () => {
 const amountExpense = ref({ value: 0 });
 const fetchExpenseByYear = async () => {
     try {
-        const response = await axios.get(`${baseURL}/expenses/total-year`, {
+        const response = await axiosInstance.get(`/expenses/total-year`, {
             params: { year: selectedYear.value },
             headers: { Authorization: `Bearer ${token}` }
         });
         amountExpense.value = response.data;
-        console.log('charge' + amountExpense.value);
+        // console.log('charge' + amountExpense.value);
     } catch (error) {
         console.error('Error fetching expenses:', error.response?.data || error.message);
     }
@@ -216,24 +216,24 @@ const amountCharge = ref({ value: 0 });
 const amountBillCharge = ref({ value: 0 });
 const fetchChargeByYear = async () => {
     try {
-        const response = await axios.get(`${baseURL}/contributions/total`, {
+        const response = await axiosInstance.get(`/contributions/total`, {
             params: { year: selectedYear.value },
             headers: { Authorization: `Bearer ${token}` }
         });
         amountCharge.value = response.data;
-        console.log('charge' + amountCharge.value);
+        // console.log('charge' + amountCharge.value);
     } catch (error) {
         console.error('Error fetching expenses:', error.response?.data || error.message);
     }
 }
 const fetchBillByYear = async () => {
     try {
-        const response = await axios.get(`${baseURL}/pen-bills/total`, {
+        const response = await axiosInstance.get(`/pen-bills/total`, {
             params: { year: selectedYear.value },
             headers: { Authorization: `Bearer ${token}` }
         });
         amountBillCharge.value = response.data;
-        console.log('charge' + amountBillCharge.value);
+        // console.log('charge' + amountBillCharge.value);
     } catch (error) {
         console.error('Error fetching expenses:', error.response?.data || error.message);
     }
@@ -241,7 +241,7 @@ const fetchBillByYear = async () => {
 
 const fetchDataYears = async () => {
     try {
-        const response = await axios.get(`${baseURL}/contributions/yearly-stats`, {
+        const response = await axiosInstance.get(`/contributions/yearly-stats`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -265,7 +265,7 @@ const fetchDataYears = async () => {
 };
 const fetchBillDataYears = async () => {
     try {
-        const response = await axios.get(`${baseURL}/pen-bills/yearly-stats`, {
+        const response = await axiosInstance.get(`/pen-bills/yearly-stats`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 

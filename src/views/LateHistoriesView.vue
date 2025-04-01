@@ -43,13 +43,12 @@ import { ref, computed, onMounted } from 'vue';
 import InputText from 'primevue/inputtext';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import Button from 'primevue/button';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import formatCurrency from '@/utils/FormatCurrency';
 import type Trans from '@/types/Trans';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 const trans = ref<Trans[]>([]);
 const searchQuery = ref("");
@@ -67,11 +66,10 @@ const getTransactionLabel = (type: string) => {
 
 const fetchExpense = async () => {
     try {
-        const response = await axios.get(`${baseURL}/trans`, {
+        const response = await axiosInstance.get(`/trans`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         trans.value = response.data;
-        console.log();
     } catch (error) {
         console.error('Error fetching funds:', error);
     }

@@ -62,13 +62,13 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type Reminder from '@/types/Reminder';
 import formatDate from '@/utils/FormatDate';
 import { useUserStore } from '@/pinia/userStore';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
 const reminders = ref<Reminder[]>([]);
 const searchQuery = ref("");
@@ -85,7 +85,7 @@ const isAdmin = ref(false); // Mặc định là false
 const checkIsAdmin = async () => {
     if (!token) return;
     try {
-        const response = await axios.get(`${baseURL}/tokens/is-admin?token=${token}`);
+        const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`);
         isAdmin.value = response.data; // API trả về true/false
     } catch (error) {
         console.error("Error checking admin status:", error);
@@ -106,7 +106,7 @@ onMounted(() => {
 
 const fetchReminders = async () => {
     try {
-        const response = await axios.get(`${baseURL}/reminders`, {
+        const response = await axiosInstance.get(`/reminders`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         reminders.value = response.data;
@@ -137,11 +137,9 @@ const saveReminder = async () => {
     if (!validateForm()) return;
     try {
 
-        await axios.post(`${baseURL}/reminders/create/other`, form.value, {
+        await axiosInstance.post(`/reminders/create/other`, form.value, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        console.log(form.value);
-
         showReminderDialog.value = false;
         fetchReminders();
     } catch (error) {

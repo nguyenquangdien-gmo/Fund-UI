@@ -80,13 +80,13 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import axios from 'axios';
+import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type { User } from '@/types/User';
 import Dropdown from 'primevue/dropdown';
 import UserRole from '@/types/UserRole';
 
-const baseURL = "http://localhost:8080/api/v1";
+// const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
 const userToDelete = ref<User | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -107,7 +107,7 @@ const roles = ref([
 
 const fetchUsers = async () => {
     try {
-        const response = await axios.get(`${baseURL}/users`, {
+        const response = await axiosInstance.get(`/users`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         users.value = response.data;
@@ -156,18 +156,18 @@ const saveUser = async () => {
     try {
         if (isUpdate.value) {
             form.value.id = parseInt(userId.value);
-            await axios.put(`${baseURL}/users/${form.value.id}`, form.value, {
+            await axiosInstance.put(`/users/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } else {
             if (selectedRole.value) {
                 form.value.role = selectedRole.value;
                 form.value.id = Number(userId.value);
-                console.log(form.value);
-                await axios.post(`${baseURL}/auth/register`, form.value, {
+                // console.log(form.value);
+                await axiosInstance.post(`/auth/register`, form.value, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                console.log(form.value);
+                // console.log(form.value);
             }
         }
         showUserDialog.value = false;
@@ -182,7 +182,7 @@ const saveUser = async () => {
 const deleteUser = async () => {
     if (!userToDelete.value) return;
     try {
-        await axios.delete(`${baseURL}/users/${userToDelete.value.id}`, {
+        await axiosInstance.delete(`/users/${userToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         fetchUsers();

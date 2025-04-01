@@ -3,6 +3,10 @@ import router from '@/router'
 import { useUserStore } from '@/pinia/userStore'
 import { eventBus } from '@/event/EventBus'
 
+const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+})
+
 let isLogoutProcessing = false
 
 export function setupAxiosInterceptors() {
@@ -49,3 +53,5 @@ export function setupAxiosInterceptors() {
     },
   )
 }
+
+export default axiosInstance

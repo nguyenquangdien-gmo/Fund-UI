@@ -4,13 +4,13 @@
             <h2 class="text-xl">Danh Sách Quỹ</h2>
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
-                <Button label="Tạo quỹ" severity="success" class="btn" raised size="small" @click="openCreateDialog" />
+                <!-- <Button label="Tạo quỹ" severity="success" class="btn" raised size="small" @click="openCreateDialog" /> -->
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
                 <Column field="id" header="ID" sortable></Column>
                 <Column field="type" header="Mã Quỹ" sortable></Column>
-                <Column field="description" header="Tên Quỹ" sortable></Column>
+                <Column field="name" header="Tên Quỹ" sortable></Column>
                 <Column field="amount" header="Số Tiền" sortable>
                     <template #body="{ data }">
                         {{ formatCurrency(data.amount) }}
@@ -24,20 +24,20 @@
                 <Column header="Actions">
                     <template #body="{ data }">
                         <Button label="Sửa" icon="pi pi-pencil" severity="info" @click="openUpdateDialog(data)" />
-                        <Button label="Xóa" icon="pi pi-trash" severity="danger" style="margin-left: 10px;"
-                            @click="confirmDeleteFund(data)" />
+                        <!-- <Button label="Xóa" icon="pi pi-trash" severity="danger" style="margin-left: 10px;"
+                            @click="confirmDeleteFund(data)" /> -->
                     </template>
                 </Column>
             </DataTable>
         </div>
     </div>
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
             <Button label="Xóa" severity="danger" @click="deleteFund" />
         </div>
-    </Dialog>
+    </Dialog> -->
 
     <Dialog v-model:visible="showFundDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
         :style="{ width: '30rem' }">
@@ -59,7 +59,7 @@
         <div class="mb-3">
             <label for="type" class="fw-bold">Loại quỹ</label>
             <Dropdown v-model="selectedFund" :options="types" optionLabel="label" optionValue="value"
-                placeholder="Chọn loại quỹ" class="w-100 md:w-56" />
+                placeholder="Chọn loại quỹ" class="w-100 md:w-56" :disabled="true" />
             <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
@@ -118,11 +118,11 @@ const filteredFunds = computed(() => {
     return funds.value.filter(fund => fund.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
 
-const openCreateDialog = () => {
-    form.value = { id: 0, name: "", description: "", type: "", amount: "" };
-    isUpdate.value = false;
-    showFundDialog.value = true;
-};
+// const openCreateDialog = () => {
+//     form.value = { id: 0, name: "", description: "", type: "", amount: "" };
+//     isUpdate.value = false;
+//     showFundDialog.value = true;
+// };
 
 const openUpdateDialog = (fund: Fund) => {
     form.value = { id: fund.id, name: fund.name, description: fund.description, type: fund.type, amount: String(fund.amount) };
@@ -131,10 +131,10 @@ const openUpdateDialog = (fund: Fund) => {
     showFundDialog.value = true;
 };
 
-const confirmDeleteFund = (fund: Fund) => {
-    fundToDelete.value = fund;
-    showConfirmDialog.value = true;
-};
+// const confirmDeleteFund = (fund: Fund) => {
+//     fundToDelete.value = fund;
+//     showConfirmDialog.value = true;
+// };
 
 
 const validateForm = () => {
@@ -154,15 +154,15 @@ const saveFund = async () => {
             await axiosInstance.put(`/funds/${form.value.id}`, form.value, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-        } else {
-            if (selectedFund.value) {
-                form.value.type = selectedFund.value;
-                // console.log(form.value);
-                await axiosInstance.post(`/funds`, form.value, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                // console.log(form.value);
-            }
+            // } else {
+            //     if (selectedFund.value) {
+            //         form.value.type = selectedFund.value;
+            //         // console.log(form.value);
+            //         await axiosInstance.post(`/funds`, form.value, {
+            //             headers: { Authorization: `Bearer ${token}` }
+            //         });
+            //         // console.log(form.value);
+            //     }
         }
         showFundDialog.value = false;
         fetchFunds();
@@ -173,20 +173,20 @@ const saveFund = async () => {
     errors.value = { name: "", description: "", type: "", amount: "" };
 };
 
-const deleteFund = async () => {
-    if (!fundToDelete.value) return;
-    try {
-        await axiosInstance.delete(`/funds/${fundToDelete.value.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchFunds();
-    } catch (error) {
-        console.error('Error deleting fund:', error);
-    } finally {
-        showConfirmDialog.value = false;
-        fundToDelete.value = null;
-    }
-};
+// const deleteFund = async () => {
+//     if (!fundToDelete.value) return;
+//     try {
+//         await axiosInstance.delete(`/funds/${fundToDelete.value.id}`, {
+//             headers: { Authorization: `Bearer ${token}` }
+//         });
+//         fetchFunds();
+//     } catch (error) {
+//         console.error('Error deleting fund:', error);
+//     } finally {
+//         showConfirmDialog.value = false;
+//         fundToDelete.value = null;
+//     }
+// };
 
 
 const formatDate = (dateString: string) => {

@@ -23,7 +23,7 @@ export function setupAxiosInterceptors() {
 
   axios.interceptors.response.use(
     (response) => response,
-    async (error) => {
+    (error) => {
       const isUnauthorized = error.response?.status === 401 || error.response?.status === 403
 
       if (isUnauthorized && !isLogoutProcessing) {
@@ -41,7 +41,7 @@ export function setupAxiosInterceptors() {
             detail: 'Vui lòng đăng nhập lại.',
           })
 
-          await router.push('/login')
+          router.push('/login')
         } catch (logoutError) {
           console.error('Lỗi trong quá trình logout:', logoutError)
         } finally {

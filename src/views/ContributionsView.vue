@@ -2,7 +2,7 @@
     <div class="p-4">
         <h2 class="text-xl font-bold mb-4" style="text-align: center;">Danh sách quỹ chưa đóng</h2>
 
-        <p v-if="error" class="text-red-500">{{ error }}</p>
+        <!-- <p v-if="error" class="text-red-500">{{ error }}</p> -->
         <p v-if="loading">Đang tải dữ liệu...</p>
 
         <div v-if="contributions.length > 0">
@@ -72,7 +72,7 @@ import formatDate from "@/utils/FormatDate";
 // const baseURL = "http://localhost:8080/api/v1";
 const contributions = ref([]);
 const loading = ref(true);
-const error = ref(null);
+// const error = ref(null);
 const user = JSON.parse(sessionStorage.getItem("user"));
 const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
@@ -90,10 +90,9 @@ const fetchPendingContributions = async () => {
         const response = await axiosInstance.get(`/periods/unpaid/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-
         contributions.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu";
+        // error.value = "Không thể tải dữ liệu";
         console.error(err);
     } finally {
         loading.value = false;

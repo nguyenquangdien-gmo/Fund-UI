@@ -167,13 +167,32 @@ const checkAdmin = async () => {
   }
 }
 
+const checkExpired = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axios.get('http://localhost:8080/api/v1/tokens/expired', {
+      params: { token },
+    })
+    return response.data // Trả về true nếu là admin
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra quyền admin:', error)
+    return false
+  }
+}
+
 // Middleware kiểm tra quyền truy cập trước khi vào trang
 router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('accessToken')
   const isAuthenticated = !!token
+  const isExpired = await checkExpired()
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next({ name: 'login' }) // Nếu chưa đăng nhập, chuyển đến login
+  }
+  if (isExpired) {
+    localStorage.removeItem('accessToken')
+    return next({ name: 'login' }) // Nếu token đã hết hạn, chuyển đến login
   }
 
   if (to.meta.requiresAdmin) {

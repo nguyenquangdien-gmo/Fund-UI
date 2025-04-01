@@ -11,7 +11,7 @@ import Button from "primevue/button";
 const token = localStorage.getItem("accessToken");
 // const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
-const error = ref(null);
+// const error = ref(null);
 const user = JSON.parse(sessionStorage.getItem("user"));
 const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
@@ -35,7 +35,7 @@ const fetchContributions = async () => {
 
         contributions.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu đóng quỹ";
+        // error.value = "Không thể tải dữ liệu đóng quỹ";
         console.error(err);
     } finally {
         loading.value = false;
@@ -54,7 +54,7 @@ const fetchPenBills = async () => {
 
         penBills.value = response.data;
     } catch (err) {
-        error.value = "Không thể tải dữ liệu nộp phạt";
+        // error.value = "Không thể tải dữ liệu nộp phạt";
         console.error(err);
     } finally {
         loading.value = false;
@@ -93,9 +93,9 @@ const filteredPenBills = computed(() => penBills.value);
 
 const formatCurrency = (value) => value.toLocaleString() + " VND";
 
-const getStatusSeverity = (status) => {
-    return { PAID: "success", PENDING: "info" }[status] || "secondary";
-};
+// const getStatusSeverity = (status) => {
+//     return { PAID: "success", PENDING: "info" }[status] || "secondary";
+// };
 </script>
 
 <template>
@@ -111,7 +111,7 @@ const getStatusSeverity = (status) => {
 
         </div>
 
-        <p v-if="error" class="text-red-500">{{ error }}</p>
+        <!-- <p v-if="error" class="text-red-500">{{ error }}</p> -->
         <p v-if="loading">Đang tải dữ liệu...</p>
 
         <!-- Hiển thị danh sách Contributions -->

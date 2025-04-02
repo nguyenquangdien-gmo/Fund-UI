@@ -19,14 +19,22 @@ import ApprovingView from '@/views/admin/ApprovingView.vue'
 import EventView from '@/views/EventView.vue'
 import LateHistories from '@/views/LateHistories.vue'
 import TeamView from '@/views/admin/TeamView.vue'
+import ProfileView from '@/views/ProfileView.vue'
+import RoleView from '@/views/admin/RoleView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HistoryView,
+      name: '/home',
+      component: ProfileView,
+      meta: { requiresAuth: true }, // Yêu cầu phải đăng nhập
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
       meta: { requiresAuth: true }, // Yêu cầu phải đăng nhập
     },
     {
@@ -86,6 +94,12 @@ const router = createRouter({
       path: '/teams',
       name: 'teams',
       component: TeamView,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/roles',
+      name: 'roles',
+      component: RoleView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {

@@ -3,8 +3,8 @@
         <div class="p-4">
             <h2 class="text-center text-xl">Danh Sách quỹ chi</h2>
             <div class="mb-3">
-                <InputText v-if="expenses.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
-                    class="w-full p-inputtext-sm" />
+                <InputText v-if="expenses.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
+                    style="width: 20%;" class="w-full p-inputtext-sm" />
                 <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small"
                     @click="openCreateDialog" />
             </div>

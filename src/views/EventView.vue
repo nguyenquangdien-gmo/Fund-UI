@@ -138,7 +138,7 @@ const checkIsAdmin = async () => {
     // console.log("Token gửi lên:", token); // Debug
     try {
         const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`);
-        console.log("API response:", response.data); // Debug
+        // console.log("API response:", response.data); // Debug
         isAdmin.value = response.data;
     } catch (error) {
         console.error("Error checking admin status:", error);

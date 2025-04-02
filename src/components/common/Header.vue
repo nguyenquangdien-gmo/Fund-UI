@@ -12,7 +12,7 @@
                             <!-- Nút Thông báo -->
                             <Button icon="pi pi-bell" style="font-size: 1.2rem;"
                                 class="p-button-rounded p-button-text p-button-plain"
-                                @mouseenter="toggleReminder($event)" />
+                                @mouseenter="toggleReminder($event)" @click="handleClick" />
 
                             <Badge v-if="reminders.length > 0" :value="reminders.length" class="notification-badge"
                                 style="background-color: #f77a86;" />
@@ -134,6 +134,9 @@ const toggleReminder = (event: Event) => {
         reminderPanel.value.toggle(event);
     }
 };
+const handleClick = (event: Event) => {
+    router.push("/reminders");
+};
 
 onMounted(() => {
     if (isLoggedIn.value) {
@@ -160,7 +163,7 @@ const baseItems = [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
             // { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
             { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
-            { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") },
+            // { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") },
         ]
     },
     { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") },
@@ -176,6 +179,7 @@ const adminItems = [
         icon: "pi pi-list",
         items: [
             { label: "Nhóm", icon: "pi pi-user", command: () => router.push("/teams") },
+            { label: "Role", icon: "pi pi-user", command: () => router.push("/roles") },
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
             { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/expenses") },
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },

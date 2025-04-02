@@ -1,9 +1,10 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-xl">Danh Sách quỹ chi</h2>
+            <h2 class="text-xl">Logs</h2>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
+                <InputText v-model="searchQuery" placeholder="Tìm kiếm log theo tên thành viên..."
+                    class="w-full p-inputtext-sm" style="width: 20%;" />
                 <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
             <DataTable :value="filteredTrans" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"

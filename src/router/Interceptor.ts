@@ -10,7 +10,8 @@ const axiosInstance = axios.create({
 let isLogoutProcessing = false
 
 export function setupAxiosInterceptors() {
-  axios.interceptors.request.use(
+  // Setup interceptors cho axiosInstance thay vì axios global
+  axiosInstance.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('accessToken')
       if (token) {
@@ -21,7 +22,7 @@ export function setupAxiosInterceptors() {
     (error) => Promise.reject(error),
   )
 
-  axios.interceptors.response.use(
+  axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
       const isUnauthorized = error.response?.status === 401 || error.response?.status === 403

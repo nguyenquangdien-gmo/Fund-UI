@@ -3,7 +3,7 @@
         <div class="p-4">
             <h2 class="text-center text-xl">Thông báo nhắc nhở</h2>
             <div class="mb-3">
-                <InputText v-if="reminders.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..."
+                <InputText v-if="reminders.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên or mô tả..."
                     class="w-full p-inputtext-sm" />
                 <Button v-if="isAdmin" label="Tạo nhắc nhở" severity="success" raised size="small"
                     @click="openCreateDialog" style="margin-left: 10px;" />
@@ -117,7 +117,7 @@ const fetchReminders = async () => {
 
 const filteredFunds = computed(() => {
     if (!searchQuery.value) return reminders.value;
-    return reminders.value.filter(reminder => reminder.title.toLowerCase().includes(searchQuery.value.toLowerCase()));
+    return reminders.value.filter(reminder => reminder.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || reminder.description.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
 
 const openCreateDialog = () => {

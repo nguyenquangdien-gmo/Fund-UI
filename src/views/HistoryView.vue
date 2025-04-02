@@ -88,7 +88,14 @@ const filteredContributions = computed(() => {
 
 
 
-const filteredPenBills = computed(() => penBills.value);
+const filteredPenBills = computed(() => {
+    if (!searchQuery.value) return penBills.value;
+    return penBills.value.filter(item =>
+        item.id.toString().includes(searchQuery.value) ||
+        item.periodName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        item.paymentStatus.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+});
 
 
 const formatCurrency = (value) => value.toLocaleString() + " VND";

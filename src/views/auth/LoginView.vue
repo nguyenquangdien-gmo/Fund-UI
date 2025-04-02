@@ -98,7 +98,7 @@ const handleLogin = async () => {
                 // console.log('user', user);
                 userStore.setUser(user);
 
-                router.push('/histories');
+                router.push('/');
             } else {
                 errorMessage.value = 'Email or password is incorrect';
             }

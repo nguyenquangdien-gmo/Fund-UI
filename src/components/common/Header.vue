@@ -14,8 +14,8 @@
                                 class="p-button-rounded p-button-text p-button-plain"
                                 @mouseenter="toggleReminder($event)" @click="handleClick" />
 
-                            <Badge v-if="reminders.length > 0" :value="reminders.length" class="notification-badge"
-                                style="background-color: #f77a86;" />
+                            <Badge v-if="unreadRemindersCount > 0" :value="unreadRemindersCount"
+                                class="notification-badge" style="background-color: #f77a86;" />
                         </template>
                     </Message>
 
@@ -25,16 +25,19 @@
                             <ul class="reminder-list">
                                 <li v-for="reminder in reminders" :key="reminder.id"
                                     @click="markAsReadAndGo(reminder.id)" class="reminder-item">
-                                    <strong>{{ reminder.title }}</strong>
-                                    <p>{{ reminder.description }}</p>
+                                    <div :style="getReminderStyle(reminder.id)">
+                                        <strong>{{ reminder.title }}</strong>
+                                        <p>{{ reminder.description }}</p>
+                                    </div>
                                 </li>
                             </ul>
                             <!-- Nút Đã xem tất cả -->
-                            <Button label="Đã xem tất cả" class="p-button-sm p-button-text mark-all-read-btn"
-                                @click="markAllAsRead" />
+
                         </div>
+                        <Button v-if="unreadRemindersCount > 0" label="Đã xem tất cả"
+                            class="p-button-sm p-button-text mark-all-read-btn" @click="markAllAsRead" />
                         <div v-else>
-                            <p class="no-reminder">No reminders</p>
+                            <p class="no-reminder">Không có nhắc nhở mới!</p>
                         </div>
                     </OverlayPanel>
 
@@ -65,15 +68,12 @@ const user = computed(() => userStore.user);
 const isLoggedIn = computed(() => !!user.value.role);
 
 
-const token = localStorage.getItem("accessToken");
 const reminders = ref<Reminder[]>([]);
 const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null);
 
 const fetchReminders = async () => {
     try {
-        const response = await axiosInstance.get(`/reminders/user/${user.value.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axiosInstance.get(`/users/${user.value.id}/reminders`);
         reminders.value = response.data;
         // console.log("Reminders:", reminders.value);
 
@@ -83,21 +83,32 @@ const fetchReminders = async () => {
     }
 };
 
-const markAsReadAndGo = async (reminderId: number) => {
+const unreadRemindersCount = computed(() => {
+    const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]');
+    return reminders.value.filter(reminder => !readReminders.includes(reminder.id)).length;
+});
+const markAsReadAndGo = (reminderId: number) => {
     try {
         const reminder = reminders.value.find(r => r.id === reminderId);
         if (!reminder) return;
 
-        await axiosInstance.put(`/reminders/mark-read/${reminderId}`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]');
+        if (!readReminders.includes(reminderId)) {
+            readReminders.push(reminderId);
+            localStorage.setItem('readReminders', JSON.stringify(readReminders));
+        }
 
-        reminders.value = reminders.value.filter(r => r.id !== reminderId);
+        reminders.value = reminders.value.map(r => {
+            if (r.id === reminderId) {
+                return { ...r, isRead: true };
+            }
+            return r;
+        });
 
         if (reminder.type !== ReminderType.OTHER) {
             router.push("/contributions");
         } else {
-            router.push("/reminders");
+            router.push("/user/reminders");
         }
 
         if (reminderPanel.value) {
@@ -107,19 +118,16 @@ const markAsReadAndGo = async (reminderId: number) => {
         console.error("Error marking reminder as read:", error);
     }
 };
-const markAllAsRead = async () => {
+
+const markAllAsRead = () => {
     if (reminders.value.length === 0) return;
 
     try {
         const reminderIds = reminders.value.map(reminder => reminder.id);
-        // console.log("Reminder IDs:", reminderIds);
 
+        localStorage.setItem('readReminders', JSON.stringify(reminderIds));
 
-        await axiosInstance.post(`/reminders/mark-reads`, reminderIds, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
-        });
-
-        reminders.value = [];
+        reminders.value = reminders.value.map(r => ({ ...r, isRead: true }));
 
         if (reminderPanel.value) {
             reminderPanel.value.hide();
@@ -129,13 +137,23 @@ const markAllAsRead = async () => {
     }
 };
 
+const getReminderStyle = (reminderId: number) => {
+    const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]');
+    const isRead = readReminders.includes(reminderId);
+
+    return {
+        fontWeight: isRead ? 'normal' : 'bold',
+        opacity: isRead ? 0.5 : 1,
+    };
+};
+
 const toggleReminder = (event: Event) => {
     if (reminderPanel.value) {
         reminderPanel.value.toggle(event);
     }
 };
 const handleClick = (event: Event) => {
-    router.push("/reminders");
+    router.push("/user/reminders");
 };
 
 onMounted(() => {
@@ -173,13 +191,13 @@ const baseItems = [
 
 const adminItems = [
     { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
-    { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
+    // { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
     {
         label: "Quản lý",
         icon: "pi pi-list",
         items: [
-            { label: "Nhóm", icon: "pi pi-user", command: () => router.push("/teams") },
-            { label: "Role", icon: "pi pi-user", command: () => router.push("/roles") },
+            { label: "Nhóm", icon: "pi pi-users", command: () => router.push("/teams") },
+            { label: "Role", icon: "pi pi-address-book", command: () => router.push("/roles") },
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
             { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/expenses") },
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },
@@ -187,7 +205,7 @@ const adminItems = [
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },
             { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/users/late-checkin") },
             // { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
-            // { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
+            { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") }
         ]
     },
     {
@@ -197,7 +215,7 @@ const adminItems = [
             { label: "Quỹ mới", icon: "pi pi-bolt", command: () => router.push("/funds") },
             { label: "Quỹ Phạt", icon: "pi pi-server", command: () => router.push("/penalties") },
             { label: "Quỹ hàng tháng", icon: "pi pi-file-edit", command: () => router.push("/periods") },
-            { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
+            // { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
         ]
     }
 ];

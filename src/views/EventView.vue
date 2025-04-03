@@ -14,7 +14,11 @@
             <!-- Event DataTable -->
             <DataTable :value="filteredEvents" paginator :rows="10" :rowsPerPageOptions="[10, 15, 20]"
                 class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="name" header="Tên Sự Kiện" sortable></Column>
                 <Column field="eventTime" header="Thời Gian" sortable>
                     <template #body="{ data }">

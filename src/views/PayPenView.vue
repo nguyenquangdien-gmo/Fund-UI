@@ -10,6 +10,11 @@
                 </div>
                 <DataTable :value="filteredBills" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                     class="p-datatable-sm">
+                    <Column header="STT" sortable>
+                        <template #body="{ index }">
+                            {{ index + 1 }}
+                        </template>
+                    </Column>
                     <Column field="description" header="Mô Tả" sortable></Column>
                     <Column field="amount" header="Tổng cộng" sortable>
                         <template #body="{ data }">

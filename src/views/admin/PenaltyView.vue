@@ -9,7 +9,11 @@
             </div>
             <DataTable :value="filteredPeriods" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="name" header="Tên quỹ phạt" sortable></Column>
                 <Column field="description" header="Mô tả" sortable></Column>
                 <Column field="amount" header="Tổng cộng" sortable>

@@ -5,12 +5,17 @@
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên, MNV..."
                     class="w-full p-inputtext-sm" />
-                <Button class="left-10" label="Thêm thành viên" severity="success" raised size="small"
-                    @click="openCreateDialog" />
+                <Button label="Thêm thành viên" severity="success" raised size="small" @click="openCreateDialog"
+                    style="margin-left: 10px;" />
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
+                <Column header="STT" sortable style="width: 5%;">
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
+                <Column field="id" header="Mã nhân viên" sortable style="width: 10%;"></Column>
                 <Column field="email" header="Email" sortable></Column>
                 <Column field="fullName" header="Tên " sortable></Column>
                 <Column field="dob" header="Ngày sinh" sortable>
@@ -27,7 +32,7 @@
                         {{ formatDate(data.joinDate) }}
                     </template>
                 </Column>
-                <Column header="Actions">
+                <Column header="Actions" style="width: 20%;">
                     <template #body="{ data }">
                         <Button label="Sửa" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
                         <Button label="Xóa" class="left-10" icon="pi pi-trash" severity="danger"
@@ -84,7 +89,8 @@
         </div>
         <div class="mb-3">
             <label for="slugTeam" class="fw-bold">Team</label>
-            <InputText id="slugTeam" v-model="form.slugTeam" class="w-100" autocomplete="off" />
+            <Dropdown id="slugTeam" v-model="selectedTeam" :options="teams" optionLabel="name" optionValue="slug"
+                placeholder="Chọn Team" class="w-100" />
             <small class="text-danger" v-if="errors.slugTeam">{{ errors.slugTeam }}</small>
         </div>
         <div class="mb-3">
@@ -159,6 +165,20 @@ const selectedRole = ref('');
 const seletedDob = ref<Date | null>(null)
 const seletedJoinDate = ref<Date | null>(null)
 const roles = ref<{ id: number, name: string }[]>([]);
+const teams = ref<{ id: string, name: string, slug: string }[]>([]);
+const selectedTeam = ref('');
+
+const fetchTeams = async () => {
+    try {
+        const response = await axiosInstance.get('/teams'); // API lấy danh sách team
+        teams.value = response.data;
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+    }
+};
+onMounted(() => {
+    fetchTeams();
+});
 
 const fetchRoles = async () => {
     try {
@@ -215,8 +235,9 @@ const openUpdateDialog = (user: User) => {
         phoneNumber: user.phone || "",
         position: user.position || "",
         joinDate: user.joinDate,
-        slugTeam: user.team.name || "",
+        slugTeam: user.team.name || ""
     };
+    selectedTeam.value = user.team.name || "";
 
 
     selectedRole.value = typeof user.role === 'object' && user.role !== null ? user.role.name : user.role || "";
@@ -257,7 +278,7 @@ const validateForm = () => {
     if (!seletedDob.value) errors.value.dob = "Vui lòng chọn ngày sinh!";
     if (!seletedJoinDate.value) errors.value.dob = "Vui lòng chọn ngày tham gia!";
     if (!form.value.phoneNumber) errors.value.phone = "Vui lòng nhập SĐT!";
-    if (!form.value.slugTeam) errors.value.slugTeam = "Vui lòng nhập team!";
+    if (!selectedTeam.value) errors.value.slugTeam = "Vui lòng nhập team!";
     if (!form.value.position) errors.value.position = "Vui lòng nhập chức vụ!";
 
     return Object.values(errors.value).every(err => err === "");
@@ -274,6 +295,7 @@ const saveUser = async () => {
         // Chuyển đổi đối tượng Date thành chuỗi ngày tháng
         form.value.dob = seletedDob.value ? seletedDob.value.toISOString().split('T')[0] : '';
         form.value.joinDate = seletedJoinDate.value ? seletedJoinDate.value.toISOString().split('T')[0] : '';
+        form.value.slugTeam = selectedTeam.value;
 
         if (isUpdate.value) {
             console.log("Updating user:", form.value);
@@ -345,5 +367,6 @@ onMounted(() => {
 
 .left-10 {
     margin-left: 10px;
+    margin-top: 10px;
 }
 </style>

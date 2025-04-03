@@ -14,6 +14,11 @@
             <!-- DataTable với phân trang -->
             <DataTable :value="filteredContributions" class="p-datatable-striped" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="month" header="Tháng" />
                 <Column field="year" header="Năm" />
                 <Column field="totalAmount" header="Tổng tiền">

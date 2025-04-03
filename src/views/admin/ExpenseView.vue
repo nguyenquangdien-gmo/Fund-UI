@@ -10,7 +10,11 @@
             </div>
             <DataTable v-if="expenses.length > 0" :value="filteredExpense" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="name" header="Tên" sortable></Column>
                 <Column field="expenseType" header="Mã Quỹ" sortable></Column>
                 <Column field="description" header="Mô tả" sortable></Column>

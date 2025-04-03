@@ -125,7 +125,11 @@ const formatCurrency = (value) => value.toLocaleString() + " VND";
         <DataTable v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
             :value="filteredContributions" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
             responsiveLayout=" scroll">
-            <Column field="id" header="Id" />
+            <Column header="STT" sortable>
+                <template #body="{ index }">
+                    {{ index + 1 }}
+                </template>
+            </Column>
             <Column field="periodName" header="Kỳ đóng" />
             <Column field="totalAmount" header="Số tiền">
                 <template #body="slotProps">
@@ -156,6 +160,11 @@ const formatCurrency = (value) => value.toLocaleString() + " VND";
         <!-- Hiển thị danh sách Pen Bills -->
         <DataTable v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0" :value="filteredPenBills"
             paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
+            <Column header="STT" sortable>
+                <template #body="{ index }">
+                    {{ index + 1 }}
+                </template>
+            </Column>
             <Column field="description" header="Mô Tả" sortable></Column>
             <Column field="amount" header="Tổng cộng" sortable>
                 <template #body="{ data }">

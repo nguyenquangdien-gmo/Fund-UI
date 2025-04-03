@@ -13,8 +13,9 @@
                 <div class="icon bg-blue-100 text-blue-600"><i class="pi pi-dollar"></i></div>
                 <div>
                     <h3 class="text-gray">Tiền chung</h3>
-                    <p class="text-2xl font-semibold" v-if="balance.length > 0"> ${{
-                        formatCurrency(balance[1].totalAmount) }}
+                    <p class="text-2xl font-semibold"> {{
+
+                        balance.length > 1 ? `$${formatCurrency(balance[1].totalAmount)}` : `$ 0 VND` }}
                     </p>
                     <p class="text-green-500 text-sm">Tổng tiền chung của nhóm</p>
                 </div>
@@ -24,7 +25,7 @@
                 <div>
                     <h3 class="text-gray">Tiền ăn vặt</h3>
                     <p class="text-2xl font-semibold">
-                        {{ balance.length > 1 ? `$${formatCurrency(balance[0].totalAmount)}` : 'Đang tải...' }}
+                        {{ balance.length > 1 ? `$${formatCurrency(balance[0].totalAmount)}` : '$ 0 VND' }}
                     </p>
 
                     <p class="text-green-500 text-sm">Tổng tiền ăn vặt của nhóm</p>
@@ -42,7 +43,7 @@
                 <div class="icon bg-purple-100 text-purple-600"><i class="pi pi-cart-plus"></i></div>
                 <div>
                     <h3 class="text-gray">Tiền chi</h3>
-                    <p class="text-2xl font-semibold">{{ formatCurrency(amountExpense) }}</p>
+                    <p class="text-2xl font-semibold"> $ {{ formatCurrency(amountExpense) }}</p>
                     <p class="text-green-500 text-sm">Tiền chi ra của nhóm</p>
                 </div>
             </div>

@@ -90,6 +90,11 @@ const filteredRecords = computed(() => {
 
         <DataTable v-if="filteredRecords.length > 0" :value="filteredRecords" :paginator="true" :rows="15"
             :rowsPerPageOptions="[15, 20, 25]" stripedRows responsiveLayout="scroll">
+            <Column header="STT" sortable>
+                <template #body="{ index }">
+                    {{ index + 1 }}
+                </template>
+            </Column>
             <Column field="user.id" header="Mã nhân viên">
                 <template #body="{ data }">
                     {{ data.user?.id || '-' }}

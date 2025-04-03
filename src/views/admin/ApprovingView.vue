@@ -174,7 +174,11 @@ const getStatusSeverity = (status) => {
         <DataTable v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
             :value="filteredContributions" class="p-datatable-striped" paginator :rows="15"
             :rowsPerPageOptions="[15, 20, 25]" responsiveLayout=" scroll">
-            <Column field="id" header="Id" />
+            <Column header="STT" sortable>
+                <template #body="{ index }">
+                    {{ index + 1 }}
+                </template>
+            </Column>
             <Column field="periodName" header="Kỳ đóng" />
             <Column field="totalAmount" header="Số tiền">
                 <template #body="slotProps">
@@ -200,6 +204,11 @@ const getStatusSeverity = (status) => {
         <DataTable v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0" :value="filteredPenBills"
             class="p-datatable-striped" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
             responsiveLayout=" scroll">
+            <Column header="STT" sortable>
+                <template #body="{ index }">
+                    {{ index + 1 }}
+                </template>
+            </Column>
             <Column field="description" header="Mô Tả" sortable></Column>
             <Column field="amount" header="Tổng cộng" sortable>
                 <template #body="{ data }">

@@ -10,7 +10,6 @@ import axios from 'axios'
 import StatsView from '@/views/admin/StatsView.vue'
 import ExpenseView from '@/views/admin/ExpenseView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
-import ReminderView from '@/views/ReminderView.vue'
 import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
 import LateContributions from '@/views/admin/LateContributions.vue'
@@ -21,6 +20,8 @@ import LateHistories from '@/views/LateHistories.vue'
 import TeamView from '@/views/admin/TeamView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import RoleView from '@/views/admin/RoleView.vue'
+import ReminderView from '@/views/admin/ReminderView.vue'
+import UserReminderView from '@/views/UserReminderView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -85,6 +86,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/user/reminders',
+      name: 'user-reminders',
+      component: UserReminderView,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/users/late-checkin',
       name: 'late-checkin',
       component: LateListView,
@@ -126,17 +133,17 @@ const router = createRouter({
       component: PeriodView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
-    {
-      path: '/logs',
-      name: 'logs',
-      component: TransactionView,
-      meta: { requiresAuth: true, requiresAdmin: true },
-    },
+    // {
+    //   path: '/logs',
+    //   name: 'logs',
+    //   component: TransactionView,
+    //   meta: { requiresAuth: true, requiresAdmin: true },
+    // },
     {
       path: '/reminders',
       name: 'reminders',
       component: ReminderView,
-      meta: { requiresAuth: true },
+      meta: { requiresAdmin: true, requiresAuth: true },
     },
     {
       path: '/penalties',

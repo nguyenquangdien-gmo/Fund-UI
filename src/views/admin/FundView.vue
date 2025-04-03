@@ -8,7 +8,11 @@
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
-                <Column field="id" header="ID" sortable></Column>
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="type" header="Mã Quỹ" sortable></Column>
                 <Column field="name" header="Tên Quỹ" sortable></Column>
                 <Column field="amount" header="Số Tiền" sortable>

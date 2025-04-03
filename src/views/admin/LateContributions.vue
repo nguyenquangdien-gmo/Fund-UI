@@ -22,7 +22,11 @@
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
-                <Column field="user.id" header="ID" sortable></Column>
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="user.email" header="Email" sortable></Column>
                 <Column field="user.fullName" header="Tên " sortable></Column>
                 <Column field="user.role" header="Vai trò " sortable></Column>

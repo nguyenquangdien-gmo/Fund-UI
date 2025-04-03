@@ -72,10 +72,8 @@ import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { useUserStore } from '@/pinia/userStore';
 import { useToast } from "primevue/usetoast";
-import { header } from '@primeuix/themes/aura/accordion';
 
 
-const token = localStorage.getItem('accessToken');
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const error = ref({ oldPass: "", newPass: "", confirmPass: "", summary: '' });
@@ -131,7 +129,7 @@ const validatePassword = () => {
     }
     if (!passwordData.value.confirmPassword) {
         error.value.confirmPass = 'Vui lòng nhập mật khẩu xác nhận!';
-        toast.add({ severity: 'error', summary: 'L��i', detail: 'Vui lòng nhập mật khẩu xác nhận!', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Vui lòng nhập mật khẩu xác nhận!', life: 3000 });
         return false;
     }
     if (passwordData.value.newPassword !== passwordData.value.confirmPassword) {
@@ -152,9 +150,8 @@ const changePassword = async () => {
             oldPassword: passwordData.value.currentPassword,
             newPassword: passwordData.value.newPassword
         });
-
-        toast.add({ severity: 'success', summary: 'Đổi mật khẩu thành công!', life: 3000 });
         resetForm();
+        toast.add({ severity: 'success', summary: 'Đổi mật khẩu thành công!', life: 3000 });
         // alert('Đổi mật khẩu thành công!');
     } catch (err) {
         console.error('Error changing password:', err);
@@ -163,10 +160,11 @@ const changePassword = async () => {
     }
 };
 const resetForm = () => {
-    passwordData.value = {
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+    error.value = {
+        newPass: '',
+        oldPass: '',
+        confirmPass: '',
+        summary: ''
     };
 }
 const formatDate = (dateString?: string) => {

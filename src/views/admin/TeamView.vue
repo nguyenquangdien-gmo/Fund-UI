@@ -15,6 +15,7 @@
                         {{ index + 1 }}
                     </template>
                 </Column>
+
                 <Column field="name" header="Tên Team" sortable></Column>
                 <Column field="slug" header="Slug" sortable></Column>
                 <Column field="channelId" header="Channel ID" sortable></Column>

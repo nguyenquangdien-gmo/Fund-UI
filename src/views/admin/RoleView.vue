@@ -9,7 +9,11 @@
             </div>
             <DataTable :value="filteredRoles" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
-                <Column field="id" header="ID" sortable style="width: 10%;"></Column>
+                <Column header="STT" sortable style="width: 10%;">
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="name" header="Tên vai trò" sortable style="width: 70%;"></Column>
                 <Column header="Actions">
                     <template #body="{ data }">

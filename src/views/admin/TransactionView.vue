@@ -10,6 +10,11 @@
             <DataTable :value="filteredTrans" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
                 class="p-datatable-sm">
                 <!-- <Column field="id" header="ID" sortable></Column> -->
+                <Column header="STT" sortable>
+                    <template #body="{ index }">
+                        {{ index + 1 }}
+                    </template>
+                </Column>
                 <Column field="transactionType" header="Loại giao dịch" sortable>
                     <template #body="{ data }">
                         {{ getTransactionLabel(data.transactionType) }}

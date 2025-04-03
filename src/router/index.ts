@@ -8,7 +8,6 @@ import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
 import axios from 'axios'
 import StatsView from '@/views/admin/StatsView.vue'
-import ExpenseView from '@/views/admin/ExpenseView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
 import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
@@ -22,6 +21,8 @@ import ProfileView from '@/views/ProfileView.vue'
 import RoleView from '@/views/admin/RoleView.vue'
 import ReminderView from '@/views/admin/ReminderView.vue'
 import UserReminderView from '@/views/UserReminderView.vue'
+import InvoiceView from '@/views/admin/InvoiceView.vue'
+import UserInvoiceView from '@/views/UserInvoiceView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -92,6 +93,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/user/invoices',
+      name: 'user-invoices',
+      component: UserInvoiceView,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/users/late-checkin',
       name: 'late-checkin',
       component: LateListView,
@@ -110,9 +117,9 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
-      path: '/expenses',
-      name: 'expenses',
-      component: ExpenseView,
+      path: '/invoices',
+      name: 'invoices',
+      component: InvoiceView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
@@ -133,12 +140,12 @@ const router = createRouter({
       component: PeriodView,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
-    // {
-    //   path: '/logs',
-    //   name: 'logs',
-    //   component: TransactionView,
-    //   meta: { requiresAuth: true, requiresAdmin: true },
-    // },
+    {
+      path: '/logs',
+      name: 'logs',
+      component: TransactionView,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
     {
       path: '/reminders',
       name: 'reminders',

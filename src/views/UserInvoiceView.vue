@@ -1,14 +1,14 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-center text-xl">Danh Sách quỹ chi</h2>
+            <h2 class="text-center text-xl">Danh sách Thu/Chi</h2>
             <div class="mb-3">
-                <InputText v-if="expenses.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
+                <InputText v-if="invoices.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
                     style="width: 20%;" class="w-full p-inputtext-sm" />
                 <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small"
                     @click="openCreateDialog" />
             </div>
-            <DataTable v-if="expenses.length > 0" :value="filteredExpense" paginator :rows="15"
+            <DataTable v-if="invoices.length > 0" :value="filteredInvoice" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
@@ -16,11 +16,16 @@
                     </template>
                 </Column>
                 <Column field="name" header="Tên" sortable></Column>
-                <Column field="expenseType" header="Mã Quỹ" sortable></Column>
+
                 <Column field="description" header="Mô tả" sortable></Column>
                 <Column field="amount" header="Số Tiền" sortable>
                     <template #body="{ data }">
                         {{ formatCurrency(data.amount) }}
+                    </template>
+                </Column>
+                <Column field="status" header="Trạng thái" sortable>
+                    <template #body="{ data }">
+                        <Tag :value="data.status" :severity="getInvoiceTypeSeverity(data.status)" />
                     </template>
                 </Column>
                 <!-- <Column field="userId" header="Tạo bởi" sortable></Column> -->
@@ -31,9 +36,10 @@
                 </Column>
                 <Column header="Actions">
                     <template #body="{ data }">
-                        <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)" />
-                        <!-- <Button label="Delete" icon="pi pi-trash" severity="danger"
-                            @click="confirmDeleteExpense(data)" /> -->
+                        <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)"
+                            :hidden="data.status === 'APPROVED'" />
+                        <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteInvoice(data)"
+                            style="margin-left: 10px;" />
                     </template>
                 </Column>
             </DataTable>
@@ -46,11 +52,11 @@
         <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-            <Button label="Xóa" severity="danger" @click="deleteExpense" />
+            <Button label="Xóa" severity="danger" @click="deleteInvoice" />
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showExpense" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
+    <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
             <label for="name" class="fw-bold">Tên</label>
@@ -63,7 +69,7 @@
             <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
         </div>
         <div class="mb-3">
-            <label for="amount" class="fw-bold">Tổng tiền</label>
+            <label for="amount" class="fw-bold">Số tiền</label>
             <InputText id="amount" type="number" v-model="amount" class="w-100" autocomplete="off" />
             <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
         </div>
@@ -74,8 +80,8 @@
             <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
         </div>
         <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showExpense = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="saveExpense"></Button>
+            <Button type="button" label="Cancel" severity="secondary" @click="showInvoice = false"></Button>
+            <Button type="button" label="Save" severity="primary" @click="saveInvoice"></Button>
         </div>
     </Dialog>
 </template>
@@ -89,133 +95,164 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
-import FundType from '@/types/FundType';
 import formatCurrency from '@/utils/FormatCurrency';
-import type Expense from '@/types/Expense';
 import { useUserStore } from '@/pinia/userStore';
 import Dropdown from 'primevue/dropdown';
+import type Invoice from '@/types/Invoice';
+import InvoiceType from '@/types/InvoiceType';
+import type InvoiceStatus from '@/types/InvoiceStatus';
+import Tag from 'primevue/tag';
 
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
-const expeneseToDelete = ref<Expense | null>(null);
+const invoiceToDelete = ref<Invoice | null>(null);
 const token = localStorage.getItem('accessToken');
-const expenses = ref<Expense[]>([]);
+const invoices = ref<Invoice[]>([]);
 const searchQuery = ref("");
-const showExpense = ref(false);
+const showInvoice = ref(false);
 const isUpdate = ref(false);
-const form = ref({ id: 0, name: "", expenseType: "", description: "", userId: 0, amount: 0 });
+const form = ref({ id: 0, name: "", invoiceType: "", description: "", userId: 0, amount: 0 });
 const errors = ref({ name: "", description: "", type: "", amount: "" });
 const router = useRouter();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const amount = ref('');
 
-const selectedType = ref<FundType | null>(null);
+const selectedType = ref<InvoiceType | null>(null);
 const types = ref([
-    { label: "Quỹ chung", value: FundType.COMMON },
-    { label: "Quỹ ăn vặt", value: FundType.SNACK }
+    { label: "Quỹ thu", value: InvoiceType.INCOME },
+    { label: "Quỹ chi", value: InvoiceType.EXPENSE }
+]);
+const status = ref([
+    { label: "Chưa duyệt", value: InvoiceType.INCOME },
+    { label: "Đã duyệt", value: InvoiceType.EXPENSE },
+    { label: "Bị hủy", value: InvoiceType.EXPENSE }
 ]);
 
-
-const fetchExpense = async () => {
-    try {
-        const response = await axiosInstance.get(`/expenses`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        expenses.value = response.data;
-    } catch (error) {
-        console.error('Error fetching expenses:', error);
+const getInvoiceTypeSeverity = (status: string) => {
+    switch (status.toUpperCase()) {  // Đảm bảo không phân biệt chữ hoa/thường
+        case 'PENDING': return 'info';        // Chưa duyệt -> màu xanh dương
+        case 'CANCELED': return 'secondary';  // Bị hủy -> màu xám
+        case 'APPROVED': return 'success';    // Đã duyệt -> màu xanh lá
+        default: return 'warning';            // Trạng thái không xác định -> màu vàng
     }
 };
 
-const filteredExpense = computed(() => {
-    if (!searchQuery.value) return expenses.value;
-    return expenses.value.filter(expense => expense.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
+
+const fetchInvoice = async () => {
+    try {
+        const response = await axiosInstance.get(`/invoices/user/${user.value.id}`);
+        invoices.value = response.data;
+    } catch (error) {
+        console.error('Error fetching invoices:', error);
+    }
+};
+
+const filteredInvoice = computed(() => {
+    if (!searchQuery.value) return invoices.value;
+    return invoices.value.filter(invoice => invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
 
 const openCreateDialog = () => {
-    form.value = { id: 0, name: "", userId: 0, description: "", expenseType: "", amount: 0 };
+    form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
     isUpdate.value = false;
-    showExpense.value = true;
+    showInvoice.value = true;
 };
 
-const openUpdateDialog = (expense: Expense) => {
+
+const openUpdateDialog = (invoice: Invoice) => {
     form.value = {
-        id: expense.id,
-        name: expense.name,
+        id: invoice.id,
+        name: invoice.name,
         userId: user.value.id,
-        description: expense.description,
-        expenseType: expense.expenseType.toString(),
-        amount: expense.amount
+        description: invoice.description,
+        invoiceType: invoice.type,
+        amount: invoice.amount
     };
-    amount.value = expense.amount.toString();
-    selectedType.value = types.value.find(t => t.value === expense.expenseType)?.value || null;
+    amount.value = invoice.amount.toString();
+
+    // Just use this line - set selectedType to the enum value directly
+    selectedType.value = invoice.type === InvoiceType.INCOME ? InvoiceType.INCOME : InvoiceType.EXPENSE;
+
     isUpdate.value = true;
-    showExpense.value = true;
-    // console.log(form.value);
+    showInvoice.value = true;
+
+    console.log(form.value);
+
 };
 
-
-
+const confirmDeleteInvoice = (invoice: Invoice) => {
+    invoiceToDelete.value = invoice;
+    showConfirmDialog.value = true;
+};
 
 const validateForm = () => {
     errors.value = { name: "", description: "", type: "", amount: "" };
-    if (!form.value.name) errors.value.name = "Name is required!";
-    if (!form.value.description) errors.value.name = "Description is required!";
-    if (!selectedType.value) errors.value.type = "Type is required!";
+    if (!form.value.name) errors.value.name = "Vui lòng nhập tên phí!";
+    if (!form.value.description) errors.value.name = "Vui lòng nhập mô tả phí!";
+    if (!selectedType.value) errors.value.type = "Vui lòng chọn loại phí!";
     if (!amount.value || Number(amount.value) < 0)
-        errors.value.amount = "Amount is required and must be greater than 0!";
+        errors.value.amount = "Số tiền cần phải lớn hơn 0!";
     return Object.values(errors.value).every(err => err === "");
 };
 
-const saveExpense = async () => {
+const saveInvoice = async () => {
     if (!validateForm()) return;
     try {
         if (isUpdate.value) {
             if (selectedType.value) {
-                form.value.expenseType = selectedType.value;
+                form.value.invoiceType = selectedType.value.toString();
             }
             form.value.amount = Number(amount.value);
-            // console.log(form.value.expenseType);
+            console.log(form.value);
 
-            await axiosInstance.put(`/expenses/${form.value.id}`, form.value, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axiosInstance.put(`/invoices/${form.value.id}/update`, form.value);
             // console.log(form.value);
 
         } else {
             if (selectedType.value) {
-                form.value.expenseType = selectedType.value;
+                form.value.invoiceType = selectedType.value;
                 form.value.userId = user.value.id;
-                form.value.amount = Number(form.value.amount);
+                form.value.amount = Number(amount.value);
                 // console.log(form.value);
-                await axiosInstance.post(`/expenses`, form.value, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+
                 // console.log(form.value);
+                await axiosInstance.post(`/invoices`, form.value);
+                resetForm();
             }
+
         }
-        showExpense.value = false;
-        fetchExpense();
+        showInvoice.value = false;
+        fetchInvoice();
     } catch (error) {
         console.error('Error saving fund:', error);
     }
-}; const resetErrors = () => {
+};
+
+const resetErrors = () => {
     errors.value = { name: "", description: "", type: "", amount: "" };
 };
 
-const deleteExpense = async () => {
-    if (!expeneseToDelete.value) return;
+
+
+const resetForm = () => {
+    form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
+    amount.value = '';
+    selectedType.value = null;
+}
+
+const deleteInvoice = async () => {
+    if (!invoiceToDelete.value) return;
     try {
-        await axiosInstance.delete(`/expenses/${expeneseToDelete.value.id}`, {
+        await axiosInstance.delete(`/invoices/${invoiceToDelete.value.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        fetchExpense();
+        fetchInvoice();
     } catch (error) {
         console.error('Error deleting fund:', error);
     } finally {
         showConfirmDialog.value = false;
-        expeneseToDelete.value = null;
+        invoiceToDelete.value = null;
     }
 };
 
@@ -230,7 +267,7 @@ onMounted(() => {
     if (!token) {
         router.push('/');
     } else {
-        fetchExpense();
+        fetchInvoice();
     }
 });
 </script>

@@ -181,7 +181,7 @@ const baseItems = [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
             // { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
             { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
-            // { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") },
+            { label: "Hóa đơn", icon: "pi pi-bell", command: () => router.push("/user/invoices") },
         ]
     },
     { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") },
@@ -199,7 +199,7 @@ const adminItems = [
             { label: "Nhóm", icon: "pi pi-users", command: () => router.push("/teams") },
             { label: "Role", icon: "pi pi-address-book", command: () => router.push("/roles") },
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
-            { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/expenses") },
+            { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/invoices") },
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },
             { label: "Chưa đóng quỹ", icon: "pi pi-bolt", command: () => router.push("/users/not-paid") },
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },

@@ -18,8 +18,11 @@
                 <Column field="name" header="Tên" sortable></Column>
                 <Column field="fundType" header="Mã Quỹ" sortable>
                     <template #body="{ data }">
-                        {{ data.fundType !== 'null' ? data.fundType : 'Chưa duyệt' }}
+                        <Tag v-if="data.fundType !== 'null'" :value="getInvoiceTypeLabel(data.fundType)"
+                            :severity="getInvoiceTypeSeverity(data.fundType)" />
+                        <!-- <Tag v-else value="chưa duyệt" severity="warn" /> -->
                     </template>
+
                 </Column>
                 <Column field="description" header="Mô tả" sortable></Column>
                 <Column field="amount" header="Số Tiền" sortable>
@@ -99,6 +102,7 @@ import { useUserStore } from '@/pinia/userStore';
 import Dropdown from 'primevue/dropdown';
 import type Invoice from '@/types/Invoice';
 import InvoiceType from '@/types/InvoiceType';
+import Tag from 'primevue/tag';
 
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false);
@@ -121,6 +125,13 @@ const types = ref([
     { label: "Quỹ chi", value: InvoiceType.EXPENSE }
 ]);
 
+const getInvoiceTypeLabel = (type: string) => {
+    return type === "COMMON" ? "Quỹ chung" : "Quỹ ăn vặt";
+};
+
+const getInvoiceTypeSeverity = (type: string) => {
+    return type === "COMMON" ? "info" : "success";;
+};
 
 const fetchInvoice = async () => {
     try {

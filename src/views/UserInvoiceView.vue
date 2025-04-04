@@ -34,12 +34,13 @@
                         {{ formatDate(data.createdAt) }}
                     </template>
                 </Column>
-                <Column header="Actions">
+                <Column header="Actions" style="width: 20%;">
                     <template #body="{ data }">
                         <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)"
-                            :hidden="data.status === 'APPROVED'" />
+                            :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
                         <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteInvoice(data)"
-                            style="margin-left: 10px;" />
+                            style="margin-left: 10px;"
+                            :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
                     </template>
                 </Column>
             </DataTable>
@@ -132,7 +133,7 @@ const status = ref([
 const getInvoiceTypeSeverity = (status: string) => {
     switch (status.toUpperCase()) {  // Đảm bảo không phân biệt chữ hoa/thường
         case 'PENDING': return 'info';        // Chưa duyệt -> màu xanh dương
-        case 'CANCELED': return 'secondary';  // Bị hủy -> màu xám
+        case 'CANCELLED': return 'secondary';  // Bị hủy -> màu xám
         case 'APPROVED': return 'success';    // Đã duyệt -> màu xanh lá
         default: return 'warning';            // Trạng thái không xác định -> màu vàng
     }

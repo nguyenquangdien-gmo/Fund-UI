@@ -191,7 +191,7 @@ const baseItems = [
 
 const adminItems = [
     { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
-    // { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
+    { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
     {
         label: "Quản lý",
         icon: "pi pi-list",

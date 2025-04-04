@@ -190,7 +190,7 @@ const checkAdmin = async () => {
     })
     return response.data // Trả về true nếu là admin
   } catch (error) {
-    console.error('Lỗi khi kiểm tra quyền admin:', error)
+    // console.error('Lỗi khi kiểm tra quyền admin:', error)
     return false
   }
 }

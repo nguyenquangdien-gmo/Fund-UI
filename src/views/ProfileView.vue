@@ -160,9 +160,14 @@ const changePassword = async () => {
     }
 };
 const resetForm = () => {
+    passwordData.value = {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    };
     error.value = {
-        newPass: '',
         oldPass: '',
+        newPass: '',
         confirmPass: '',
         summary: ''
     };

@@ -76,6 +76,8 @@ const fetchInvoices = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         invoices.value = response.data;
+        console.log(invoices.value);
+
     } catch (err) {
         console.error(err);
     } finally {
@@ -156,14 +158,23 @@ const handlePenBillAction = async (action) => {
 };
 
 // Thêm hàm xử lý phê duyệt thu chi
-
 const errorMessageInvoice = ref('');
+
+const validateForm = () => {
+    errorMessageInvoice.value = '';
+    if (!selectedFundType.value) errorMessageInvoice.value = 'Vui lòng chọn quỹ trước khi phê duyệt!';
+
+    return Object.values(errorMessageInvoice.value).every(err => err === "");
+};
+
 const handleInvoiceAction = async (action) => {
+    if (!validateForm()) return;
     try {
         loading.value = true;
 
         if (action === 'confirm' && !selectedFundType.value) {
             errorMessageInvoice.value = "Vui lòng chọn quỹ trước khi phê duyệt!";
+            loading.value = false;
 
         }
 
@@ -171,17 +182,23 @@ const handleInvoiceAction = async (action) => {
             ? `/invoices/${selectedItemToConfirm.value.id}/approve`
             : `/invoices/${selectedItemToConfirm.value.id}/reject`;
 
-        await axiosInstance.post(endpoint, {
-            fundType: action === 'confirm' ? selectedFundType.value : null
-        }, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        errorMessageInvoice.value = '';
+        console.log(selectedFundType.value);
 
+        await axiosInstance.put(
+            `${endpoint}?fundType=${encodeURIComponent(selectedFundType.value)}`,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        errorMessageInvoice.value = "";
         fetchInvoices();
+
+
     } catch (err) {
         console.error(err);
     } finally {
@@ -242,7 +259,7 @@ const getStatusSeverity = (status) => {
 
 // Thêm hàm để lấy nhãn cho loại thu chi
 const getInvoiceTypeLabel = (type) => {
-    return type === "INCOME" ? "Thu" : type === "EXPENSE" ? "Chi" : type;
+    return type === "INCOME" ? "Phiếu thu" : type === "EXPENSE" ? "Phiếu chi" : type;
 };
 
 // Thêm hàm để lấy severity cho loại thu chi
@@ -275,13 +292,15 @@ const getInvoiceTypeSeverity = (type) => {
                     {{ index + 1 }}
                 </template>
             </Column>
+            <Column field="user.fullName" header="Người tạo" sortable />
             <Column field="name" header="Tên" sortable />
-            <Column field="description" header="Mô tả" sortable style="width: 15%;" />
-            <Column field="type" header="Loại" sortable style="text-align: center;">
+            <Column field="description" header="Mô tả" sortable style="width: 20%;" />
+            <Column field="invoiceType" header="Loại" sortable style="text-align: center;">
                 <template #body="slotProps">
-                    <Tag v-if="slotProps.data.fundType !== 'null'" :value="getInvoiceTypeLabel(slotProps.data.fundType)"
-                        :severity="getInvoiceTypeSeverity(slotProps.data.fundType)" />
-                    <Tag v-else value="chưa duyệt" severity="warn" />
+                    <Tag v-if="slotProps.data.invoiceType !== 'null'"
+                        :value="getInvoiceTypeLabel(slotProps.data.invoiceType)"
+                        :severity="getInvoiceTypeSeverity(slotProps.data.invoiceType)" />
+                    <Tag v-else value="chưa xác định" severity="warn" />
                 </template>
             </Column>
             <Column field="amount" header="Số tiền" sortable>
@@ -289,12 +308,13 @@ const getInvoiceTypeSeverity = (type) => {
                     {{ formatCurrency(slotProps.data.amount) }}
                 </template>
             </Column>
+
             <Column field="createdAt" header="Ngày tạo" sortable>
                 <template #body="slotProps">
                     {{ new Date(slotProps.data.createdAt).toLocaleDateString('vi-VN') }}
                 </template>
             </Column>
-            <Column header="Hành động">
+            <Column header="Hành động" style="width: 22%;">
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
                         @click="openConfirmDialog(data, 'confirm')" />
@@ -375,7 +395,7 @@ const getInvoiceTypeSeverity = (type) => {
                 <label for="fundType" class="block mb-2">Chọn quỹ:</label>
                 <Dropdown id="fundType" v-model="selectedFundType" :options="fundOptions" optionLabel="label"
                     optionValue="value" placeholder="Chọn quỹ" class="w-full" />
-                <small class="text-danger">{{ errorMessageInvoice.value }}</small>
+                <small class="text-danger">{{ errorMessageInvoice }}</small>
             </div>
 
             <template #footer>
@@ -395,6 +415,12 @@ const getInvoiceTypeSeverity = (type) => {
 }
 
 .left-10 {
+    margin-left: 10px;
+}
+
+#fundType {
+    margin-top: 10px;
+    width: 70%;
     margin-left: 10px;
 }
 </style>

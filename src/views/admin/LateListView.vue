@@ -6,6 +6,8 @@ import Column from "primevue/column";
 import InputText from "primevue/inputtext";
 import axiosInstance from '@/router/Interceptor';
 import formatDate from "@/utils/FormatDate";
+import Button from "primevue/button";
+import Dialog from "primevue/dialog";
 
 interface User {
     id?: string | null;
@@ -24,7 +26,27 @@ const fromDate = ref<Date | null>(new Date());
 const toDate = ref<Date | null>(new Date(new Date().getTime() + 24 * 60 * 60 * 1000));
 const lateRecords = ref<LateRecord[]>([]);
 const searchTerm = ref("");
-// const baseURL = "http://localhost:8080/api/v1";
+const isAdmin = ref(false);
+
+// Thêm state cho phần cài đặt thông báo đi muộn
+const showScheduleDialog = ref(false);
+const scheduleForm = ref({
+    fromDate: new Date(),
+    sendTime: new Date(),
+    type: 'late_notification',
+});
+
+// Kiểm tra quyền admin
+const checkIsAdmin = async () => {
+    if (!token) return;
+    try {
+        const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`);
+        isAdmin.value = response.data;
+    } catch (error) {
+        console.error("Error checking admin status:", error);
+        isAdmin.value = false;
+    }
+};
 
 const fetchLateRecords = async () => {
     if (!fromDate.value || !toDate.value) return;
@@ -45,7 +67,85 @@ const fetchLateRecords = async () => {
     }
 };
 
-onMounted(fetchLateRecords);
+// Hàm lấy thông tin cài đặt thông báo đi muộn
+const fetchSchedule = async () => {
+    try {
+        const response = await axiosInstance.get(`/schedules/type/late_notification`);
+        if (response.data && response.data.length > 0) {
+            const scheduleData = response.data[0];
+            scheduleForm.value = {
+                fromDate: new Date(scheduleData.fromDate),
+                sendTime: new Date(`1970-01-01T${scheduleData.sendTime}`),
+                type: scheduleData.type.toLowerCase(),
+            };
+        } else if (response.data) {
+            scheduleForm.value = {
+                fromDate: new Date(response.data.fromDate),
+                sendTime: new Date(`1970-01-01T${response.data.sendTime}`),
+                type: response.data.type.toLowerCase(),
+            };
+        }
+    } catch (error) {
+        console.error('Error fetching schedule:', error);
+    }
+};
+
+// Hàm định dạng hiển thị ngày tháng
+const formatFullDateTime = (dateObj: Date) => {
+    if (!dateObj) return "Không có dữ liệu";
+    return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+};
+
+// Định dạng chỉ thời gian
+const formatTimeOnly = (dateObj: Date) => {
+    if (!dateObj) return "Không có dữ liệu";
+    return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+};
+
+// Hàm mở dialog cài đặt
+const openScheduleDialog = () => {
+    fetchSchedule();
+    showScheduleDialog.value = true;
+};
+
+// Hàm định dạng ngày tháng theo yêu cầu API (yyyy-MM-dd)
+const formatDateToApiString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00`;
+};
+
+// Hàm định dạng thời gian theo yêu cầu API (HH:mm:ss)
+const formatTimeToApiString = (date: Date): string => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+};
+
+// Hàm lưu cài đặt thông báo
+const saveSchedule = async () => {
+    try {
+        const dataForm = {
+            fromDate: formatDateToApiString(scheduleForm.value.fromDate),
+            sendTime: formatTimeToApiString(scheduleForm.value.sendTime),
+            type: scheduleForm.value.type,
+        };
+
+        console.log('scheduleForm update gửi lên:', dataForm);
+
+        await axiosInstance.put(`/schedules/${dataForm.type}`, dataForm);
+        showScheduleDialog.value = false;
+    } catch (error) {
+        console.error('Lỗi khi cập nhật schedule:', error);
+    }
+};
+
+onMounted(() => {
+    fetchLateRecords();
+    checkIsAdmin();
+});
 
 // Cải tiến hàm lọc với kiểm tra an toàn
 const filteredRecords = computed(() => {
@@ -74,13 +174,22 @@ const filteredRecords = computed(() => {
     <div class="p-4">
         <h2 class="text-xl font-bold mb-4">Danh sách đi muộn</h2>
 
-        <div class="flex gap-4 mb-4">
-            Từ
-            <Calendar v-model="fromDate" dateFormat="dd-mm-yy" placeholder="Từ ngày" @date-select="fetchLateRecords" />
-            đến
-            <Calendar v-model="toDate" dateFormat="dd-mm-yy" placeholder="Đến ngày" @date-select="fetchLateRecords" />
-            Tìm kiếm
-            <InputText v-model="searchTerm" placeholder="🔍 Tìm theo tên hoặc ID" class="p-inputtext-sm" />
+        <div class="navbar-actions">
+            <div class="flex gap-4 mb-4">
+                Từ
+                <Calendar v-model="fromDate" dateFormat="dd-mm-yy" placeholder="Từ ngày"
+                    @date-select="fetchLateRecords" />
+                đến
+                <Calendar v-model="toDate" dateFormat="dd-mm-yy" placeholder="Đến ngày"
+                    @date-select="fetchLateRecords" />
+                Tìm kiếm
+                <InputText v-model="searchTerm" placeholder="🔍 Tìm theo tên hoặc ID" class="p-inputtext-sm" />
+            </div>
+            <div>
+                <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
+                <Button v-if="isAdmin" label="Cài đặt" icon="pi pi-cog" class="p-button-sm" severity="success" raised
+                    @click="openScheduleDialog" />
+            </div>
         </div>
 
         <DataTable v-if="filteredRecords.length > 0" :value="filteredRecords" :paginator="true" :rows="15"
@@ -121,4 +230,72 @@ const filteredRecords = computed(() => {
             Không có dữ liệu để hiển thị.
         </div>
     </div>
+
+    <!-- Dialog Cài đặt thông báo đi muộn -->
+    <Dialog v-model:visible="showScheduleDialog" modal header="Cài đặt thông báo đi muộn" class="container-dialog">
+        <!-- Thông tin hiện tại -->
+        <div class="col-12 mb-3 item-dialog lh-2">
+            <p class="text-sm text-gray-600">
+                📅 <strong>Ngày gửi thông báo:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
+                ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+            </p>
+        </div>
+
+        <!-- Form chọn lại -->
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">Ngày cảnh báo</label>
+            <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
+        </div>
+
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">Thời gian gửi</label>
+            <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+        </div>
+
+        <div class="actions-dialog">
+            <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+            <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
+        </div>
+    </Dialog>
 </template>
+
+<style scoped>
+.navbar-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f5f5f5;
+}
+
+.navbar-actions .p-button {
+    margin-left: 1rem;
+}
+
+.select-year {
+    width: 150px;
+    margin-left: 10px;
+}
+
+:global(.container-dialog) {
+    width: 400px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+:global(.item-dialog) {
+    display: flex;
+    flex-direction: column;
+}
+
+:global(.actions-dialog) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.lh-2 {
+    line-height: 1.6;
+}
+</style>

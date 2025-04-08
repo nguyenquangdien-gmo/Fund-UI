@@ -32,7 +32,7 @@
                 <Column field="user.id" header="Mã nhân viên" sortable></Column>
                 <Column field="user.email" header="Email" sortable></Column>
                 <Column field="user.fullName" header="Tên " sortable></Column>
-                <Column field="user.role" header="Vai trò " sortable></Column>
+                <Column field="user.role.name" header="Vai trò " sortable></Column>
                 <Column field="amountToPay" header="Tổng tiền" sortable>
                     <template #body="{ data }">
                         {{ formatCurrency(data.amountToPay) }}
@@ -161,7 +161,7 @@ const fetchUsers = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         users.value = response.data;
-        // console.log(users.value);
+        console.log(users.value);
     } catch (error) {
         console.error('Error fetching users:', error);
     }

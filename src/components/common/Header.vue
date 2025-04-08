@@ -174,12 +174,13 @@ watch(user, (newUser) => {
 
 
 const baseItems = [
+    { label: "Profile", icon: "pi pi-sparkles", command: () => router.push("/profile") },
     {
         label: "Danh sách",
         icon: "pi pi-list",
         items: [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
-            // { label: "Quỹ nợ", icon: "pi pi-server", command: () => router.push("/contributions/owed") },
+            { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/user/late") },
             { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
             { label: "Hóa đơn", icon: "pi pi-bell", command: () => router.push("/user/invoices") },
         ]
@@ -203,7 +204,7 @@ const adminItems = [
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },
             { label: "Chưa đóng quỹ", icon: "pi pi-bolt", command: () => router.push("/users/not-paid") },
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },
-            { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/users/late-checkin") },
+            { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/late-checkin") },
             // { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
             { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") }
         ]

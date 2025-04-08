@@ -99,10 +99,16 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/users/late-checkin',
+      path: '/user/late',
+      name: 'user-late',
+      component: LateHistories,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/late-checkin',
       name: 'late-checkin',
       component: LateListView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/teams',
@@ -190,7 +196,7 @@ const checkAdmin = async () => {
     })
     return response.data // Trả về true nếu là admin
   } catch (error) {
-    // console.error('Lỗi khi kiểm tra quyền admin:', error)
+    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
     return false
   }
 }

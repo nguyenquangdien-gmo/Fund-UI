@@ -17,7 +17,8 @@
                 </select>
             </div>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã quỹ..." class="w-full p-inputtext-sm" />
+                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên or mã NV..."
+                    class="w-full p-inputtext-sm" style="width: 20%;" />
                 <!-- <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
@@ -159,7 +160,7 @@ const fetchUsers = async () => {
 
 const filteredFunds = computed(() => {
     if (!searchQuery.value) return users.value;
-    return users.value.filter(user => user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()));
+    return users.value.filter(user => user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) || user.id === Number(searchQuery.value));
 });
 
 // const openCreateDialog = () => {

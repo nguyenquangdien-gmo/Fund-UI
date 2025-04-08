@@ -4,7 +4,7 @@
             <h2 class="text-center text-xl">Danh sách Thu/Chi</h2>
             <div class="mb-3">
                 <InputText v-if="invoices.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
-                    style="width: 20%;" class="w-full p-inputtext-sm" />
+                    style="width: 20%; text-align: end;" class="w-full p-inputtext-sm" />
                 <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small"
                     @click="openCreateDialog" />
             </div>

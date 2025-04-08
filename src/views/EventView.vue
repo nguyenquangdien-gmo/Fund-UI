@@ -4,11 +4,21 @@
             <h2 class="text-center">Danh Sách Sự Kiện</h2>
 
             <!-- Search and Create Button (Only for Admin) -->
-            <div class="mb-3 flex justify-content-between align-items-center">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên sự kiện..."
-                    class="w-full p-inputtext-sm mr-3" />
-                <Button v-if="isAdmin" label="Tạo Sự Kiện" class="left-10" severity="success" raised size="small"
-                    @click="openCreateDialog" />
+            <div class="navbar-actions">
+                <div class=" mb-3 flex justify-content-between align-items-center">
+                    <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên sự kiện..."
+                        class="w-full p-inputtext-sm mr-3" />
+                    <Button v-if="isAdmin" label="Tạo Sự Kiện" class="left-10" severity="success" raised size="small"
+                        @click="openCreateDialog" />
+                </div>
+                <div class="navbar-actions-time">
+                    <div class="navbar-actions-time">
+                        <p></p>
+                        <Button v-if="isAdmin" label="Cài đặt" icon="pi pi-calendar-plus" class="left-10"
+                            severity="success" raised size="small" @click="openScheduleDialog" />
+                    </div>
+
+                </div>
             </div>
 
             <!-- Event DataTable -->
@@ -89,7 +99,8 @@
         <div class="col-12 mb-3 item-dialog">
             <label for="hosts" class="font-bold mb-2">Chủ Sự Kiện</label>
             <MultiSelect id="hosts" v-model="selectedHosts" :options="userOptions" optionLabel="fullName"
-                optionValue="id" placeholder="Chọn chủ sự kiện" :class="{ 'p-invalid': errors.hosts }" class="w-full" />
+                optionValue="id" placeholder="Chọn chủ sự kiện" :class="{ 'p-invalid': errors.hosts }" class="w-full"
+                style="width: 100%;" />
             <small class="p-error" v-if="errors.hosts">{{ errors.hosts }}</small>
         </div>
 
@@ -99,6 +110,41 @@
                 class="p-button-raised" />
         </div>
     </Dialog>
+
+    <!-- dialog setting time  -->
+    <Dialog v-model:visible="showScheduleDialog" modal header="Cập nhật" class="container-dialog">
+        <!-- Thông tin hiện tại -->
+        <div class="col-12 mb-3 item-dialog lh-2">
+            <p class="text-sm text-gray-600">
+                🕒 <strong>Từ ngày cũ:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
+                🕒 <strong>Đến ngày cũ:</strong> {{ formatFullDateTime(scheduleForm.toDate) }}<br />
+                ⏰ <strong>Thời gian gửi cũ:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+            </p>
+        </div>
+
+        <!-- Form chọn lại -->
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">Từ ngày</label>
+            <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
+        </div>
+
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">Đến ngày</label>
+            <Calendar v-model="scheduleForm.toDate" date-format="dd/mm/yy" class="w-full" />
+        </div>
+
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">Thời gian gửi</label>
+            <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+        </div>
+
+        <div class="actions-dialog">
+            <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+            <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
+        </div>
+    </Dialog>
+
+
 </template>
 
 <script setup lang="ts">
@@ -117,11 +163,7 @@ import MultiSelect from 'primevue/multiselect';
 import type { User } from '@/types/User';
 import type Event from '@/types/Event';
 import formatTextWithLinks from '@/utils/FormateTextWithUrl';
-
-
-
-// Configuration
-// const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+import { convertToLocalDateTimeString, convertToLocalTimeString } from '@/utils/ConvertTimeToDateTime';
 
 // Composition Setup
 const router = useRouter();
@@ -139,10 +181,8 @@ const isAdmin = ref(false);
 
 const checkIsAdmin = async () => {
     if (!token) return;
-    // console.log("Token gửi lên:", token); // Debug
     try {
         const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`);
-        // console.log("API response:", response.data); // Debug
         isAdmin.value = response.data;
     } catch (error) {
         console.error("Error checking admin status:", error);
@@ -150,15 +190,13 @@ const checkIsAdmin = async () => {
     }
 };
 
-// Current User and Role Management
-
-// Form State
 const form = ref({
     id: 0,
     name: "",
     eventTime: new Date(),
     location: "",
 });
+
 const selectedHosts = ref<number[]>([]);
 const errors = ref({
     name: "",
@@ -167,9 +205,6 @@ const errors = ref({
     hosts: ""
 });
 
-
-
-// Data Fetching Methods
 const fetchUsers = async () => {
     try {
         const token = localStorage.getItem('accessToken');
@@ -195,13 +230,94 @@ const fetchEvents = async () => {
     }
 };
 
-// Computed Properties
 const filteredEvents = computed(() => {
     if (!searchQuery.value) return events.value;
     return events.value.filter(event =>
         event.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
 });
+//setting time
+const showScheduleDialog = ref(false);
+const scheduleForm = ref({
+    fromDate: new Date(),
+    toDate: new Date(),
+    sendTime: new Date(),
+    type: 'event_notification',
+});
+const fetchSchedule = async () => {
+    try {
+        const response = await axiosInstance.get(`/schedules/type/event_notification`);
+        if (response.data && response.data.length > 0) {
+            const scheduleData = response.data[0]; // Lấy phần tử đầu tiên từ mảng
+            scheduleForm.value = {
+                fromDate: new Date(scheduleData.fromDate),
+                toDate: new Date(scheduleData.toDate),
+                sendTime: new Date(`1970-01-01T${scheduleData.sendTime}`), // LocalTime convert
+                type: scheduleData.type.toLowerCase(),
+            };
+        } else if (response.data) { // Nếu response không phải là mảng
+            scheduleForm.value = {
+                fromDate: new Date(response.data.fromDate),
+                toDate: new Date(response.data.toDate),
+                sendTime: new Date(`1970-01-01T${response.data.sendTime}`),
+                type: response.data.type.toLowerCase(),
+            };
+        }
+    } catch (error) {
+        console.error('Error fetching schedule:', error);
+    }
+};
+
+const formatFullDateTime = (dateObj: Date) => {
+    if (!dateObj) return "Không có dữ liệu";
+    return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+};
+
+// Định dạng chỉ thời gian
+const formatTimeOnly = (dateObj: Date) => {
+    if (!dateObj) return "Không có dữ liệu";
+    return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+};
+
+// 👉 Hàm mở dialog với schedule sẵn có
+const openScheduleDialog = () => {
+    fetchSchedule();
+    showScheduleDialog.value = true;
+};
+
+const saveSchedule = async () => {
+    try {
+        const fromDate = new Date(scheduleForm.value.fromDate);
+        const toDate = new Date(scheduleForm.value.toDate);
+
+        fromDate.setHours(0, 0, 0, 0);
+
+        toDate.setHours(23, 59, 59, 999);
+
+        const dataForm = {
+            fromDate: convertToLocalDateTimeString(fromDate),
+            toDate: convertToLocalDateTimeString(toDate),
+            sendTime: convertToLocalTimeString(scheduleForm.value.sendTime),
+            type: scheduleForm.value.type,
+        };
+
+        console.log('scheduleForm update gửi lên:', dataForm);
+
+        await axiosInstance.put(`/schedules/${dataForm.type}`, dataForm);
+        showScheduleDialog.value = false;
+    } catch (error) {
+        console.error('Lỗi khi cập nhật schedule:', error);
+    }
+};
+
+function parseTimeWithDate(dateStr: string, timeStr: string): Date | null {
+    if (!dateStr || !timeStr) return null;
+    const baseDate = dateStr.split("T")[0];
+    const combined = `${baseDate}T${timeStr}`;
+    const parsed = new Date(combined);
+    return isNaN(parsed.getTime()) ? null : parsed;
+}
+
 
 // Dialog and Form Methods
 const openCreateDialog = () => {
@@ -305,6 +421,7 @@ onMounted(() => {
         fetchEvents();
         fetchUsers();
         checkIsAdmin();
+        fetchSchedule();
     }
 });
 </script>
@@ -342,5 +459,23 @@ onMounted(() => {
 
 .left-10 {
     margin-left: 10px;
+}
+
+.navbar-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f5f5f5;
+    align-items: center;
+}
+
+.navbar-actions-time {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-actions-time p {
+    margin: 0;
 }
 </style>

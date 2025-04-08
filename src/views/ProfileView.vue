@@ -19,7 +19,7 @@
                     </div>
                     <div>
                         <span>Số Điện Thoại:</span>
-                        <p>{{ form.phone ?? 'Chưa cập nhật' }}</p>
+                        <p>{{ form.phoneNumber ?? 'Chưa cập nhật' }}</p>
                     </div>
                     <div>
                         <span>Ngày Sinh:</span>
@@ -31,7 +31,7 @@
                     </div>
                     <div>
                         <span>Team:</span>
-                        <p>{{ user.team?.name ?? 'Chưa có nhóm' }}</p>
+                        <p>{{ user.slugTeam ?? 'Chưa có nhóm' }}</p>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@ type User = {
     fullName: string;
     email: string;
     position?: string;
-    phone?: string;
+    phoneNumber?: string;
     dob?: string;
     joinDate?: string;
     team?: string;
@@ -94,7 +94,7 @@ const form = ref<User>({
     fullName: '',
     email: '',
     position: '',
-    phone: '',
+    phoneNumber: '',
     dob: '',
     joinDate: '',
     team: '',

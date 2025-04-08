@@ -17,12 +17,12 @@
                 </select>
             </div>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên or mã NV..."
-                    class="w-full p-inputtext-sm" style="width: 20%;" />
+                <InputText v-if="users.values.length > 0" v-model="searchQuery"
+                    placeholder="Tìm kiếm theo tên or mã NV..." class="w-full p-inputtext-sm" style="width: 20%;" />
                 <!-- <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
-            <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-                class="p-datatable-sm">
+            <DataTable v-if="users.values.length > 0" :value="filteredFunds" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
                         {{ index + 1 }}
@@ -48,6 +48,7 @@
                     </template>
                 </Column> -->
             </DataTable>
+            <div v-else> Chưa có ai đi muộn cả!😊</div>
         </div>
     </div>
     <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">

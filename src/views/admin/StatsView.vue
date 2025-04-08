@@ -14,8 +14,7 @@
                 <div>
                     <h3 class="text-gray">Tiền chung</h3>
                     <p class="text-2xl font-semibold"> {{
-
-                        balance.length > 1 ? `$${formatCurrency(balance[1].totalAmount)}` : `$ 0 VND` }}
+                        balance.length > 1 ? `${formatCurrency(balance[0].totalAmount)}` : `0 VNĐ` }}
                     </p>
                     <p class="text-green-500 text-sm">Tổng tiền chung của nhóm</p>
                 </div>
@@ -25,9 +24,8 @@
                 <div>
                     <h3 class="text-gray">Tiền ăn vặt</h3>
                     <p class="text-2xl font-semibold">
-                        {{ balance.length > 1 ? `$${formatCurrency(balance[0].totalAmount)}` : '$ 0 VND' }}
+                        {{ balance.length > 1 ? `${formatCurrency(balance[1].totalAmount)}` : '0 VNĐ' }}
                     </p>
-
                     <p class="text-green-500 text-sm">Tổng tiền ăn vặt của nhóm</p>
                 </div>
             </div>
@@ -35,7 +33,8 @@
                 <div class="icon bg-teal-100 text-teal-600"><i class="pi pi-wallet"></i></div>
                 <div>
                     <h3 class="text-gray">Tiền thu</h3>
-                    <p class="text-2xl font-semibold">$ {{ formatCurrency(amountCharge + amountBillCharge) }}</p>
+                    <p class="text-2xl font-semibold">{{ formatCurrency(amountCharge + amountBillCharge +
+                        incomeAmount) }}</p>
                     <p class="text-green-500 text-sm">Tiền thu vào của nhóm</p>
                 </div>
             </div>
@@ -43,7 +42,7 @@
                 <div class="icon bg-purple-100 text-purple-600"><i class="pi pi-cart-plus"></i></div>
                 <div>
                     <h3 class="text-gray">Tiền chi</h3>
-                    <p class="text-2xl font-semibold"> $ {{ formatCurrency(amountExpense) }}</p>
+                    <p class="text-2xl font-semibold">{{ formatCurrency(expenseAmount) }}</p>
                     <p class="text-green-500 text-sm">Tiền chi ra của nhóm</p>
                 </div>
             </div>
@@ -53,56 +52,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts" style="margin-bottom: 15px;">
             <div class="bg-white shadow-lg rounded-lg p-5 line">
                 <div class="flex items-center justify-between mb-4">
-                    <p class="text-xl font-semibold text-gray-700">Quỹ hàng tháng</p>
-
+                    <p class="text-xl font-semibold text-gray-700">Thống kê quỹ hàng tháng</p>
                 </div>
-                <Chart type="line" :data="chartDataMonths" :options="chartMonthOptions" class="h-[20rem]" />
+                <Chart type="line" :data="combinedMonthlyData" :options="chartMonthOptions" class="h-[20rem]" />
             </div>
 
             <div class="bg-white shadow-lg rounded-lg p-5 column">
-                <p class="text-xl font-semibold text-gray-700 mb-4">Quỹ hàng năm</p>
-                <Chart type="bar" :data="chartDataYears" :options="chartYearOptions" class="h-[20rem]" />
+                <p class="text-xl font-semibold text-gray-700 mb-4">Thống kê quỹ hàng năm</p>
+                <Chart type="bar" :data="combinedYearlyData" :options="chartYearOptions" class="h-[20rem]" />
             </div>
-
-        </div>
-        <!-- quy phat hang thang -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts">
-            <div class="bg-white shadow-lg rounded-lg p-5 line">
-                <div class="flex items-center justify-between mb-4">
-                    <p class="text-xl font-semibold text-gray-700">Quỹ phạt hàng tháng</p>
-
-                </div>
-                <Chart type="line" :data="chartBillDataMonths" :options="chartMonthOptions" class="h-[20rem]" />
-            </div>
-
-            <div class="bg-white shadow-lg rounded-lg p-5 column">
-                <p class="text-xl font-semibold text-gray-700 mb-4">Quỹ phạt hàng năm</p>
-                <Chart type="bar" :data="chartBillDataYears" :options="chartYearOptions" class="h-[20rem]" />
-            </div>
-
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axiosInstance from '@/router/Interceptor';
 import Chart from 'primevue/chart';
 import formatCurrency from '@/utils/FormatCurrency';
 
-// const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken');
-
-// const stats = ref({
-//     orders: 152,
-//     newOrders: 24,
-//     revenue: 2100,
-//     revenueGrowth: 52,
-//     customers: 28441,
-//     newCustomers: 520,
-//     unreadComments: 152,
-//     respondedComments: 85
-// });
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
@@ -112,221 +81,428 @@ for (let year = 2020; year <= currentYear; year++) {
     availableYears.value.push(year);
 }
 
-const fundMonths = ref([]);
-const billMonthly = ref([]);
-const months = ref([]);
-const billMonths = ref([]);
-const amountsMonths = ref([]);
-const amountsBillMonths = ref([]);
-const fundYears = ref([]);
+// Fund data references
+const contributionMonthlyData = ref([]);
+const penaltyMonthlyData = ref([]);
+const incomeMonthlyData = ref([]);
+const expenseMonthlyData = ref([]);
+
+const contributionYearlyData = ref([]);
+const penaltyYearlyData = ref([]);
+const incomeYearlyData = ref([]);
+const expenseYearlyData = ref([]);
+
 const balance = ref([]);
+const amountCharge = ref(0);
+const amountBillCharge = ref(0);
+const incomeAmount = ref(0);
+const expenseAmount = ref(0);
 
+// Computed combined chart data
+const combinedMonthlyData = computed(() => {
+    const months = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
 
-const chartDataMonths = ref({});
-const chartBillDataMonths = ref({});
-const chartMonthOptions = ref({});
-const chartDataYears = ref({});
-const chartBillDataYears = ref({});
-const chartYearOptions = ref({});
+    // Prepare empty data arrays with 12 months
+    const contributionData = new Array(12).fill(0);
+    const penaltyData = new Array(12).fill(0);
+    const incomeData = new Array(12).fill(0);
+    const expenseData = new Array(12).fill(0);
 
+    // Fill contribution data
+    contributionMonthlyData.value.forEach(item => {
+        contributionData[item.month - 1] = item.totalAmount;
+    });
 
-const fetchDataMonths = async (year) => {
+    // Fill penalty data
+    penaltyMonthlyData.value.forEach(item => {
+        penaltyData[item.month - 1] = item.totalAmount;
+    });
+
+    // Fill income data
+    incomeMonthlyData.value.forEach(item => {
+        incomeData[item.month - 1] = item.totalAmount;
+    });
+
+    // Fill expense data
+    expenseMonthlyData.value.forEach(item => {
+        expenseData[item.month - 1] = item.totalAmount;
+    });
+
+    return {
+        labels: months,
+        datasets: [
+            {
+                label: 'Quỹ đóng góp',
+                data: contributionData,
+                borderColor: '#42A5F5',
+                backgroundColor: 'rgba(66, 165, 245, 0.2)',
+                tension: 0.4,
+                borderWidth: 2
+            },
+            {
+                label: 'Quỹ phạt',
+                data: penaltyData,
+                borderColor: '#FF9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                tension: 0.4,
+                borderWidth: 2
+            },
+            {
+                label: 'Thu',
+                data: incomeData,
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                tension: 0.4,
+                borderWidth: 2
+            },
+            {
+                label: 'Chi tiêu',
+                data: expenseData,
+                borderColor: '#F44336',
+                backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                tension: 0.4,
+                borderWidth: 2
+            }
+        ]
+    };
+});
+
+const combinedYearlyData = computed(() => {
+    const years = [...new Set([
+        ...contributionYearlyData.value.map(item => item.year),
+        ...penaltyYearlyData.value.map(item => item.year),
+        ...incomeYearlyData.value.map(item => item.year),
+        ...expenseYearlyData.value.map(item => item.year)
+    ])].sort();
+
+    // Create labels array
+    const labels = years.map(year => `Năm ${year}`);
+
+    // Prepare data arrays
+    const contributionData = [];
+    const penaltyData = [];
+    const incomeData = [];
+    const expenseData = [];
+
+    // Fill data arrays
+    years.forEach(year => {
+        // For contributions
+        const contributionItem = contributionYearlyData.value.find(item => item.year === year);
+        contributionData.push(contributionItem ? contributionItem.totalAmount : 0);
+
+        // For penalties
+        const penaltyItem = penaltyYearlyData.value.find(item => item.year === year);
+        penaltyData.push(penaltyItem ? penaltyItem.totalAmount : 0);
+
+        // For income
+        const incomeItem = incomeYearlyData.value.find(item => item.year === year);
+        incomeData.push(incomeItem ? incomeItem.totalAmount : 0);
+
+        // For expense
+        const expenseItem = expenseYearlyData.value.find(item => item.year === year);
+        expenseData.push(expenseItem ? expenseItem.totalAmount : 0);
+    });
+
+    return {
+        labels: labels,
+        datasets: [
+            {
+                type: 'bar',
+                label: 'Quỹ đóng góp',
+                data: contributionData,
+                backgroundColor: 'rgba(66, 165, 245, 0.7)',
+                borderColor: '#42A5F5',
+                borderWidth: 1
+            },
+            {
+                type: 'bar',
+                label: 'Quỹ phạt',
+                data: penaltyData,
+                backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                borderColor: '#FF9800',
+                borderWidth: 1
+            },
+            {
+                type: 'bar',
+                label: 'Thu',
+                data: incomeData,
+                backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                borderColor: '#4CAF50',
+                borderWidth: 1
+            },
+            {
+                type: 'bar',
+                label: 'Chi tiêu',
+                data: expenseData,
+                backgroundColor: 'rgba(244, 67, 54, 0.7)',
+                borderColor: '#F44336',
+                borderWidth: 1
+            }
+        ]
+    };
+});
+
+// Chart options
+const chartMonthOptions = ref({
+    maintainAspectRatio: false,
+    aspectRatio: 0.6,
+    plugins: {
+        legend: {
+            position: 'top',
+            labels: { color: '#4B5563', font: { size: 14 } }
+        },
+        tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+                label: function (context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                        label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                        label += formatCurrency(context.parsed.y);
+                    }
+                    return label;
+                }
+            }
+        }
+    },
+    interaction: {
+        mode: 'nearest',
+        intersect: true
+    },
+    scales: {
+        x: {
+            ticks: { color: '#4B5563' },
+            grid: { color: 'rgba(75, 85, 99, 0.2)' }
+        },
+        y: {
+            ticks: {
+                color: '#4B5563',
+                callback: function (value) {
+                    return formatCurrency(value);
+                }
+            },
+            grid: { color: 'rgba(75, 85, 99, 0.2)' },
+            beginAtZero: true
+        }
+    }
+});
+
+const chartYearOptions = ref({
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'top',
+            labels: { color: '#4B5563', font: { size: 14 } }
+        },
+        tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+                label: function (context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                        label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                        label += formatCurrency(context.parsed.y);
+                    }
+                    return label;
+                }
+            }
+        }
+    },
+    scales: {
+        x: {
+            ticks: { color: '#4B5563' },
+            grid: { color: 'rgba(75, 85, 99, 0.2)' }
+        },
+        y: {
+            beginAtZero: true,
+            ticks: {
+                color: '#4B5563',
+                callback: function (value) {
+                    return formatCurrency(value);
+                }
+            },
+            grid: { color: 'rgba(75, 85, 99, 0.2)' }
+        }
+    }
+});
+
+// API Calls
+const fetchContributionMonthlyData = async (year) => {
     try {
         const response = await axiosInstance.get(`/contributions/monthly-stats`, {
-            params: { year },
-            headers: { Authorization: `Bearer ${token}` }
+            params: { year }
         });
-
-        fundMonths.value = response.data;
-        months.value = response.data.map(item => `Tháng ${item.month}`);
-        amountsMonths.value = response.data.map(item => item.totalAmount);
-
-        chartDataMonths.value = {
-            labels: months.value,
-            datasets: [
-                {
-                    label: 'Tổng số tiền',
-                    data: amountsMonths.value,
-                    borderColor: '#42A5F5',
-                    fill: true,
-                    tension: 0.4,
-                    backgroundColor: 'rgba(66, 165, 245, 0.5)',
-                    borderWidth: 3
-                }
-            ]
-        };
+        contributionMonthlyData.value = response.data;
     } catch (error) {
-        console.error('Error fetching monthly data:', error.response?.data || error.message);
+        console.error('Error fetching monthly contributions:', error.response?.data || error.message);
     }
 };
-const fetchDataMonthsBill = async (year) => {
+
+const fetchPenaltyMonthlyData = async (year) => {
     try {
         const response = await axiosInstance.get(`/pen-bills/monthly-stats`, {
-            params: { year },
-            headers: { Authorization: `Bearer ${token}` }
+            params: { year }
         });
-
-        billMonthly.value = response.data;
-        billMonths.value = response.data.map(item => `Tháng ${item.month}`);
-        amountsBillMonths.value = response.data.map(item => item.totalAmount);
-
-        chartBillDataMonths.value = {
-            labels: months.value,
-            datasets: [
-                {
-                    label: 'Tổng số tiền',
-                    data: amountsBillMonths.value,
-                    borderColor: '#42A5F5',
-                    fill: true,
-                    tension: 0.4,
-                    backgroundColor: 'rgba(66, 165, 245, 0.5)',
-                    borderWidth: 3
-                }
-            ]
-        };
+        penaltyMonthlyData.value = response.data;
     } catch (error) {
-        console.error('Error fetching monthly data:', error.response?.data || error.message);
+        console.error('Error fetching monthly penalties:', error.response?.data || error.message);
+    }
+};
+
+const fetchIncomeMonthlyData = async (year) => {
+    try {
+        const response = await axiosInstance.get(`/invoices/monthly-stats`, {
+            params: { year, type: 'income' }
+        });
+        incomeMonthlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching monthly income:', error.response?.data || error.message);
+    }
+};
+
+const fetchExpenseMonthlyData = async (year) => {
+    try {
+        const response = await axiosInstance.get(`/invoices/monthly-stats`, {
+            params: { year, type: 'expense' }
+        });
+        expenseMonthlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching monthly expenses:', error.response?.data || error.message);
+    }
+};
+
+const fetchContributionYearlyData = async () => {
+    try {
+        const response = await axiosInstance.get(`/contributions/yearly-stats`);
+        contributionYearlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching yearly contributions:', error.response?.data || error.message);
+    }
+};
+
+const fetchPenaltyYearlyData = async () => {
+    try {
+        const response = await axiosInstance.get(`/pen-bills/yearly-stats`);
+        penaltyYearlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching yearly penalties:', error.response?.data || error.message);
+    }
+};
+
+const fetchIncomeYearlyData = async () => {
+    try {
+        const response = await axiosInstance.get(`/invoices/yearly-stats`, {
+            params: { type: 'income' }
+        });
+        incomeYearlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching yearly income:', error.response?.data || error.message);
+    }
+};
+
+const fetchExpenseYearlyData = async () => {
+    try {
+        const response = await axiosInstance.get(`/invoices/yearly-stats`, {
+            params: { type: 'expense' }
+        });
+        expenseYearlyData.value = response.data;
+    } catch (error) {
+        console.error('Error fetching yearly expenses:', error.response?.data || error.message);
     }
 };
 
 const fetchBalance = async () => {
     try {
-        const response = await axiosInstance.get(`/balances`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axiosInstance.get(`/balances`);
         balance.value = response.data;
-        // console.log(response.data);
     } catch (error) {
         console.error('Error fetching common funds:', error.response?.data || error.message);
     }
-}
-const amountExpense = ref({ value: 0 });
-const fetchExpenseByYear = async () => {
-    try {
-        const response = await axiosInstance.get(`/expenses/total-year`, {
-            params: { year: selectedYear.value },
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        amountExpense.value = response.data;
-        // console.log('charge' + amountExpense.value);
-    } catch (error) {
-        console.error('Error fetching expenses:', error.response?.data || error.message);
-    }
-}
-const amountCharge = ref({ value: 0 });
-const amountBillCharge = ref({ value: 0 });
-const fetchChargeByYear = async () => {
+};
+
+const fetchContributionTotal = async () => {
     try {
         const response = await axiosInstance.get(`/contributions/total`, {
-            params: { year: selectedYear.value },
-            headers: { Authorization: `Bearer ${token}` }
+            params: { year: selectedYear.value }
         });
         amountCharge.value = response.data;
-        // console.log('charge' + amountCharge.value);
     } catch (error) {
-        console.error('Error fetching expenses:', error.response?.data || error.message);
-    }
-}
-const fetchBillByYear = async () => {
-    try {
-        const response = await axiosInstance.get(`/pen-bills/total`, {
-            params: { year: selectedYear.value },
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        amountBillCharge.value = response.data;
-        // console.log('charge' + amountBillCharge.value);
-    } catch (error) {
-        console.error('Error fetching expenses:', error.response?.data || error.message);
-    }
-}
-
-const fetchDataYears = async () => {
-    try {
-        const response = await axiosInstance.get(`/contributions/yearly-stats`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        fundYears.value = response.data;
-
-        chartDataYears.value = {
-            labels: fundYears.value.map(item => `Năm ${item.year}`),
-            datasets: [
-                {
-                    label: 'Tổng số tiền',
-                    data: fundYears.value.map(item => item.totalAmount),
-                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
-                    borderColor: '#8B5CF6',
-                    borderWidth: 2
-                }
-            ]
-        };
-    } catch (error) {
-        console.error('Error fetching yearly data:', error.response?.data || error.message);
+        console.error('Error fetching contribution total:', error.response?.data || error.message);
     }
 };
-const fetchBillDataYears = async () => {
+
+const fetchPenaltyTotal = async () => {
     try {
-        const response = await axiosInstance.get(`/pen-bills/yearly-stats`, {
-            headers: { Authorization: `Bearer ${token}` }
+        const response = await axiosInstance.get(`/pen-bills/total`, {
+            params: { year: selectedYear.value }
         });
-
-        fundYears.value = response.data;
-
-        chartBillDataYears.value = {
-            labels: fundYears.value.map(item => `Năm ${item.year}`),
-            datasets: [
-                {
-                    label: 'Tổng số tiền',
-                    data: fundYears.value.map(item => item.totalAmount),
-                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
-                    borderColor: '#8B5CF6',
-                    borderWidth: 2
-                }
-            ]
-        };
+        amountBillCharge.value = response.data;
     } catch (error) {
-        console.error('Error fetching yearly data:', error.response?.data || error.message);
+        console.error('Error fetching penalty total:', error.response?.data || error.message);
     }
+};
+
+const fetchIncomeTotal = async () => {
+    try {
+        const response = await axiosInstance.get(`/invoices/total-year`, {
+            params: { year: selectedYear.value, type: 'income' }
+        });
+        incomeAmount.value = response.data;
+    } catch (error) {
+        console.error('Error fetching income total:', error.response?.data || error.message);
+    }
+};
+
+const fetchExpenseTotal = async () => {
+    try {
+        const response = await axiosInstance.get(`/invoices/total-year`, {
+            params: { year: selectedYear.value, type: 'expense' }
+        });
+        expenseAmount.value = response.data;
+    } catch (error) {
+        console.error('Error fetching expense total:', error.response?.data || error.message);
+    }
+};
+
+const fetchAllData = () => {
+    fetchContributionMonthlyData(selectedYear.value);
+    fetchPenaltyMonthlyData(selectedYear.value);
+    fetchIncomeMonthlyData(selectedYear.value);
+    fetchExpenseMonthlyData(selectedYear.value);
+
+    fetchContributionYearlyData();
+    fetchPenaltyYearlyData();
+    fetchIncomeYearlyData();
+    fetchExpenseYearlyData();
+
+    fetchBalance();
+
+    fetchContributionTotal();
+    fetchPenaltyTotal();
+    fetchIncomeTotal();
+    fetchExpenseTotal();
 };
 
 onMounted(() => {
-    fetchDataMonths(selectedYear.value);
-    fetchDataMonthsBill(selectedYear.value);
-    fetchDataYears();
-    fetchBillDataYears();
-    fetchBalance();
-    fetchExpenseByYear();
-    fetchChargeByYear();
-    fetchBillByYear();
+    fetchAllData();
 });
+
 const onYearChange = () => {
-    fetchDataMonths(selectedYear.value);
-    fetchDataMonthsBill(selectedYear.value);
-    fetchExpenseByYear();
-    fetchChargeByYear();
-    fetchBillByYear();
-};
+    fetchContributionMonthlyData(selectedYear.value);
+    fetchPenaltyMonthlyData(selectedYear.value);
+    fetchIncomeMonthlyData(selectedYear.value);
+    fetchExpenseMonthlyData(selectedYear.value);
 
-chartMonthOptions.value = {
-    maintainAspectRatio: false,
-    aspectRatio: 0.6,
-    plugins: {
-        legend: { labels: { color: '#4B5563', font: { size: 14, weight: 'bold' } } }
-    },
-    scales: {
-        x: { ticks: { color: '#4B5563' }, grid: { color: 'rgba(75, 85, 99, 0.2)' } },
-        y: { ticks: { color: '#4B5563' }, grid: { color: 'rgba(75, 85, 99, 0.2)' } }
-    }
-};
-
-chartYearOptions.value = {
-    plugins: {
-        legend: { labels: { color: '#4B5563', font: { size: 14, weight: 'bold' } } }
-    },
-    scales: {
-        x: { ticks: { color: '#4B5563' }, grid: { color: 'rgba(75, 85, 99, 0.2)' } },
-        y: { beginAtZero: true, ticks: { color: '#4B5563' }, grid: { color: 'rgba(75, 85, 99, 0.2)' } }
-    }
+    fetchContributionTotal();
+    fetchPenaltyTotal();
+    fetchIncomeTotal();
+    fetchExpenseTotal();
 };
 </script>
 
@@ -377,8 +553,6 @@ chartYearOptions.value = {
 .charts {
     display: flex;
     justify-content: space-between;
-    /* gap: 5px; */
-
 }
 
 .line {

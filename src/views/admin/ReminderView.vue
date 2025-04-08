@@ -5,15 +5,16 @@
 
             <!-- Search and Create Button (Only for Admin) -->
             <div class="mb-3 flex justify-content-between align-items-center">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tiêu đề nhắc nhở..." style="width: 20%;"
+                <InputText v-if="reminders.values.length > 0" v-model="searchQuery"
+                    placeholder="Tìm kiếm theo tiêu đề nhắc nhở..." style="width: 20%;"
                     class="w-full p-inputtext-sm mr-3" />
                 <Button v-if="isAdmin" label="Tạo Nhắc Nhở" class="left-10" severity="success" raised size="small"
                     @click="openCreateDialog" style="margin-left: 10px;" />
             </div>
 
             <!-- Reminder DataTable -->
-            <DataTable :value="filteredReminders" paginator :rows="10" :rowsPerPageOptions="[10, 15, 20]"
-                class="p-datatable-sm">
+            <DataTable v-if="reminders.values.length > 0" :value="filteredReminders" paginator :rows="10"
+                :rowsPerPageOptions="[10, 15, 20]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
                         {{ index + 1 }}
@@ -69,6 +70,7 @@
                     </template>
                 </Column>
             </DataTable>
+            <div v-else>Chưa có bất kỳ nhắc nhở nào!😊</div>
         </div>
     </div>
 

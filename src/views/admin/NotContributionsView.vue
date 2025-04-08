@@ -17,13 +17,14 @@
                 </select>
             </div>
             <div class="mb-3">
-                <InputText v-model="searchQuery" placeholder="Tìm kiếm theo mã thành viên or tên..."
-                    class="w-full p-inputtext-sm" style="width: 25%;" />
-                <Button label="Create reminder" severity="success" class="left-10" raised size="small"
-                    @click="openCreateDialog" />
+                <InputText v-if="users.values.length > 0" v-model="searchQuery"
+                    placeholder="Tìm kiếm theo mã thành viên or tên..." class="w-full p-inputtext-sm"
+                    style="width: 25%;" />
+                <!-- <Button label="Create reminder" severity="success" class="left-10" raised size="small"
+                    @click="openCreateDialog" /> -->
             </div>
-            <DataTable :value="filteredUsers" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-                class="p-datatable-sm">
+            <DataTable v-if="users.values.length > 0" :value="filteredUsers" paginator :rows="15"
+                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
                         {{ index + 1 }}
@@ -51,6 +52,7 @@
                     </template>
                 </Column> -->
             </DataTable>
+            <div v-else>Chưa có thành viên không đóng quỹ!😊</div>
         </div>
     </div>
     <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">

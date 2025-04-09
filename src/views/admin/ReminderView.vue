@@ -305,6 +305,12 @@ const validateForm = () => {
 };
 
 // CRUD Methods
+const formatDateToLocalISOString = (date: Date): string => {
+    const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+    const localTime = new Date(date.getTime() - offsetMs);
+    return localTime.toISOString().slice(0, 19); // YYYY-MM-DDTHH:mm:ss
+};
+
 const saveReminder = async () => {
     if (!isAdmin.value || !validateForm()) return;
 
@@ -314,7 +320,10 @@ const saveReminder = async () => {
             title: form.value.title,
             description: form.value.description,
             type: form.value.type,
-            scheduledTime: new Date(form.value.scheduledTime).toISOString().slice(0, 19),
+            scheduledTime: form.value.scheduledTime
+                ? formatDateToLocalISOString(form.value.scheduledTime) // hoặc formatDateToLocalISOString nếu muốn giữ nguyên giờ
+                : null,
+
             isSendChatGroup: form.value.isSendChatGroup,
             userIds: selectedUsers.value
         };

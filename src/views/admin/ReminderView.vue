@@ -5,7 +5,7 @@
 
             <!-- Search and Create Button (Only for Admin) -->
             <div class="mb-3 flex justify-content-between align-items-center">
-                <InputText v-if="reminders.values.length > 0" v-model="searchQuery"
+                <InputText v-if="reminders.length > 0" v-model="searchQuery"
                     placeholder="Tìm kiếm theo tiêu đề nhắc nhở..." style="width: 20%;"
                     class="w-full p-inputtext-sm mr-3" />
                 <Button v-if="isAdmin" label="Tạo Nhắc Nhở" class="left-10" severity="success" raised size="small"
@@ -13,7 +13,7 @@
             </div>
 
             <!-- Reminder DataTable -->
-            <DataTable v-if="reminders.values.length > 0" :value="filteredReminders" paginator :rows="10"
+            <DataTable v-if="reminders.length > 0" :value="filteredReminders" paginator :rows="10"
                 :rowsPerPageOptions="[10, 15, 20]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
@@ -53,19 +53,22 @@
                 </Column>
                 <Column field="users" header="Người Nhận" style="width: 20%;">
                     <template #body="{ data }">
-                        <div>
+                        <div v-if="selectedUsers.length === userOptions.length">
+                            Tất cả
+                        </div>
+                        <div v-else>
                             {{ getUserNames(data) }}
                         </div>
                     </template>
                 </Column>
                 <!-- Action Column (Only for Admin) -->
-                <Column v-if="isAdmin" header="Thao Tác">
+                <Column v-if="isAdmin" header="Thao Tác" style="width: 15%;">
                     <template #body="{ data }">
                         <div class="flex gap-2">
                             <Button label="Sửa" icon="pi pi-pencil" severity="info" size="small"
                                 @click="openUpdateDialog(data)" />
                             <Button label="Xóa" icon="pi pi-trash" class="left-10" severity="danger" size="small"
-                                @click="confirmDeleteReminder(data)" />
+                                @click="confirmDeleteReminder(data)" style="margin-left: 10px;" />
                         </div>
                     </template>
                 </Column>
@@ -220,9 +223,8 @@ const checkIsAdmin = async () => {
 // Data Fetching Methods
 const fetchUsers = async () => {
     try {
-        const response = await axiosInstance.get<User[]>(`/users`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axiosInstance.get<User[]>(`/users/exclude-current`);
+
         userOptions.value = response.data;
     } catch (error) {
         console.error('Error fetching users:', error);

@@ -46,6 +46,8 @@ const fetchContributions = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         contributions.value = response.data;
+        // console.log(contributions.value);
+
     } catch (err) {
         console.error(err);
     } finally {
@@ -61,6 +63,7 @@ const fetchPenBills = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         penBills.value = response.data;
+        console.log(penBills.value);
     } catch (err) {
         console.error(err);
     } finally {
@@ -76,7 +79,7 @@ const fetchInvoices = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         invoices.value = response.data;
-        console.log(invoices.value);
+        // console.log(invoices.value);
 
     } catch (err) {
         console.error(err);
@@ -119,10 +122,7 @@ const handleContributionAction = async (action) => {
             }
         });
 
-        // Remove the item from the list
-        contributions.value = contributions.value.filter(
-            item => item.id !== selectedItemToConfirm.value.id
-        );
+        fetchContributions();
 
     } catch (err) {
         console.error(err);
@@ -160,15 +160,19 @@ const handlePenBillAction = async (action) => {
 // Thêm hàm xử lý phê duyệt thu chi
 const errorMessageInvoice = ref('');
 
-const validateForm = () => {
+const validateForm = (action) => {
     errorMessageInvoice.value = '';
-    if (!selectedFundType.value) errorMessageInvoice.value = 'Vui lòng chọn quỹ trước khi phê duyệt!';
 
-    return Object.values(errorMessageInvoice.value).every(err => err === "");
+    if (action === 'confirm' && !selectedFundType.value) {
+        errorMessageInvoice.value = 'Vui lòng chọn quỹ trước khi phê duyệt!';
+    }
+
+    return errorMessageInvoice.value === "";
 };
 
+
 const handleInvoiceAction = async (action) => {
-    if (!validateForm()) return;
+    if (!validateForm(action)) return;
     try {
         loading.value = true;
 
@@ -256,6 +260,27 @@ const formatCurrency = (value) => value.toLocaleString() + " VND";
 const getStatusSeverity = (status) => {
     return { PAID: "success", PENDING: "info", UNPAID: "danger", PARTIAL: "warn" }[status] || "secondary";
 };
+// invoice
+const getInvoiceStatusSeverity = (status) => {
+    return { APPROVED: "success", PENDING: "info" }[status] || "secondary";
+};
+const getInvoiceStatusLabel = (status) => {
+    return status === "APPROVED" ? "Đã duyệt" : status === "CANCELLED" ? "Bị hủy" : "Đang chờ";
+};
+//contribution
+const getContributionStatusLabel = (status) => {
+    return status === "PAID" ? "Đã thanh toán" : status === "CANCELED" ? "Bị hủy" : status === "LATE" ? "Trễ hạn" : "Đang chờ";
+};
+const getContributionStatusSeverity = (status) => {
+    return { PAID: "success", PENDING: "info", LATE: "warn" }[status] || "secondary";
+};
+//penbill
+const getPenBillStatusLabel = (status) => {
+    return status === "PAID" ? "Đã thanh toán" : status === "CANCELED" ? "Bị hủy" : status === "LATE" ? "Trễ hạn" : "Đang chờ";
+};
+const getPenBillStatusSeverity = (status) => {
+    return { PAID: "success", PENDING: "info", LATE: "warn" }[status] || "secondary";
+};
 
 // Thêm hàm để lấy nhãn cho loại thu chi
 const getInvoiceTypeLabel = (type) => {
@@ -295,6 +320,13 @@ const getInvoiceTypeSeverity = (type) => {
             <Column field="user.fullName" header="Người tạo" sortable />
             <Column field="name" header="Tên" sortable />
             <Column field="description" header="Mô tả" sortable style="width: 20%;" />
+            <Column field="status" header="Trạng thái" sortable style="text-align: center;">
+                <template #body="slotProps">
+                    <Tag v-if="slotProps.data.status !== 'null'" :value="getInvoiceStatusLabel(slotProps.data.status)"
+                        :severity="getInvoiceStatusSeverity(slotProps.data.status)" />
+                    <Tag v-else value="chưa xác định" severity="warn" />
+                </template>
+            </Column>
             <Column field="invoiceType" header="Loại" sortable style="text-align: center;">
                 <template #body="slotProps">
                     <Tag v-if="slotProps.data.invoiceType !== 'null'"
@@ -317,9 +349,11 @@ const getInvoiceTypeSeverity = (type) => {
             <Column header="Hành động" style="width: 22%;">
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')" />
+                        @click="openConfirmDialog(data, 'confirm')"
+                        :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
                     <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')" />
+                        @click="openConfirmDialog(data, 'cancel')"
+                        :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
                 </template>
             </Column>
         </DataTable>
@@ -333,6 +367,7 @@ const getInvoiceTypeSeverity = (type) => {
                     {{ index + 1 }}
                 </template>
             </Column>
+            <Column field="memberName" header="Tên thành viên" />
             <Column field="periodName" header="Kỳ đóng" />
             <Column field="totalAmount" header="Số tiền">
                 <template #body="slotProps">
@@ -341,16 +376,20 @@ const getInvoiceTypeSeverity = (type) => {
             </Column>
             <Column field="paymentStatus" header="Trạng thái">
                 <template #body="slotProps">
-                    <Tag :value="slotProps.data.paymentStatus"
-                        :severity="getStatusSeverity(slotProps.data.paymentStatus)" />
+                    <Tag v-if="slotProps.data.paymentStatus !== 'null'"
+                        :value="getContributionStatusLabel(slotProps.data.paymentStatus)"
+                        :severity="getContributionStatusSeverity(slotProps.data.paymentStatus)" />
+                    <Tag v-else value="chưa xác định" severity="warn" />
                 </template>
             </Column>
             <Column header="Hành động">
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')" />
+                        @click="openConfirmDialog(data, 'confirm')"
+                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
                     <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')" />
+                        @click="openConfirmDialog(data, 'cancel')"
+                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
                 </template>
             </Column>
         </DataTable>
@@ -364,18 +403,30 @@ const getInvoiceTypeSeverity = (type) => {
                     {{ index + 1 }}
                 </template>
             </Column>
+            <Column field="userDto.fullName" header="Tên thành viên" sortable></Column>
+            <Column field="penalty.name" header="Lỗi phạt" sortable></Column>
             <Column field="description" header="Mô Tả" sortable></Column>
             <Column field="amount" header="Tổng cộng" sortable>
                 <template #body="{ data }">
                     {{ formatCurrency(data.amount) }}
                 </template>
             </Column>
-            <Column header="Hành động">
+            <Column field="paymentStatus" header="Trạng thái">
+                <template #body="slotProps">
+                    <Tag v-if="slotProps.data.paymentStatus !== 'null'"
+                        :value="getContributionStatusLabel(slotProps.data.paymentStatus)"
+                        :severity="getContributionStatusSeverity(slotProps.data.paymentStatus)" />
+                    <Tag v-else value="chưa xác định" severity="warn" />
+                </template>
+            </Column>
+            <Column header="Hành động" style="width: 21%;">
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')" />
+                        @click="openConfirmDialog(data, 'confirm')"
+                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
                     <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')" />
+                        @click="openConfirmDialog(data, 'cancel')"
+                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
                 </template>
             </Column>
         </DataTable>

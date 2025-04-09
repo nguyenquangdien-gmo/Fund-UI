@@ -174,7 +174,7 @@ watch(user, (newUser) => {
 
 
 const baseItems = [
-    { label: "Profile", icon: "pi pi-sparkles", command: () => router.push("/profile") },
+    { label: "Profile", icon: "pi pi-user", command: () => router.push("/profile") },
     {
         label: "Danh sách",
         icon: "pi pi-list",

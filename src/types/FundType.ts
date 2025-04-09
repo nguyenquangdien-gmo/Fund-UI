@@ -1,5 +1,5 @@
-enum ExpenseType {
+enum FundType {
   COMMON = 'COMMON',
   SNACK = 'SNACK',
 }
-export default ExpenseType
+export default FundType

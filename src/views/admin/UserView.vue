@@ -24,7 +24,7 @@
                     </template>
                 </Column>
                 <Column field="phone" header="SĐT" sortable></Column>
-                <Column field="position" header="Chức vụ" sortable></Column>
+                <!-- <Column field="position" header="Chức vụ" sortable></Column> -->
                 <Column field="role.name" header="Vai trò " sortable></Column>
 
                 <Column field="joinDate" header="Ngày tham gia" sortable>
@@ -32,11 +32,12 @@
                         {{ formatDate(data.joinDate) }}
                     </template>
                 </Column>
-                <Column header="Actions" style="width: 20%;">
+                <Column header="Actions" style="width: 25%;">
                     <template #body="{ data }">
-                        <Button label="Sửa" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Reset" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Sửa" class="left-10" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
                         <Button label="Xóa" class="left-10" icon="pi pi-trash" severity="danger"
-                            @click="confirmDeleteFund(data)" />
+                            @click="confirmDeleteFund(data)" :hidden="data.role.name === 'ADMIN'" />
                     </template>
                 </Column>
             </DataTable>
@@ -51,64 +52,74 @@
     </Dialog>
 
     <Dialog v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'" @hide="resetErrors"
-        :style="{ width: '30rem' }">
-        <div class="mb-3">
-            <label for="id" class="fw-bold">Mã nhân viên</label>
-            <InputText id="id" v-model="userId" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.id">{{ errors.id }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="fullName" class="fw-bold">Tên</label>
-            <InputText id="fullName" v-model="form.fullName" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.fullName">{{ errors.fullName }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="email" class="fw-bold">Email</label>
-            <InputText id="email" v-model="form.email" class="w-100" type="email" autocomplete="off" />
-            <small class="text-danger" v-if="errors.email">{{ errors.email }}</small>
-        </div>
-        <!-- <div class="mb-3" v-if="!isUpdate">
-            <label for="password" class="fw-bold">Mật khẩu</label>
-            <InputText id="password" type="text" v-model="form.password" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.password">{{ errors.password }}</small>
-        </div> -->
-        <div class="mb-3">
-            <label for="dob" class="fw-bold">Ngày sinh</label>
-            <Calendar id="dob" v-model="seletedDob" dateFormat="dd/mm/yy" class="w-100" showIcon />
-            <small class="text-danger" v-if="errors.dob">{{ errors.dob }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="phone" class="fw-bold">SĐT</label>
-            <InputText id="phone" v-model="form.phoneNumber" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.phone">{{ errors.phone }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="position" class="fw-bold">Chức vụ</label>
-            <InputText id="position" v-model="form.position" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.position">{{ errors.position }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="slugTeam" class="fw-bold">Team</label>
-            <Dropdown id="slugTeam" v-model="selectedTeam" :options="teams" optionLabel="name" optionValue="slug"
-                placeholder="Chọn Team" class="w-100" />
-            <small class="text-danger" v-if="errors.slugTeam">{{ errors.slugTeam }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="joinDate" class="fw-bold">Ngày tham gia</label>
-            <Calendar id="joinDate" v-model="seletedJoinDate" dateFormat="dd/mm/yy" class="w-100" showIcon />
-            <small class="text-danger" v-if="errors.joinDate">{{ errors.joinDate }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="type" class="fw-bold">Vai trò</label>
-            <Dropdown :disabled="isAdmin" v-model="selectedRole" :options="roles" optionLabel="name" optionValue="name"
-                placeholder="Chọn vai trò" class="w-100" />
-            <small class="text-danger" v-if="errors.role">{{ errors.role }}</small>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Hủy" severity="secondary" @click="showUserDialog = false"></Button>
-            <Button type="button" label="Lưu" severity="primary" @click="saveUser"></Button>
-        </div>
-    </Dialog>
+    :style="{ width: '30rem' }">
+    <div class="mb-3">
+        <label for="id" class="fw-bold">
+            Mã nhân viên <span class="text-danger">*</span>
+        </label>
+        <InputText id="id" v-model="userId" class="w-100" type="number" autocomplete="off" />
+        <small class="text-danger" v-if="errors.id">{{ errors.id }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="fullName" class="fw-bold">
+            Tên <span class="text-danger">*</span>
+        </label>
+        <InputText id="fullName" v-model="form.fullName" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.fullName">{{ errors.fullName }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="email" class="fw-bold">
+            Email <span class="text-danger">*</span>
+        </label>
+        <InputText id="email" v-model="form.email" class="w-100" type="email" autocomplete="off" />
+        <small class="text-danger" v-if="errors.email">{{ errors.email }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="dob" class="fw-bold">
+            Ngày sinh <span class="text-danger">*</span>
+        </label>
+        <Calendar id="dob" v-model="seletedDob" dateFormat="dd/mm/yy" class="w-100" showIcon />
+        <small class="text-danger" v-if="errors.dob">{{ errors.dob }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="phone" class="fw-bold">SĐT</label>
+        <InputText id="phone" v-model="form.phoneNumber" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.phone">{{ errors.phone }}</small>
+    </div>
+    <!-- <div class="mb-3">
+        <label for="position" class="fw-bold">Chức vụ</label>
+        <InputText id="position" v-model="form.position" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.position">{{ errors.position }}</small>
+    </div> -->
+    <div class="mb-3">
+        <label for="slugTeam" class="fw-bold">
+            Team <span class="text-danger">*</span>
+        </label>
+        <Dropdown id="slugTeam" v-model="selectedTeam" :options="teams" optionLabel="name" optionValue="slug"
+            placeholder="Chọn Team" class="w-100" />
+        <small class="text-danger" v-if="errors.slugTeam">{{ errors.slugTeam }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="joinDate" class="fw-bold">
+            Ngày tham gia <span class="text-danger">*</span>
+        </label>
+        <Calendar id="joinDate" v-model="seletedJoinDate" dateFormat="dd/mm/yy" class="w-100" showIcon />
+        <small class="text-danger" v-if="errors.joinDate">{{ errors.joinDate }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="type" class="fw-bold">
+            Vai trò <span class="text-danger">*</span>
+        </label>
+        <Dropdown :disabled="isAdmin" v-model="selectedRole" :options="roles" optionLabel="name" optionValue="name"
+            placeholder="Chọn vai trò" class="w-100" />
+        <small class="text-danger" v-if="errors.role">{{ errors.role }}</small>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <Button type="button" label="Hủy" severity="secondary" @click="showUserDialog = false"></Button>
+        <Button type="button" label="Lưu" severity="primary" @click="saveUser"></Button>
+    </div>
+</Dialog>
+
 </template>
 
 <script setup lang="ts">
@@ -203,11 +214,12 @@ const filteredFunds = computed(() => {
     if (!searchQuery.value) return users.value;
     return users.value.filter(user => user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) || user.id === parseInt(searchQuery.value));
 });
-
+const emailDomain = "@runsystem.net";
 const openCreateDialog = () => {
+
     form.value = {
         id: 0,
-        email: "",
+        email: form.value.email + emailDomain,
         fullName: "",
         role: "",
         dob: "",
@@ -222,9 +234,13 @@ const openCreateDialog = () => {
     showUserDialog.value = true;
     seletedDob.value = null;
     seletedJoinDate.value = null;
+    selectedTeam.value = findJavaTeam('java');
 
 };
-
+const findJavaTeam = (slugTeam:string) => {
+  const team = teams.value.find(team => team.name.toLowerCase() === slugTeam);
+  return team ? team.slug : '';
+};
 const openUpdateDialog = (user: User) => {
     form.value = {
         id: user.id,
@@ -237,7 +253,7 @@ const openUpdateDialog = (user: User) => {
         joinDate: user.joinDate,
         slugTeam: user.team.name || ""
     };
-    selectedTeam.value = user.team.name || "";
+    selectedTeam.value = findJavaTeam(user.team.slug);
 
 
     selectedRole.value = typeof user.role === 'object' && user.role !== null ? user.role.name : user.role || "";
@@ -277,9 +293,7 @@ const validateForm = () => {
     if (!selectedRole.value) errors.value.role = "Vui lòng chọn vai trò!";
     if (!seletedDob.value) errors.value.dob = "Vui lòng chọn ngày sinh!";
     if (!seletedJoinDate.value) errors.value.dob = "Vui lòng chọn ngày tham gia!";
-    if (!form.value.phoneNumber) errors.value.phone = "Vui lòng nhập SĐT!";
     if (!selectedTeam.value) errors.value.slugTeam = "Vui lòng nhập team!";
-    if (!form.value.position) errors.value.position = "Vui lòng nhập chức vụ!";
 
     return Object.values(errors.value).every(err => err === "");
 };
@@ -287,15 +301,16 @@ const saveUser = async () => {
     try {
         if (!validateForm()) return;
 
-        // Xử lý dữ liệu chung cho cả create và update
-
         form.value.id = parseInt(userId.value);
         form.value.role = selectedRole.value ?? "";
 
-        // Chuyển đổi đối tượng Date thành chuỗi ngày tháng
         form.value.dob = seletedDob.value ? seletedDob.value.toISOString().split('T')[0] : '';
         form.value.joinDate = seletedJoinDate.value ? seletedJoinDate.value.toISOString().split('T')[0] : '';
         form.value.slugTeam = selectedTeam.value;
+
+        if (form.value.email && !form.value.email.includes('@')) {
+            form.value.email += '@runsystem.net';
+        }
 
         if (isUpdate.value) {
             console.log("Updating user:", form.value);
@@ -311,6 +326,7 @@ const saveUser = async () => {
         console.error('Error saving user:', error);
     }
 };
+
 
 
 

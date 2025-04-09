@@ -36,9 +36,7 @@
                         </div>
                         <Button v-if="unreadRemindersCount > 0" label="Đã xem tất cả"
                             class="p-button-sm p-button-text mark-all-read-btn" @click="markAllAsRead" />
-                        <div v-else>
-                            <p class="no-reminder">Không có nhắc nhở mới!</p>
-                        </div>
+                    
                     </OverlayPanel>
 
                     <!-- Nút Logout -->
@@ -75,7 +73,7 @@ const fetchReminders = async () => {
     try {
         const response = await axiosInstance.get(`/users/${user.value.id}/reminders`);
         reminders.value = response.data;
-        // console.log("Reminders:", reminders.value);
+        console.log("Reminders:", reminders.value);
 
 
     } catch (error) {
@@ -104,8 +102,10 @@ const markAsReadAndGo = (reminderId: number) => {
             }
             return r;
         });
+        console.log(reminder);
 
-        if (reminder.type !== ReminderType.OTHER) {
+
+        if (reminder.reminderType !== ReminderType.OTHER) {
             router.push("/contributions");
         } else {
             router.push("/user/reminders");
@@ -175,14 +175,15 @@ watch(user, (newUser) => {
 
 const baseItems = [
     { label: "Profile", icon: "pi pi-user", command: () => router.push("/profile") },
+    { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
     {
         label: "Danh sách",
         icon: "pi pi-list",
         items: [
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
             { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/user/late") },
-            { label: "Nợ phạt", icon: "pi pi-pencil", command: () => router.push("/bills") },
-            { label: "Hóa đơn", icon: "pi pi-bell", command: () => router.push("/user/invoices") },
+            { label: "Nợ phạt", icon: "pi pi-times-circle", command: () => router.push("/bills") },
+            { label: "Hóa đơn", icon: "pi pi-receipt", command: () => router.push("/user/invoices") },
         ]
     },
     { label: "Lịch sử", icon: "pi pi-history", command: () => router.push("/histories") },
@@ -191,7 +192,6 @@ const baseItems = [
 ];
 
 const adminItems = [
-    { label: "Thống kê", icon: "pi pi-chart-line", command: () => router.push("/stats") },
     { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
     {
         label: "Quản lý",

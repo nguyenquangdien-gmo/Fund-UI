@@ -53,11 +53,11 @@
                 </Column>
                 <Column field="users" header="Người Nhận" style="width: 20%;">
                     <template #body="{ data }">
-                        <div v-if="selectedUsers.length === userOptions.length">
+                        <div v-if="isAllUsersSelected(data.users)">
                             Tất cả
                         </div>
                         <div v-else>
-                            {{ getUserNames(data) }}
+                            {{ data.users.length }} người
                         </div>
                     </template>
                 </Column>
@@ -106,8 +106,9 @@
 
         <div class="col-12 mb-3 item-dialog">
             <label for="type" class="font-bold mb-2">Loại Nhắc Nhở</label>
-            <Dropdown id="type" v-model="form.type" :options="reminderTypes" optionLabel="name" optionValue="value"
-                placeholder="Chọn loại nhắc nhở" :class="{ 'p-invalid': errors.type }" class="w-full" />
+            <Dropdown id="type" v-model="form.reminderType" :options="reminderTypes" optionLabel="name"
+                optionValue="value" placeholder="Chọn loại nhắc nhở" :class="{ 'p-invalid': errors.type }"
+                class="w-full" />
             <small class="p-error" v-if="errors.type">{{ errors.type }}</small>
         </div>
 
@@ -116,6 +117,10 @@
             <Calendar id="scheduledTime" v-model="form.scheduledTime" showTime hourFormat="24"
                 placeholder="Để trống nếu gửi ngay" class="w-full" />
         </div>
+        <!-- <div class=" mb-3 item-dialog">
+            <label class="font-bold mb-2">Gửi Ngay</label>
+            <Checkbox v-model="sendNow" :binary="true" />
+        </div> -->
 
         <div class="col-12 mb-3 item-dialog">
             <label for="users" class="font-bold mb-2">Người Nhận</label>
@@ -167,8 +172,22 @@ import type { User } from '@/types/User';
 import formatTextWithLinks from '@/utils/FormateTextWithUrl';
 import type Reminder from '@/types/Reminder';
 
+const isAllUsersSelected = (users: User[]) => {
+    // Kiểm tra nếu số lượng người dùng được chọn bằng tổng số người dùng có thể chọn
+    return users.length > 0 && users.length === userOptions.value.length;
+};
 
-
+interface Reminder {
+    id: number
+    title: string
+    description: string
+    type: string
+    status: string
+    createdAt: string
+    scheduledTime: string | null
+    isSendChatGroup: boolean
+    users: User[]
+}
 // Composition Setup
 const router = useRouter();
 const token = localStorage.getItem('accessToken');
@@ -183,6 +202,7 @@ const reminderToDelete = ref<Reminder | null>(null);
 const userOptions = ref<User[]>([]);
 const isAdmin = ref(false);
 const selectedUsers = ref<number[]>([]);
+// const sendNow = ref(false);
 
 // Reminder type options
 const reminderTypes = [
@@ -196,7 +216,7 @@ const form = ref({
     id: 0,
     title: "",
     description: "",
-    type: "",
+    reminderType: "",
     scheduledTime: new Date(),
     isSendChatGroup: false
 });
@@ -237,6 +257,7 @@ const fetchReminders = async () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         reminders.value = response.data;
+        console.log(response.data);
     } catch (error) {
         console.error('Error fetching reminders:', error);
     }
@@ -258,7 +279,7 @@ const openCreateDialog = () => {
         id: 0,
         title: "",
         description: "",
-        type: "",
+        reminderType: "",
         scheduledTime: new Date(),
         isSendChatGroup: false
     };
@@ -268,21 +289,17 @@ const openCreateDialog = () => {
 };
 
 const openUpdateDialog = (reminder: Reminder) => {
-    // if (!isAdmin.value) return;
-
     form.value = {
         id: reminder.id,
         title: reminder.title,
         description: reminder.description,
-        type: reminder.type,
+        reminderType: reminder.type, // Thay đổi từ reminder.reminderType thành reminder.type
         scheduledTime: reminder.scheduledTime ? new Date(reminder.scheduledTime) : new Date(),
         isSendChatGroup: reminder.isSendChatGroup
     };
     selectedUsers.value = reminder.users.map(user => user.id);
     isUpdate.value = true;
     showReminderDialog.value = true;
-    console.log(form.value);
-
 };
 
 const confirmDeleteReminder = (reminder: Reminder) => {
@@ -298,7 +315,7 @@ const validateForm = () => {
 
     if (!form.value.title) errors.value.title = "Tiêu đề là bắt buộc";
     if (!form.value.description) errors.value.description = "Mô tả là bắt buộc";
-    if (!form.value.type) errors.value.type = "Loại nhắc nhở là bắt buộc";
+    if (!form.value.reminderType) errors.value.type = "Loại nhắc nhở là bắt buộc";
     // if (selectedUsers.value.length === 0) errors.value.users = "Phải chọn ít nhất một người nhận";
 
     return Object.values(errors.value).every(err => err === "");
@@ -319,7 +336,7 @@ const saveReminder = async () => {
             id: form.value.id,
             title: form.value.title,
             description: form.value.description,
-            type: form.value.type,
+            type: form.value.reminderType,
             scheduledTime: form.value.scheduledTime
                 ? formatDateToLocalISOString(form.value.scheduledTime) // hoặc formatDateToLocalISOString nếu muốn giữ nguyên giờ
                 : null,

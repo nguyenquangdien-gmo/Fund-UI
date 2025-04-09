@@ -4,7 +4,7 @@ export default interface Reminder {
   id: number
   title: string
   description: string
-  type: string
+  reminderType: string
   status: string
   createdAt: string
   scheduledTime: string | null

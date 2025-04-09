@@ -116,9 +116,9 @@
         <!-- Thông tin hiện tại -->
         <div class="col-12 mb-3 item-dialog lh-2">
             <p class="text-sm text-gray-600">
-                🕒 <strong>Từ ngày cũ:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
-                🕒 <strong>Đến ngày cũ:</strong> {{ formatFullDateTime(scheduleForm.toDate) }}<br />
-                ⏰ <strong>Thời gian gửi cũ:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+                🕒 <strong>Từ ngày:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
+                🕒 <strong>Đến ngày:</strong> {{ formatFullDateTime(scheduleForm.toDate) }}<br />
+                ⏰ <strong>Thời gian gửi:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
             </p>
         </div>
 

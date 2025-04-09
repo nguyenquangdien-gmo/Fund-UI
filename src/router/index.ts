@@ -7,7 +7,7 @@ import PeriodView from '@/views/admin/PeriodView.vue'
 import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
 import axios from 'axios'
-import StatsView from '@/views/admin/StatsView.vue'
+import StatsView from '@/views/StatsView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
 import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
@@ -84,6 +84,12 @@ const router = createRouter({
       path: '/users/late-contributions',
       name: 'late-contributions',
       component: LateContributions,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/stats',
+      name: 'stats',
+      component: StatsView,
       meta: { requiresAuth: true },
     },
     {
@@ -168,12 +174,6 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: UserView,
-      meta: { requiresAdmin: true, requiresAuth: true },
-    },
-    {
-      path: '/stats',
-      name: 'stats',
-      component: StatsView,
       meta: { requiresAdmin: true, requiresAuth: true },
     },
 

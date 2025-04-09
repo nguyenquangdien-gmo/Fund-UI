@@ -52,6 +52,8 @@
             <div class="p-fluid">
                 <!-- <p class="mb-2">Bạn có chắc muốn đóng quỹ?</p> -->
                 <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
+                <Dropdown id="fundType" v-model="selectedFundType" :options="fundOptions" optionLabel="label"
+                    optionValue="value" placeholder="Chọn quỹ" class="w-full" />
                 <InputText :value="formatCurrency(paymentAmount)" type="text" class="p-inputtext w-full" disabled />
                 <div class="flex justify-end gap-2 mt-4">
                     <Button label="Hủy" class="p-button-text" @click="showDialog = false" />
@@ -63,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
@@ -72,6 +74,7 @@ import Dialog from "primevue/dialog";
 import axiosInstance from '@/router/Interceptor';
 import formatCurrency from "@/utils/FormatCurrency";
 import formatDate from "@/utils/FormatDate";
+import Dropdown from "primevue/dropdown";
 
 
 // const baseURL = "http://localhost:8080/api/v1";
@@ -83,7 +86,7 @@ const userId = ref(user ? user.id : null);
 const searchQuery = ref("");
 const selectedContribution = ref(null);
 const showDialog = ref(false);
-const paymentAmount = ref(150000);
+const paymentAmount = ref(0);
 const token = localStorage.getItem("accessToken");
 
 const fetchPendingContributions = async () => {
@@ -103,6 +106,54 @@ const fetchPendingContributions = async () => {
         loading.value = false;
     }
 };
+//fetch fund
+const funds = ref([]);
+const fundOptions = ref([]);
+const selectedFundType = ref('ALL');
+
+// Theo dõi thay đổi selectedFundType
+watch(selectedFundType, (newValue) => {
+    if (newValue === "ALL" || (Array.isArray(newValue) && newValue.length === 0)) {
+        // Nếu chọn "Tất cả", lấy tất cả quỹ
+        const total = funds.value.reduce((sum, fund) => sum + Number(fund.amount), 0);
+        paymentAmount.value = total;
+        return;
+    }
+
+    const selectedTypes = Array.isArray(newValue) ? newValue : [newValue];
+
+    const total = funds.value
+        .filter(fund => selectedTypes.includes(fund.type))
+        .reduce((sum, fund) => sum + Number(fund.amount), 0);
+
+    paymentAmount.value = total;
+});
+
+
+const fetchFund = async () => {
+    try {
+        if (!token) {
+            throw new Error("Unauthorized");
+        }
+
+        const response = await axiosInstance.get(`/funds`);
+        funds.value = response.data;
+
+        fundOptions.value = [
+            { label: "Tất cả", value: "ALL" },
+            ...funds.value.map((fund) => ({
+                label: fund.name,
+                value: fund.type
+            }))
+        ];
+    } catch (err) {
+        console.error(err);
+    } finally {
+        loading.value = false;
+    }
+};
+
+
 const qrCode = ref(null);
 const fetchTeam = async () => {
     try {
@@ -131,6 +182,7 @@ const fetchTeam = async () => {
 }
 onMounted(() => {
     fetchTeam();
+    fetchFund();
     fetchPendingContributions();
 });
 const filteredContributions = computed(() => {
@@ -161,8 +213,11 @@ const confirmPayment = async () => {
             periodId: selectedContribution.value.id,
             userId: userId.value,
             totalAmount: paymentAmount.value,
+            fundType: selectedFundType.value === 'ALL' ? '' : selectedFundType.value,
             note: `Thanh toán quỹ tháng ${selectedContribution.value.month} năm ${selectedContribution.value.year}`,
         };
+        console.log("Payment Data:", paymentData);
+        selectedFundType.value = 'ALL';
         // console.log(paymentData);
 
 
@@ -191,5 +246,11 @@ const confirmPayment = async () => {
 
 .p-fluid {
     text-align: center;
+}
+
+#fundType {
+    margin: 0;
+    margin-bottom: 10px;
+    width: 66%;
 }
 </style>

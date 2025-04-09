@@ -10,16 +10,9 @@ import axiosInstance from '@/router/Interceptor';
 import Button from "primevue/button";
 
 const token = localStorage.getItem("accessToken");
-// const baseURL = "http://localhost:8080/api/v1";
 const loading = ref(true);
 const searchQuery = ref("");
-// Thay đổi giá trị mặc định thành "invoices"
-const selectedListType = ref("invoices");
-const listOptions = ref([
-    { label: "Phê duyệt thu chi", value: "invoices" },
-    { label: "Phê duyệt đóng quỹ", value: "contributions" },
-    { label: "Phê duyệt nộp phạt", value: "penBills" }
-]);
+const allItems = ref([]);
 
 const fundOptions = ref([
     { label: "Quỹ chung", value: "COMMON" },
@@ -32,21 +25,72 @@ const showConfirmDialog = ref(false);
 const confirmDialogMessage = ref("");
 const selectedItemToConfirm = ref(null);
 const confirmAction = ref(null);
+const errorMessage = ref('');
 
-const contributions = ref([]);
-const penBills = ref([]);
-// Thêm mảng cho danh sách thu chi
-const invoices = ref([]);
-
-// Fetch contributions
-const fetchContributions = async () => {
+// Fetch all data and combine into one list
+const fetchAllData = async () => {
     try {
+        loading.value = true;
         if (!token) throw new Error("Unauthorized");
-        const response = await axiosInstance.get(`/contributions/pending`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        contributions.value = response.data;
-        // console.log(contributions.value);
+
+        // Fetch all three types of data in parallel
+        const [invoicesResponse, contributionsResponse, penBillsResponse] = await Promise.all([
+            axiosInstance.get(`/invoices/pending`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }),
+            axiosInstance.get(`/contributions/pending`, {
+                headers: { Authorization: `Bearer ${token}` }
+            }),
+            axiosInstance.get(`/pen-bills/pending`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+        ]);
+
+        // Transform invoices data
+        const invoicesData = invoicesResponse.data.map(item => ({
+            ...item,
+            itemType: 'invoice',
+            displayName: item.name,
+            displayAmount: item.amount,
+            displayStatus: item.status,
+            displayDate: item.createdAt,
+            typeSeverity: item.invoiceType === "INCOME" ? "success" : "danger",
+            typeLabel: item.invoiceType === "INCOME" ? "Phiếu thu" : "Phiếu chi",
+            sortOrder: isPending(item.status) ? 0 : 1 // Pending items get priority
+        }));
+
+        // Transform contributions data
+        const contributionsData = contributionsResponse.data.map(item => ({
+            ...item,
+            itemType: 'contribution',
+            displayName: item.memberName,
+            displayAmount: item.totalAmount,
+            displayStatus: item.paymentStatus,
+            displayDate: new Date().toISOString(), // Default to current date if not available
+            typeSeverity: "info",
+            typeLabel: "Đóng quỹ",
+            sortOrder: isPending(item.paymentStatus) ? 0 : 1 // Pending items get priority
+        }));
+
+        // Transform penalty bills data
+        const penBillsData = penBillsResponse.data.map(item => ({
+            ...item,
+            itemType: 'penBill',
+            displayName: item.userDto?.fullName || "N/A",
+            displayAmount: item.amount,
+            displayStatus: item.paymentStatus,
+            displayDate: new Date().toISOString(), // Default to current date if not available
+            typeSeverity: "warn",
+            typeLabel: "Nộp phạt",
+            sortOrder: isPending(item.paymentStatus) ? 0 : 1 // Pending items get priority
+        }));
+
+        // Combine all data
+        allItems.value = [
+            ...invoicesData,
+            ...contributionsData,
+            ...penBillsData
+        ];
 
     } catch (err) {
         console.error(err);
@@ -55,153 +99,164 @@ const fetchContributions = async () => {
     }
 };
 
-// Fetch penalty bills
-const fetchPenBills = async () => {
-    try {
-        if (!token) throw new Error("Unauthorized");
-        const response = await axiosInstance.get(`/pen-bills/pending`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        penBills.value = response.data;
-        console.log(penBills.value);
-    } catch (err) {
-        console.error(err);
-    } finally {
-        loading.value = false;
-    }
-};
-
-// Thêm hàm fetch danh sách thu chi
-const fetchInvoices = async () => {
-    try {
-        if (!token) throw new Error("Unauthorized");
-        const response = await axiosInstance.get(`/invoices/pending`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        invoices.value = response.data;
-        // console.log(invoices.value);
-
-    } catch (err) {
-        console.error(err);
-    } finally {
-        loading.value = false;
-    }
+// Helper function to check if status is pending
+const isPending = (status) => {
+    return status === "PENDING";
 };
 
 onMounted(() => {
-    // Mặc định gọi API lấy danh sách thu chi
-    fetchInvoices();
-    // Vẫn gọi API các danh sách khác để tải sẵn dữ liệu
-    fetchContributions();
-    fetchPenBills();
+    fetchAllData();
 });
 
-watch(selectedListType, () => {
-    loading.value = true;
-    if (selectedListType.value === "contributions") {
-        fetchContributions();
-    } else if (selectedListType.value === "penBills") {
-        fetchPenBills();
-    } else if (selectedListType.value === "invoices") {
-        fetchInvoices();
-    }
-});
+// Filter and sort function for combined list - now puts pending items first
+const filteredItems = computed(() => {
+    let items = allItems.value;
 
-// Confirm or cancel contribution
-const handleContributionAction = async (action) => {
-    try {
-        loading.value = true;
-        const endpoint = action === 'confirm'
-            ? `/contributions/${selectedItemToConfirm.value.id}/approve`
-            : `/contributions/${selectedItemToConfirm.value.id}/reject`;
+    // Apply search filter if query exists
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        items = items.filter(item => {
+            // Common fields to search in
+            if (item.id && item.id.toString().includes(query)) return true;
+            if (item.displayName && item.displayName.toLowerCase().includes(query)) return true;
 
-        await axiosInstance.post(endpoint, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            // Item-specific fields
+            if (item.itemType === 'invoice') {
+                return (
+                    (item.description && item.description.toLowerCase().includes(query)) ||
+                    (item.name && item.name.toLowerCase().includes(query))
+                );
+            } else if (item.itemType === 'contribution') {
+                return (
+                    (item.periodName && item.periodName.toLowerCase().includes(query))
+                );
+            } else if (item.itemType === 'penBill') {
+                return (
+                    (item.description && item.description.toLowerCase().includes(query)) ||
+                    (item.penalty?.name && item.penalty.name.toLowerCase().includes(query))
+                );
             }
+
+            return false;
         });
-
-        fetchContributions();
-
-    } catch (err) {
-        console.error(err);
-    } finally {
-        loading.value = false;
-        showConfirmDialog.value = false;
-    }
-};
-
-// Confirm or cancel penalty bill
-const handlePenBillAction = async (action) => {
-    try {
-        loading.value = true;
-        const endpoint = action === 'confirm'
-            ? `/pen-bills/${selectedItemToConfirm.value.id}/approve`
-            : `/pen-bills/${selectedItemToConfirm.value.id}/reject`;
-
-        await axiosInstance.post(endpoint, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        fetchPenBills();
-
-    } catch (err) {
-        console.error(err);
-    } finally {
-        loading.value = false;
-        showConfirmDialog.value = false;
-    }
-};
-
-// Thêm hàm xử lý phê duyệt thu chi
-const errorMessageInvoice = ref('');
-
-const validateForm = (action) => {
-    errorMessageInvoice.value = '';
-
-    if (action === 'confirm' && !selectedFundType.value) {
-        errorMessageInvoice.value = 'Vui lòng chọn quỹ trước khi phê duyệt!';
     }
 
-    return errorMessageInvoice.value === "";
-};
-
-
-const handleInvoiceAction = async (action) => {
-    if (!validateForm(action)) return;
-    try {
-        loading.value = true;
-
-        if (action === 'confirm' && !selectedFundType.value) {
-            errorMessageInvoice.value = "Vui lòng chọn quỹ trước khi phê duyệt!";
-            loading.value = false;
-
+    // Sort by sortOrder (pending first) and then by date (newest first)
+    return items.sort((a, b) => {
+        // First sort by pending status
+        if (a.sortOrder !== b.sortOrder) {
+            return a.sortOrder - b.sortOrder;
         }
 
-        const endpoint = action === 'confirm'
-            ? `/invoices/${selectedItemToConfirm.value.id}/approve`
-            : `/invoices/${selectedItemToConfirm.value.id}/reject`;
+        // Then sort by date (newest first)
+        const dateA = new Date(a.displayDate);
+        const dateB = new Date(b.displayDate);
+        return dateB - dateA;
+    });
+});
 
-        console.log(selectedFundType.value);
+const formatCurrency = (value) => value.toLocaleString() + " VND";
 
-        await axiosInstance.put(
-            `${endpoint}?fundType=${encodeURIComponent(selectedFundType.value)}`,
-            {},
-            {
+// Get status label and severity for any item type
+const getStatusLabel = (item) => {
+    const status = item.displayStatus;
+
+    if (item.itemType === 'invoice') {
+        return status === "APPROVED" ? "Đã duyệt" : status === "CANCELLED" ? "Bị hủy" : "Đang chờ";
+    } else {
+        return status === "PAID" ? "Đã thanh toán" : status === "CANCELED" ? "Bị hủy" : status === "LATE" ? "Trễ hạn" : "Đang chờ";
+    }
+};
+
+const getStatusSeverity = (item) => {
+    const status = item.displayStatus;
+
+    if (item.itemType === 'invoice') {
+        return status === "APPROVED" ? "success" : status === "PENDING" ? "info" : "secondary";
+    } else {
+        return status === "PAID" ? "success" : status === "PENDING" ? "info" : status === "LATE" ? "warn" : "secondary";
+    }
+};
+
+const getItemDescription = (item) => {
+    if (item.itemType === 'invoice') {
+        return item.description || '';
+    } else if (item.itemType === 'contribution') {
+        return item.periodName || '';
+    } else if (item.itemType === 'penBill') {
+        return item.description || '';
+    }
+    return '';
+};
+
+const validateForm = (action, item) => {
+    errorMessage.value = '';
+
+    if (action === 'confirm' && item.itemType === 'invoice' && !selectedFundType.value) {
+        errorMessage.value = 'Vui lòng chọn quỹ trước khi phê duyệt!';
+        return false;
+    }
+
+    return true;
+};
+
+// Unified action handler
+const handleConfirmAction = async () => {
+    if (!selectedItemToConfirm.value) return;
+
+    const item = selectedItemToConfirm.value;
+    const action = confirmAction.value;
+
+    if (!validateForm(action, item)) return;
+
+    try {
+        loading.value = true;
+
+        let endpoint = '';
+        let method = 'post';
+        let params = {};
+
+        if (item.itemType === 'invoice') {
+            endpoint = action === 'confirm'
+                ? `/invoices/${item.id}/approve`
+                : `/invoices/${item.id}/reject`;
+            method = 'put';
+
+            if (action === 'confirm') {
+                params = { fundType: selectedFundType.value };
+            }
+        } else if (item.itemType === 'contribution') {
+            endpoint = action === 'confirm'
+                ? `/contributions/${item.id}/approve`
+                : `/contributions/${item.id}/reject`;
+        } else if (item.itemType === 'penBill') {
+            endpoint = action === 'confirm'
+                ? `/pen-bills/${item.id}/approve`
+                : `/pen-bills/${item.id}/reject`;
+        }
+
+        if (method === 'put' && Object.keys(params).length > 0) {
+            await axiosInstance.put(
+                `${endpoint}?fundType=${encodeURIComponent(params.fundType)}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        } else {
+            await axiosInstance.post(endpoint, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
-            }
-        );
+            });
+        }
 
-        errorMessageInvoice.value = "";
-        fetchInvoices();
-
+        // Refresh data after action
+        fetchAllData();
 
     } catch (err) {
         console.error(err);
@@ -220,76 +275,20 @@ const openConfirmDialog = (item, action) => {
         ? 'Bạn có chắc chắn muốn phê duyệt không?'
         : 'Bạn có chắc chắn muốn hủy không?';
 
-    if (action === 'confirm' && selectedListType.value === 'invoices') {
+    if (action === 'confirm' && item.itemType === 'invoice') {
         selectedFundType.value = null;
     }
 
     showConfirmDialog.value = true;
 };
 
-// Computed filters and pagination
-const filteredContributions = computed(() => {
-    if (!searchQuery.value) return contributions.value;
-    return contributions.value.filter(item =>
-        item.id.toString().includes(searchQuery.value) ||
-        item.periodName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        item.paymentStatus.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
-
-const filteredPenBills = computed(() => {
-    if (!searchQuery.value) return penBills.value;
-    return penBills.value.filter(item =>
-        item.id.toString().includes(searchQuery.value) ||
-        item.description.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
-
-// Thêm computed property cho danh sách thu chi đã lọc
-const filteredInvoices = computed(() => {
-    if (!searchQuery.value) return invoices.value;
-    return invoices.value.filter(item =>
-        item.id.toString().includes(searchQuery.value) ||
-        item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
-
-const formatCurrency = (value) => value.toLocaleString() + " VND";
-
-const getStatusSeverity = (status) => {
-    return { PAID: "success", PENDING: "info", UNPAID: "danger", PARTIAL: "warn" }[status] || "secondary";
-};
-// invoice
-const getInvoiceStatusSeverity = (status) => {
-    return { APPROVED: "success", PENDING: "info" }[status] || "secondary";
-};
-const getInvoiceStatusLabel = (status) => {
-    return status === "APPROVED" ? "Đã duyệt" : status === "CANCELLED" ? "Bị hủy" : "Đang chờ";
-};
-//contribution
-const getContributionStatusLabel = (status) => {
-    return status === "PAID" ? "Đã thanh toán" : status === "CANCELED" ? "Bị hủy" : status === "LATE" ? "Trễ hạn" : "Đang chờ";
-};
-const getContributionStatusSeverity = (status) => {
-    return { PAID: "success", PENDING: "info", LATE: "warn" }[status] || "secondary";
-};
-//penbill
-const getPenBillStatusLabel = (status) => {
-    return status === "PAID" ? "Đã thanh toán" : status === "CANCELED" ? "Bị hủy" : status === "LATE" ? "Trễ hạn" : "Đang chờ";
-};
-const getPenBillStatusSeverity = (status) => {
-    return { PAID: "success", PENDING: "info", LATE: "warn" }[status] || "secondary";
-};
-
-// Thêm hàm để lấy nhãn cho loại thu chi
-const getInvoiceTypeLabel = (type) => {
-    return type === "INCOME" ? "Phiếu thu" : type === "EXPENSE" ? "Phiếu chi" : type;
-};
-
-// Thêm hàm để lấy severity cho loại thu chi
-const getInvoiceTypeSeverity = (type) => {
-    return type === "INCOME" ? "success" : type === "EXPENSE" ? "danger" : "info";
+// Helper to check if item can be approved/rejected
+const canPerformAction = (item) => {
+    if (item.itemType === 'invoice') {
+        return item.status !== 'APPROVED' && item.status !== 'CANCELLED';
+    } else {
+        return item.paymentStatus !== 'PAID' && item.paymentStatus !== 'CANCELED' && item.paymentStatus !== 'LATE';
+    }
 };
 </script>
 
@@ -298,135 +297,56 @@ const getInvoiceTypeSeverity = (type) => {
         <h2 class="text-xl font-bold mb-4">Quản lý phê duyệt</h2>
 
         <div class="mb-4 flex items-center gap-4">
-            <Dropdown v-model="selectedListType" :options="listOptions" optionLabel="label" optionValue="value"
-                placeholder="Chọn danh sách" class="w-64" />
-
-            <InputText v-model="searchQuery" placeholder="Tìm kiếm..." class="p-inputtext w-64 left-10"
-                style="width: 27%;" />
-
+            <InputText v-model="searchQuery" placeholder="Tìm kiếm..." class="p-inputtext w-64" style="width: 40%;" />
+            <!-- <div class="ml-auto">
+                <Tag value="Đang chờ" severity="info" class="mr-2" />
+                <span class="text-sm">: Ưu tiên hiển thị</span>
+            </div> -->
         </div>
 
         <p v-if="loading">Đang tải dữ liệu...</p>
 
-        <!-- Bảng thu chi -->
-        <DataTable v-if="selectedListType === 'invoices' && filteredInvoices.length > 0" :value="filteredInvoices"
-            class="p-datatable-striped" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-            responsiveLayout="scroll">
+        <!-- Unified Approval Table -->
+        <DataTable v-if="filteredItems.length > 0" :value="filteredItems" class="p-datatable-striped" paginator
+            :rows="15" :rowsPerPageOptions="[15, 20, 25]" responsiveLayout="scroll"
+            :rowClass="(data) => isPending(data.displayStatus) ? 'bg-blue-50' : ''">
             <Column header="STT" sortable>
                 <template #body="{ index }">
                     {{ index + 1 }}
                 </template>
             </Column>
-            <Column field="user.fullName" header="Người tạo" sortable />
-            <Column field="name" header="Tên" sortable />
-            <Column field="description" header="Mô tả" sortable />
-            <Column field="status" header="Trạng thái" sortable style="text-align: center;">
+            <Column field="displayName" header="Tên" sortable />
+            <Column header="Loại" sortable>
                 <template #body="slotProps">
-                    <Tag v-if="slotProps.data.status !== 'null'" :value="getInvoiceStatusLabel(slotProps.data.status)"
-                        :severity="getInvoiceStatusSeverity(slotProps.data.status)" />
-                    <Tag v-else value="chưa xác định" severity="warn" />
+                    <Tag :value="slotProps.data.typeLabel" :severity="slotProps.data.typeSeverity" />
                 </template>
             </Column>
-            <Column field="invoiceType" header="Loại" sortable style="text-align: center;">
+            <Column header="Mô tả" sortable>
                 <template #body="slotProps">
-                    <Tag v-if="slotProps.data.invoiceType !== 'null'"
-                        :value="getInvoiceTypeLabel(slotProps.data.invoiceType)"
-                        :severity="getInvoiceTypeSeverity(slotProps.data.invoiceType)" />
-                    <Tag v-else value="chưa xác định" severity="warn" />
+                    {{ getItemDescription(slotProps.data) }}
                 </template>
             </Column>
-            <Column field="amount" header="Số tiền" sortable>
+            <Column header="Trạng thái" sortable style="text-align: center;">
                 <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.amount) }}
+                    <Tag :value="getStatusLabel(slotProps.data)" :severity="getStatusSeverity(slotProps.data)" />
                 </template>
             </Column>
-
-            <Column field="createdAt" header="Ngày tạo" sortable>
+            <Column header="Số tiền" sortable>
                 <template #body="slotProps">
-                    {{ new Date(slotProps.data.createdAt).toLocaleDateString('vi-VN') }}
+                    {{ formatCurrency(slotProps.data.displayAmount) }}
+                </template>
+            </Column>
+            <Column field="displayDate" header="Ngày tạo" sortable>
+                <template #body="slotProps">
+                    {{ new Date(slotProps.data.displayDate).toLocaleDateString('vi-VN') }}
                 </template>
             </Column>
             <Column header="Hành động" style="width: 22%;">
                 <template #body="{ data }">
                     <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')"
-                        :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
+                        @click="openConfirmDialog(data, 'confirm')" :hidden="!canPerformAction(data)" />
                     <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')"
-                        :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
-                </template>
-            </Column>
-        </DataTable>
-
-        <!-- Bảng đóng quỹ -->
-        <DataTable v-else-if="selectedListType === 'contributions' && filteredContributions.length > 0"
-            :value="filteredContributions" class="p-datatable-striped" paginator :rows="15"
-            :rowsPerPageOptions="[15, 20, 25]" responsiveLayout="scroll">
-            <Column header="STT" sortable>
-                <template #body="{ index }">
-                    {{ index + 1 }}
-                </template>
-            </Column>
-            <Column field="memberName" header="Tên thành viên" />
-            <Column field="periodName" header="Kỳ đóng" />
-            <Column field="totalAmount" header="Số tiền">
-                <template #body="slotProps">
-                    {{ formatCurrency(slotProps.data.totalAmount) }}
-                </template>
-            </Column>
-            <Column field="paymentStatus" header="Trạng thái">
-                <template #body="slotProps">
-                    <Tag v-if="slotProps.data.paymentStatus !== 'null'"
-                        :value="getContributionStatusLabel(slotProps.data.paymentStatus)"
-                        :severity="getContributionStatusSeverity(slotProps.data.paymentStatus)" />
-                    <Tag v-else value="chưa xác định" severity="warn" />
-                </template>
-            </Column>
-            <Column header="Hành động">
-                <template #body="{ data }">
-                    <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')"
-                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
-                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')"
-                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
-                </template>
-            </Column>
-        </DataTable>
-
-        <!-- Bảng nộp phạt -->
-        <DataTable v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0" :value="filteredPenBills"
-            class="p-datatable-striped" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
-            responsiveLayout="scroll">
-            <Column header="STT" sortable>
-                <template #body="{ index }">
-                    {{ index + 1 }}
-                </template>
-            </Column>
-            <Column field="userDto.fullName" header="Tên thành viên" sortable></Column>
-            <Column field="penalty.name" header="Lỗi phạt" sortable></Column>
-            <Column field="description" header="Mô Tả" sortable></Column>
-            <Column field="amount" header="Tổng cộng" sortable>
-                <template #body="{ data }">
-                    {{ formatCurrency(data.amount) }}
-                </template>
-            </Column>
-            <Column field="paymentStatus" header="Trạng thái">
-                <template #body="slotProps">
-                    <Tag v-if="slotProps.data.paymentStatus !== 'null'"
-                        :value="getContributionStatusLabel(slotProps.data.paymentStatus)"
-                        :severity="getContributionStatusSeverity(slotProps.data.paymentStatus)" />
-                    <Tag v-else value="chưa xác định" severity="warn" />
-                </template>
-            </Column>
-            <Column header="Hành động" style="width: 21%;">
-                <template #body="{ data }">
-                    <Button label="Xác nhận" icon="pi pi-check" severity="success"
-                        @click="openConfirmDialog(data, 'confirm')"
-                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
-                    <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
-                        @click="openConfirmDialog(data, 'cancel')"
-                        :hidden="data.paymentStatus === 'PAID' || data.paymentStatus === 'CANCELED' || data.paymentStatus === 'LATE'" />
+                        @click="openConfirmDialog(data, 'cancel')" :hidden="!canPerformAction(data)" />
                 </template>
             </Column>
         </DataTable>
@@ -436,30 +356,27 @@ const getInvoiceTypeSeverity = (type) => {
         </div>
 
         <!-- Confirmation Dialog -->
-        <!-- Confirmation Dialog -->
         <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '350px' }">
             <div class="confirmation-content">
                 <span>{{ confirmDialogMessage }}</span>
             </div>
 
-            <div v-if="selectedListType === 'invoices' && confirmAction === 'confirm'" class="mt-3">
+            <div v-if="selectedItemToConfirm && selectedItemToConfirm.itemType === 'invoice' && confirmAction === 'confirm'"
+                class="mt-3">
                 <label for="fundType" class="block mb-2">Chọn quỹ:</label>
                 <Dropdown id="fundType" v-model="selectedFundType" :options="fundOptions" optionLabel="label"
                     optionValue="value" placeholder="Chọn quỹ" class="w-full" />
-                <small class="text-danger">{{ errorMessageInvoice }}</small>
+                <small class="text-red-500">{{ errorMessage }}</small>
             </div>
 
             <template #footer>
                 <Button label="Không" icon="pi pi-times" @click="showConfirmDialog = false" severity="secondary" />
-                <Button label="Có" icon="pi pi-check" @click="
-                    selectedListType === 'contributions' ? handleContributionAction(confirmAction) :
-                        selectedListType === 'penBills' ? handlePenBillAction(confirmAction) :
-                            handleInvoiceAction(confirmAction)" severity="primary" />
+                <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
             </template>
         </Dialog>
-
     </div>
 </template>
+
 <style>
 :global(.p-button) {
     margin-left: 10px;
@@ -473,5 +390,10 @@ const getInvoiceTypeSeverity = (type) => {
     margin-top: 10px;
     width: 70%;
     margin-left: 10px;
+}
+
+/* Highlight pending rows */
+.bg-blue-50 {
+    background-color: #eff6ff !important;
 }
 </style>

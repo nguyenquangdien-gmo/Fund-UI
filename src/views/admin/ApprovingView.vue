@@ -319,7 +319,7 @@ const getInvoiceTypeSeverity = (type) => {
             </Column>
             <Column field="user.fullName" header="Người tạo" sortable />
             <Column field="name" header="Tên" sortable />
-            <Column field="description" header="Mô tả" sortable style="width: 20%;" />
+            <Column field="description" header="Mô tả" sortable />
             <Column field="status" header="Trạng thái" sortable style="text-align: center;">
                 <template #body="slotProps">
                     <Tag v-if="slotProps.data.status !== 'null'" :value="getInvoiceStatusLabel(slotProps.data.status)"

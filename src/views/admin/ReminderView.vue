@@ -170,7 +170,6 @@ import ToggleButton from 'primevue/togglebutton';
 // Types
 import type { User } from '@/types/User';
 import formatTextWithLinks from '@/utils/FormateTextWithUrl';
-import type Reminder from '@/types/Reminder';
 
 const isAllUsersSelected = (users: User[]) => {
     // Kiểm tra nếu số lượng người dùng được chọn bằng tổng số người dùng có thể chọn

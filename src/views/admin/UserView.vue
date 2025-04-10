@@ -34,7 +34,7 @@
                 </Column>
                 <Column header="Actions" style="width: 25%;">
                     <template #body="{ data }">
-                        <Button label="Reset" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
+                        <Button label="Reset" icon="pi pi-undo" severity="Warn" @click="resetPassword(data.email)" />
                         <Button label="Sửa" class="left-10" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
                         <Button label="Xóa" class="left-10" icon="pi pi-trash" severity="danger"
                             @click="confirmDeleteFund(data)" :hidden="data.role.name === 'ADMIN'" />
@@ -327,9 +327,13 @@ const saveUser = async () => {
     }
 };
 
-
-
-
+const resetPassword = async (email: string) => {
+    try {
+        await axiosInstance.post('/auth/reset-password',  email );
+    } catch (error) {
+        console.error('Error resetting password:', error);
+    }
+};
 
 const resetErrors = () => {
     errors.value = {

@@ -35,6 +35,12 @@ const scheduleForm = ref({
     sendTime: new Date(),
     type: 'late_notification',
 });
+const dialogMode = ref<'settings' | 'check'>('settings');
+const dialogTitle = computed(() => {
+    return dialogMode.value === 'settings' 
+        ? 'Cài đặt thông báo đi muộn' 
+        : 'Kiểm tra thông báo đi muộn ngay';
+});
 
 // Kiểm tra quyền admin
 const checkIsAdmin = async () => {
@@ -103,7 +109,8 @@ const formatTimeOnly = (dateObj: Date) => {
 };
 
 // Hàm mở dialog cài đặt
-const openScheduleDialog = () => {
+const openScheduleDialog = (mode: 'settings' | 'check' = 'settings') => {
+    dialogMode.value = mode;
     fetchSchedule();
     showScheduleDialog.value = true;
 };
@@ -124,6 +131,15 @@ const formatTimeToApiString = (date: Date): string => {
     return `${hours}:${minutes}:${seconds}`;
 };
 
+// Hàm xử lý hành động dựa trên chế độ dialog
+const handleAction = async () => {
+    if (dialogMode.value === 'settings') {
+        await saveSchedule();
+    } else {
+        await checkNow();
+    }
+};
+
 // Hàm lưu cài đặt thông báo
 const saveSchedule = async () => {
     try {
@@ -139,6 +155,23 @@ const saveSchedule = async () => {
         showScheduleDialog.value = false;
     } catch (error) {
         console.error('Lỗi khi cập nhật schedule:', error);
+    }
+};
+
+// Hàm gọi API check now
+const checkNow = async () => {
+    try {
+        const dataForm = {
+            time: formatTimeToApiString(scheduleForm.value.sendTime),
+        };
+
+        console.log('checkNow request data:', dataForm);
+
+        // Gọi API check now
+        await axiosInstance.post(`/late/check-now`, dataForm);
+        showScheduleDialog.value = false;
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra ngay:', error);
     }
 };
 
@@ -175,7 +208,7 @@ const filteredRecords = computed(() => {
         <h2 class="text-xl font-bold mb-4">Danh sách đi muộn</h2>
 
         <div class="navbar-actions">
-            <div class="flex gap-4 mb-4">
+            <div class="flex gap-4">
                 Từ
                 <Calendar v-model="fromDate" dateFormat="dd-mm-yy" placeholder="Từ ngày"
                     @date-select="fetchLateRecords" />
@@ -188,7 +221,9 @@ const filteredRecords = computed(() => {
             <div>
                 <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
                 <Button v-if="isAdmin" label="Cài đặt" icon="pi pi-cog" class="p-button-sm" severity="success" raised
-                    @click="openScheduleDialog" />
+                    @click="openScheduleDialog('settings')" />
+                <Button v-if="isAdmin" label="Check now" icon="pi pi-check" class="p-button-sm" severity="success" raised
+                    @click="openScheduleDialog('check')" />
             </div>
         </div>
 
@@ -232,27 +267,31 @@ const filteredRecords = computed(() => {
     </div>
 
     <!-- Dialog Cài đặt thông báo đi muộn -->
-    <Dialog v-model:visible="showScheduleDialog" modal header="Cài đặt thông báo đi muộn" class="container-dialog">
-    <!-- Thông tin hiện tại -->
-    <div class="col-12 mb-3 item-dialog lh-2">
-        <p class="text-sm text-gray-600">
-            ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
-        </p>
-    </div>
+    <Dialog v-model:visible="showScheduleDialog" modal :header="dialogTitle" class="container-dialog">
+        <!-- Thông tin hiện tại -->
+        <div class="col-12 mb-3 item-dialog lh-2">
+            <p class="text-sm text-gray-600">
+                ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+            </p>
+        </div>
 
-    <!-- Form chọn lại -->
-    <div class="col-12 mb-3 item-dialog">
-        <label class="font-bold mb-2">
-            Thời gian gửi <span class="text-danger">*</span>
-        </label>
-        <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
-    </div>
+        <!-- Form chọn lại -->
+        <div class="col-12 mb-3 item-dialog">
+            <label class="font-bold mb-2">
+                Thời gian gửi <span class="text-danger">*</span>
+            </label>
+            <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+        </div>
 
-    <div class="actions-dialog">
-        <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
-        <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
-    </div>
-</Dialog>
+        <div class="actions-dialog">
+            <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+            <Button 
+                :label="dialogMode === 'settings' ? 'Cập nhật' : 'Kiểm tra ngay'" 
+                severity="primary" 
+                @click="handleAction" 
+            />
+        </div>
+    </Dialog>
 
 </template>
 
@@ -294,5 +333,9 @@ const filteredRecords = computed(() => {
 
 .lh-2 {
     line-height: 1.6;
+}
+
+.text-danger {
+    color: red;
 }
 </style>

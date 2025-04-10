@@ -22,10 +22,11 @@ declare global {
 }
 window.Chart = Chart
 const app = createApp(App)
-setupAxiosInterceptors()
 app.use(createPinia())
 app.use(router)
 app.use(ToastService)
+
+setupAxiosInterceptors()
 
 app.use(PrimeVue, {
   theme: {

@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', {
     logout() {
       this.user = {}
       sessionStorage.removeItem('user')
+      localStorage.removeItem('accessToken')
     },
   },
 })

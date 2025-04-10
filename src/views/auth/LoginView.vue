@@ -40,7 +40,7 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import { useRouter } from 'vue-router'
-import axiosInstance from '@/router/Interceptor';
+import axiosInstance, { resetAuthFlags } from '@/router/Interceptor';
 
 // const baseURL = "http://localhost:8080/api/v1";
 interface Error {
@@ -97,7 +97,7 @@ const handleLogin = async () => {
                 const user = response.data.user;
                 // console.log('user', user);
                 userStore.setUser(user);
-
+                resetAuthFlags();
                 router.push('/');
             } else {
                 errorMessage.value = 'Email or password is incorrect';

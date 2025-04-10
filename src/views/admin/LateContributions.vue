@@ -17,11 +17,11 @@
                 </select>
             </div>
             <div class="mb-3">
-                <InputText v-if="users.values.length > 0" v-model="searchQuery"
+                <InputText v-if="users.length > 0" v-model="searchQuery"
                     placeholder="Tìm kiếm theo tên or mã NV..." class="w-full p-inputtext-sm" style="width: 20%;" />
                 <!-- <Button label="Create reminder" severity="success" raised size="small" @click="openCreateDialog" /> -->
             </div>
-            <DataTable v-if="users.values.length > 0" :value="filteredFunds" paginator :rows="15"
+            <DataTable v-if="users.length > 0" :value="filteredFunds" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">
@@ -30,7 +30,7 @@
                 </Column>
                 <Column field="user.email" header="Email" sortable></Column>
                 <Column field="user.fullName" header="Tên " sortable></Column>
-                <Column field="user.role" header="Vai trò " sortable></Column>
+                <Column field="user.team.name" header="Team" sortable></Column>
                 <Column field="totalAmount" header="Tổng tiền" sortable>
                     <template #body="{ data }">
                         {{ formatCurrency(data.totalAmount) }}
@@ -48,7 +48,6 @@
                     </template>
                 </Column> -->
             </DataTable>
-            <div v-else> Chưa có ai đi muộn cả!😊</div>
         </div>
     </div>
     <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">

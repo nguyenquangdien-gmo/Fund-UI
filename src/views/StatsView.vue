@@ -148,7 +148,7 @@ const combinedMonthlyData = computed(() => {
                 borderWidth: 2
             },
             {
-                label: 'Thu',
+                label: 'Tổng thu',
                 data: incomeData,
                 borderColor: '#4CAF50',
                 backgroundColor: 'rgba(76, 175, 80, 0.2)',
@@ -156,7 +156,7 @@ const combinedMonthlyData = computed(() => {
                 borderWidth: 2
             },
             {
-                label: 'Chi tiêu',
+                label: 'Tổng chi',
                 data: expenseData,
                 borderColor: '#F44336',
                 backgroundColor: 'rgba(244, 67, 54, 0.2)',
@@ -224,7 +224,7 @@ const combinedYearlyData = computed(() => {
             },
             {
                 type: 'bar',
-                label: 'Thu',
+                label: 'Tổng thu',
                 data: incomeData,
                 backgroundColor: 'rgba(76, 175, 80, 0.7)',
                 borderColor: '#4CAF50',
@@ -232,7 +232,7 @@ const combinedYearlyData = computed(() => {
             },
             {
                 type: 'bar',
-                label: 'Chi tiêu',
+                label: 'Tổng chi',
                 data: expenseData,
                 backgroundColor: 'rgba(244, 67, 54, 0.7)',
                 borderColor: '#F44336',

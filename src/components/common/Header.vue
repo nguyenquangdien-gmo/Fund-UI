@@ -180,6 +180,8 @@ const baseItems = [
         label: "Danh sách",
         icon: "pi pi-list",
         items: [
+            { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
+            { label: "Thu/Chi", icon: "pi pi-shopping-bag", command: () => router.push("/invoices") },
             { label: "Quỹ chưa đóng", icon: "pi pi-bolt", command: () => router.push("/contributions") },
             { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/user/late") },
             { label: "Nợ phạt", icon: "pi pi-times-circle", command: () => router.push("/bills") },
@@ -192,7 +194,7 @@ const baseItems = [
 ];
 
 const adminItems = [
-    { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
+    // { label: "Logs", icon: "pi pi-clock", command: () => router.push("/logs") },
     {
         label: "Quản lý",
         icon: "pi pi-list",
@@ -200,11 +202,11 @@ const adminItems = [
             { label: "Nhóm", icon: "pi pi-users", command: () => router.push("/teams") },
             { label: "Role", icon: "pi pi-address-book", command: () => router.push("/roles") },
             { label: "Thành viên", icon: "pi pi-user", command: () => router.push("/users") },
-            { label: "Chi tiêu", icon: "pi pi-shopping-bag", command: () => router.push("/invoices") },
             { label: "Phê duyệt", icon: "pi pi-file-check", command: () => router.push("/approvals") },
             { label: "Chưa đóng quỹ", icon: "pi pi-bolt", command: () => router.push("/users/not-paid") },
             { label: "Đóng muộn", icon: "pi pi-server", command: () => router.push("/users/late-contributions") },
             { label: "Đi muộn", icon: "pi pi-calendar-times", command: () => router.push("/late-checkin") },
+            { label: "Giao dịch", icon: "pi pi-arrow-right-arrow-left", command: () => router.push("/logs") },
             // { label: "Quỹ hàng tháng", icon: "pi pi-pencil", command: () => router.push("/periods") },
             { label: "Thông báo", icon: "pi pi-bell", command: () => router.push("/reminders") }
         ]
@@ -241,11 +243,7 @@ const filteredItems = computed(() => {
 // Logout
 const handleLogout = async () => {
     try {
-        await axiosInstance.post('/auth/logout', {}, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
-        });
-        localStorage.removeItem("accessToken");
-        sessionStorage.removeItem("user");
+        await axiosInstance.post('/auth/logout', {});
         userStore.logout();
         router.push("/login");
         reminders.value = [];

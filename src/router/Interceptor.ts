@@ -8,6 +8,7 @@ const axiosInstance = axios.create({
 })
 
 let isLogoutProcessing = false
+let hasShownExpiredMessage = false
 
 export function setupAxiosInterceptors() {
   // Setup interceptors cho axiosInstance thay vì axios global
@@ -35,12 +36,15 @@ export function setupAxiosInterceptors() {
           localStorage.removeItem('accessToken')
           userStore.logout()
 
-          // Gửi sự kiện để hiển thị toast
-          eventBus.emit('showMessage', {
-            severity: 'error',
-            summary: 'Phiên đăng nhập hết hạn',
-            detail: 'Vui lòng đăng nhập lại.',
-          })
+          if (!hasShownExpiredMessage) {
+            hasShownExpiredMessage = true
+            // Gửi sự kiện để hiển thị toast
+            eventBus.emit('showMessage', {
+              severity: 'error',
+              summary: 'Phiên đăng nhập hết hạn',
+              detail: 'Vui lòng đăng nhập lại.',
+            })
+          }
 
           router.push('/login')
         } catch (logoutError) {
@@ -56,3 +60,6 @@ export function setupAxiosInterceptors() {
 }
 
 export default axiosInstance
+export function resetAuthFlags() {
+  hasShownExpiredMessage = false
+}

@@ -15,7 +15,7 @@
                     </div>
                     <div>
                         <span>Chức Vụ:</span>
-                        <p>{{ form.position ?? 'Chưa cập nhật' }}</p>
+                        <p>{{ form.position ? form.position:'Chưa cập nhật' }}</p>
                     </div>
                     <div>
                         <span>Số Điện Thoại:</span>

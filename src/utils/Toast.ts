@@ -1,12 +1,19 @@
-// src/utils/toastUtil.js
-import { useToast } from 'primevue/usetoast'
+// src/utils/Toast.ts
+import { eventBus } from '@/event/EventBus'
 
-export const useToastMessage = (severity: string, detail: string) => {
-  const toast = useToast()
-  toast.add({
-    severity,
-    summary: severity === 'error' ? 'Lỗi' : `Thông báo`,
-    detail,
-    life: 3000,
-  })
+let hasShownToast = false
+
+export function showToastOnce(payload: {
+  severity: 'success' | 'info' | 'warn' | 'error'
+  summary: string
+  detail: string
+}) {
+  if (hasShownToast) return
+  hasShownToast = true
+
+  eventBus.emit('showMessage', payload)
+
+  setTimeout(() => {
+    hasShownToast = false
+  }, 5000)
 }

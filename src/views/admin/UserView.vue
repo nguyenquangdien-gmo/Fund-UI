@@ -5,7 +5,7 @@
             <div class="mb-3">
                 <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên, MNV..."
                     class="w-full p-inputtext-sm" />
-                <Button label="Thêm thành viên" severity="success" raised size="small" @click="openCreateDialog"
+                <Button  v-if="admin" label="Thêm thành viên" severity="success" raised size="small" @click="openCreateDialog"
                     style="margin-left: 10px;" />
             </div>
             <DataTable :value="filteredFunds" paginator :rows="15" :rowsPerPageOptions="[15, 20, 25]"
@@ -32,9 +32,9 @@
                         {{ formatDate(data.joinDate) }}
                     </template>
                 </Column>
-                <Column header="Actions" style="width: 25%;">
+                <Column  v-if="admin" header="Actions" style="width: 25%;">
                     <template #body="{ data }">
-                        <Button label="Reset" icon="pi pi-undo" severity="Warn" @click="resetPassword(data.email)" />
+                        <Button label="Reset" icon="pi pi-undo" severity="Warn" @click="resetPassword(data.email)" :hidden="data.email===user.email" />
                         <Button label="Sửa" class="left-10" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" />
                         <Button label="Xóa" class="left-10" icon="pi pi-trash" severity="danger"
                             @click="confirmDeleteFund(data)" :hidden="data.role.name === 'ADMIN'" />
@@ -43,7 +43,7 @@
             </DataTable>
         </div>
     </div>
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+    <Dialog v-if="admin" v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa thành viên này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
@@ -51,7 +51,7 @@
         </div>
     </Dialog>
 
-    <Dialog v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'" @hide="resetErrors"
+    <Dialog  v-if="admin" v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'" @hide="resetErrors"
     :style="{ width: '30rem' }">
     <div class="mb-3">
         <label for="id" class="fw-bold">
@@ -134,9 +134,12 @@ import Dropdown from 'primevue/dropdown';
 import axiosInstance from '@/router/Interceptor';
 import { useRouter } from 'vue-router';
 import type { User } from '@/types/User';
+import { useToast } from 'primevue';
+import { useUserStore } from '@/pinia/userStore';
 // import UserRole from '@/types/UserRole';
 
 // const baseURL = "http://localhost:8080/api/v1";
+const toast = useToast();
 const showConfirmDialog = ref(false);
 const userToDelete = ref<User | null>(null);
 const token = localStorage.getItem('accessToken');
@@ -145,6 +148,25 @@ const searchQuery = ref("");
 const showUserDialog = ref(false);
 const isUpdate = ref(false);
 const isAdmin = ref(false);
+const router = useRouter();
+const userStore = useUserStore();
+const user = computed(() => userStore.user);
+
+const admin =ref(false);
+const checkAdmin = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axiosInstance.get('/tokens/is-admin', {
+      params: { token }
+    })
+    return response.data // Trả về true nếu là admin
+  } catch (error) {
+    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+    return false
+  }
+}
+
 const form = ref({
     id: 0,
     email: "",
@@ -168,7 +190,7 @@ const errors = ref({
     joinDate: "",
     slugTeam: "",
 });
-const router = useRouter();
+
 const userId = ref('');
 const oldId = ref(0);
 
@@ -187,9 +209,6 @@ const fetchTeams = async () => {
         console.error('Error fetching teams:', error);
     }
 };
-onMounted(() => {
-    fetchTeams();
-});
 
 const fetchRoles = async () => {
     try {
@@ -329,7 +348,13 @@ const saveUser = async () => {
 
 const resetPassword = async (email: string) => {
     try {
-        await axiosInstance.post('/auth/reset-password',  email );
+        await axiosInstance.post('/auth/reset-password',  {email} );
+        toast.add({ severity: 'success', summary: 'Reset mật khẩu thành công!', life: 3000 });
+        if(user.value.email === email) {
+            userStore.logout();
+            router.push('/');
+        }
+
     } catch (error) {
         console.error('Error resetting password:', error);
     }
@@ -370,10 +395,12 @@ const formatDate = (dateString: string) => {
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
 };
 
-onMounted(() => {
+onMounted(async () => {
     if (!token) {
         router.push('/');
     } else {
+        admin.value = await checkAdmin();
+        fetchTeams();
         fetchUsers();
         fetchRoles();
     }

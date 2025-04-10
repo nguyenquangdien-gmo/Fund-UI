@@ -29,15 +29,15 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: '/home',
-      component: ProfileView,
+      name: '/stats',
+      component: StatsView,
       meta: { requiresAuth: true }, // Yêu cầu phải đăng nhập
     },
     {
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true }, // Yêu cầu phải đăng nhập
+      meta: { requiresAuth: true },
     },
     {
       path: '/login',
@@ -105,9 +105,21 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/users',
+      name: 'users',
+      component: UserView,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/user/late',
       name: 'user-late',
       component: LateHistories,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/invoices',
+      name: 'invoices',
+      component: InvoiceView,
       meta: { requiresAuth: true },
     },
     {
@@ -132,7 +144,7 @@ const router = createRouter({
       path: '/invoices',
       name: 'invoices',
       component: InvoiceView,
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true },
     },
     {
       path: '/approvals',
@@ -170,13 +182,6 @@ const router = createRouter({
       component: PenaltyView,
       meta: { requiresAdmin: true, requiresAuth: true },
     },
-    {
-      path: '/users',
-      name: 'users',
-      component: UserView,
-      meta: { requiresAdmin: true, requiresAuth: true },
-    },
-
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
@@ -226,6 +231,7 @@ router.beforeEach(async (to, from, next) => {
   }
   if (isExpired) {
     localStorage.removeItem('accessToken')
+
     return next({ name: 'login' }) // Nếu token đã hết hạn, chuyển đến login
   }
 

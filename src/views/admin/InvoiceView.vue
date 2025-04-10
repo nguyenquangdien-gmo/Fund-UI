@@ -5,8 +5,8 @@
             <div class="mb-3">
                 <InputText v-if="invoices.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
                     style="width: 20%; text-align: end;" class="w-full p-inputtext-sm" />
-                <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small"
-                    @click="openCreateDialog" />
+                <!-- <Button label="Tạo phiếu chi" class="btn-create" severity="success" raised size="small"
+                    @click="openCreateDialog" /> -->
             </div>
             <DataTable v-if="invoices.length > 0" :value="filteredInvoice" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
@@ -16,10 +16,10 @@
                     </template>
                 </Column>
                 <Column field="name" header="Tên" sortable></Column>
-                <Column field="fundType" header="Mã Quỹ" sortable>
+                <Column field="invoiceType" header="Loại" sortable>
                     <template #body="{ data }">
-                        <Tag v-if="data.fundType !== 'null'" :value="getInvoiceTypeLabel(data.fundType)"
-                            :severity="getInvoiceTypeSeverity(data.fundType)" />
+                        <Tag v-if="data.invoiceType !== 'null'" :value="getInvoiceTypeLabel(data.invoiceType)"
+                            :severity="getInvoiceTypeSeverity(data.invoiceType)" />
                         <!-- <Tag v-else value="chưa duyệt" severity="warn" /> -->
                     </template>
 
@@ -50,15 +50,15 @@
             </div>
         </div>
     </div>
-    <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
             <Button label="Xóa" severity="danger" @click="deleteInvoice" />
         </div>
-    </Dialog>
+    </Dialog> -->
 
-    <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
+    <!-- <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
             <label for="name" class="fw-bold">Tên</label>
@@ -85,7 +85,7 @@
             <Button type="button" label="Cancel" severity="secondary" @click="showInvoice = false"></Button>
             <Button type="button" label="Save" severity="primary" @click="saveInvoice"></Button>
         </div>
-    </Dialog>
+    </Dialog> -->
 </template>
 
 <script setup lang="ts">
@@ -119,24 +119,42 @@ const userStore = useUserStore();
 const user = computed(() => userStore.user);
 const amount = ref('');
 
+//check role
+const admin =ref(false);
+const checkAdmin = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axiosInstance.get('/tokens/is-admin', {
+      params: { token }
+    })
+    return response.data // Trả về true nếu là admin
+  } catch (error) {
+    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+    return false
+  }
+}
+
 const selectedType = ref<InvoiceType | null>(null);
-const types = ref([
-    { label: "Quỹ thu", value: InvoiceType.INCOME },
-    { label: "Quỹ chi", value: InvoiceType.EXPENSE }
-]);
+// const types = ref([
+//     { label: "Quỹ thu", value: InvoiceType.INCOME },
+//     { label: "Quỹ chi", value: InvoiceType.EXPENSE }
+// ]);
 
 const getInvoiceTypeLabel = (type: string) => {
-    return type === "COMMON" ? "Quỹ chung" : "Quỹ ăn vặt";
+    return type === "EXPENSE" ? "Chi" : "Thu";
 };
 
 const getInvoiceTypeSeverity = (type: string) => {
-    return type === "COMMON" ? "info" : "success";;
+    return type === "EXPENSE" ? "warn" : "info";
 };
 
 const fetchInvoice = async () => {
     try {
         const response = await axiosInstance.get(`/invoices`);
         invoices.value = response.data;
+        console.log('invoice', invoices.value);
+        
     } catch (error) {
         console.error('Error fetching invoices:', error);
     }
@@ -147,11 +165,11 @@ const filteredInvoice = computed(() => {
     return invoices.value.filter(invoice => invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
 });
 
-const openCreateDialog = () => {
-    form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
-    isUpdate.value = false;
-    showInvoice.value = true;
-};
+// const openCreateDialog = () => {
+//     form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
+//     isUpdate.value = false;
+//     showInvoice.value = true;
+// };
 
 // const openUpdateDialog = (invoice: Invoice) => {
 //     form.value = {
@@ -173,71 +191,71 @@ const openCreateDialog = () => {
 //     console.log(form.value);
 
 // };
-const validateForm = () => {
-    errors.value = { name: "", description: "", type: "", amount: "" };
-    if (!form.value.name) errors.value.name = "Vui lòng nhập tên phí!";
-    if (!form.value.description) errors.value.name = "Vui lòng nhập mô tả phí!";
-    if (!selectedType.value) errors.value.type = "Vui lòng chọn loại phí!";
-    if (!amount.value || Number(amount.value) < 0)
-        errors.value.amount = "Số tiền cần phải lớn hơn 0!";
-    return Object.values(errors.value).every(err => err === "");
-};
+// const validateForm = () => {
+//     errors.value = { name: "", description: "", type: "", amount: "" };
+//     if (!form.value.name) errors.value.name = "Vui lòng nhập tên phí!";
+//     if (!form.value.description) errors.value.name = "Vui lòng nhập mô tả phí!";
+//     if (!selectedType.value) errors.value.type = "Vui lòng chọn loại phí!";
+//     if (!amount.value || Number(amount.value) < 0)
+//         errors.value.amount = "Số tiền cần phải lớn hơn 0!";
+//     return Object.values(errors.value).every(err => err === "");
+// };
 
-const saveInvoice = async () => {
-    if (!validateForm()) return;
-    try {
-        // if (isUpdate.value) {
-        //     if (selectedType.value) {
-        //         form.value.invoiceType = selectedType.value.toString();
-        //     }
-        //     form.value.amount = Number(amount.value);
-        //     console.log(form.value);
+// const saveInvoice = async () => {
+//     if (!validateForm()) return;
+//     try {
+//         // if (isUpdate.value) {
+//         //     if (selectedType.value) {
+//         //         form.value.invoiceType = selectedType.value.toString();
+//         //     }
+//         //     form.value.amount = Number(amount.value);
+//         //     console.log(form.value);
 
-        //     await axiosInstance.put(`/invoices/${form.value.id}/update`, form.value);
-        //     // console.log(form.value);
+//         //     await axiosInstance.put(`/invoices/${form.value.id}/update`, form.value);
+//         //     // console.log(form.value);
 
-        // } else {
-        if (selectedType.value) {
-            form.value.invoiceType = selectedType.value;
-            form.value.userId = user.value.id;
-            form.value.amount = Number(amount.value);
-            // console.log(form.value);
+//         // } else {
+//         if (selectedType.value) {
+//             form.value.invoiceType = selectedType.value;
+//             form.value.userId = user.value.id;
+//             form.value.amount = Number(amount.value);
+//             // console.log(form.value);
 
-            // console.log(form.value);
-            await axiosInstance.post(`/invoices`, form.value);
-            resetForm();
-        }
+//             // console.log(form.value);
+//             await axiosInstance.post(`/invoices`, form.value);
+//             resetForm();
+//         }
 
-        // }
-        showInvoice.value = false;
-        fetchInvoice();
-    } catch (error) {
-        console.error('Error saving fund:', error);
-    }
-}; const resetErrors = () => {
-    errors.value = { name: "", description: "", type: "", amount: "" };
-};
+//         // }
+//         showInvoice.value = false;
+//         fetchInvoice();
+//     } catch (error) {
+//         console.error('Error saving fund:', error);
+//     }
+// }; const resetErrors = () => {
+//     errors.value = { name: "", description: "", type: "", amount: "" };
+// };
 
-const resetForm = () => {
-    form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
-    amount.value = '';
-    selectedType.value = null;
-}
+// const resetForm = () => {
+//     form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
+//     amount.value = '';
+//     selectedType.value = null;
+// }
 
-const deleteInvoice = async () => {
-    if (!expeneseToDelete.value) return;
-    try {
-        await axiosInstance.delete(`/invoices/${expeneseToDelete.value.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchInvoice();
-    } catch (error) {
-        console.error('Error deleting fund:', error);
-    } finally {
-        showConfirmDialog.value = false;
-        expeneseToDelete.value = null;
-    }
-};
+// const deleteInvoice = async () => {
+//     if (!expeneseToDelete.value) return;
+//     try {
+//         await axiosInstance.delete(`/invoices/${expeneseToDelete.value.id}`, {
+//             headers: { Authorization: `Bearer ${token}` }
+//         });
+//         fetchInvoice();
+//     } catch (error) {
+//         console.error('Error deleting fund:', error);
+//     } finally {
+//         showConfirmDialog.value = false;
+//         expeneseToDelete.value = null;
+//     }
+// };
 
 
 const formatDate = (dateString: string) => {
@@ -246,10 +264,11 @@ const formatDate = (dateString: string) => {
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
 };
 
-onMounted(() => {
+onMounted(async () => {
     if (!token) {
         router.push('/');
     } else {
+        admin.value = await checkAdmin();
         fetchInvoice();
     }
 });

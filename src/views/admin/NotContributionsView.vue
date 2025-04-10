@@ -17,13 +17,13 @@
                 </select>
             </div>
             <div class="mb-3">
-                <InputText v-if="users.values.length > 0" v-model="searchQuery"
+                <InputText v-if="users.length > 0" v-model="searchQuery"
                     placeholder="Tìm kiếm theo mã thành viên or tên..." class="w-full p-inputtext-sm"
                     style="width: 25%;" />
                 <!-- <Button label="Create reminder" severity="success" class="left-10" raised size="small"
                     @click="openCreateDialog" /> -->
             </div>
-            <DataTable v-if="users.values.length > 0" :value="filteredUsers" paginator :rows="15"
+            <DataTable v-if="users.length > 0" :value="filteredUsers" paginator :rows="15"
                 :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
                 <Column header="STT" sortable>
                     <template #body="{ index }">

@@ -236,16 +236,16 @@ const filteredRecords = computed(() => {
         <!-- Thông tin hiện tại -->
         <div class="col-12 mb-3 item-dialog lh-2">
             <p class="text-sm text-gray-600">
-                📅 <strong>Ngày gửi thông báo:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
+                <!-- 📅 <strong>Ngày gửi thông báo:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br /> -->
                 ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
             </p>
         </div>
 
         <!-- Form chọn lại -->
-        <div class="col-12 mb-3 item-dialog">
+        <!-- <div class="col-12 mb-3 item-dialog">
             <label class="font-bold mb-2">Ngày cảnh báo</label>
             <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
-        </div>
+        </div> -->
 
         <div class="col-12 mb-3 item-dialog">
             <label class="font-bold mb-2">Thời gian gửi</label>

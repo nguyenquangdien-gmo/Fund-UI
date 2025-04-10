@@ -233,30 +233,27 @@ const filteredRecords = computed(() => {
 
     <!-- Dialog Cài đặt thông báo đi muộn -->
     <Dialog v-model:visible="showScheduleDialog" modal header="Cài đặt thông báo đi muộn" class="container-dialog">
-        <!-- Thông tin hiện tại -->
-        <div class="col-12 mb-3 item-dialog lh-2">
-            <p class="text-sm text-gray-600">
-                <!-- 📅 <strong>Ngày gửi thông báo:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br /> -->
-                ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
-            </p>
-        </div>
+    <!-- Thông tin hiện tại -->
+    <div class="col-12 mb-3 item-dialog lh-2">
+        <p class="text-sm text-gray-600">
+            ⏰ <strong>Thời gian lấy check in:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+        </p>
+    </div>
 
-        <!-- Form chọn lại -->
-        <!-- <div class="col-12 mb-3 item-dialog">
-            <label class="font-bold mb-2">Ngày cảnh báo</label>
-            <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
-        </div> -->
+    <!-- Form chọn lại -->
+    <div class="col-12 mb-3 item-dialog">
+        <label class="font-bold mb-2">
+            Thời gian gửi <span class="text-danger">*</span>
+        </label>
+        <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+    </div>
 
-        <div class="col-12 mb-3 item-dialog">
-            <label class="font-bold mb-2">Thời gian gửi</label>
-            <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
-        </div>
+    <div class="actions-dialog">
+        <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+        <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
+    </div>
+</Dialog>
 
-        <div class="actions-dialog">
-            <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
-            <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
-        </div>
-    </Dialog>
 </template>
 
 <style scoped>

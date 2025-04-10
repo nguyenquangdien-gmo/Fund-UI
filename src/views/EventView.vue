@@ -78,26 +78,26 @@
     <Dialog v-if="isAdmin" v-model:visible="showEventDialog" modal
         :header="isUpdate ? 'Cập Nhật Sự Kiện' : 'Tạo Sự Kiện'" class="container-dialog">
         <div class="col-12 mb-3 item-dialog">
-            <label for="name" class="font-bold mb-2 ">Tên Sự Kiện</label>
+            <label for="name" class="font-bold mb-2 ">Tên Sự Kiện<span class="text-danger">*</span></label>
             <InputText id="name" v-model="form.name" :class="{ 'p-invalid': errors.name }" class="w-full" />
             <small class="p-error" v-if="errors.name">{{ errors.name }}</small>
         </div>
 
         <div class="col-12 mb-3 item-dialog">
-            <label for="eventTime" class="font-bold mb-2">Thời Gian</label>
+            <label for="eventTime" class="font-bold mb-2">Thời Gian<span class="text-danger">*</span></label>
             <Calendar id="eventTime" v-model="form.eventTime" showTime hourFormat="24"
                 :class="{ 'p-invalid': errors.eventTime }" class="w-full" />
             <small class="p-error" v-if="errors.eventTime">{{ errors.eventTime }}</small>
         </div>
 
         <div class="col-12 mb-3 item-dialog">
-            <label for="location" class="font-bold mb-2">Địa Điểm</label>
+            <label for="location" class="font-bold mb-2">Địa Điểm<span class="text-danger">*</span></label>
             <InputText id="location" v-model="form.location" :class="{ 'p-invalid': errors.location }" class="w-full" />
             <small class="p-error" v-if="errors.location">{{ errors.location }}</small>
         </div>
 
         <div class="col-12 mb-3 item-dialog">
-            <label for="hosts" class="font-bold mb-2">Chủ Sự Kiện</label>
+            <label for="hosts" class="font-bold mb-2">Chủ Sự Kiện<span class="text-danger">*</span></label>
             <MultiSelect id="hosts" v-model="selectedHosts" :options="userOptions" optionLabel="fullName"
                 optionValue="id" placeholder="Chọn chủ sự kiện" :class="{ 'p-invalid': errors.hosts }" class="w-full"
                 style="width: 100%;" />
@@ -124,17 +124,17 @@
 
         <!-- Form chọn lại -->
         <div class="col-12 mb-3 item-dialog">
-            <label class="font-bold mb-2">Từ ngày</label>
+            <label class="font-bold mb-2">Từ ngày<span class="text-danger">*</span></label>
             <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
         </div>
 
         <div class="col-12 mb-3 item-dialog">
-            <label class="font-bold mb-2">Đến ngày</label>
+            <label class="font-bold mb-2">Đến ngày<span class="text-danger">*</span></label>
             <Calendar v-model="scheduleForm.toDate" date-format="dd/mm/yy" class="w-full" />
         </div>
 
         <div class="col-12 mb-3 item-dialog">
-            <label class="font-bold mb-2">Thời gian gửi</label>
+            <label class="font-bold mb-2">Thời gian gửi<span class="text-danger">*</span></label>
             <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
         </div>
 

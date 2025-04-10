@@ -293,7 +293,7 @@ const confirmDeleteFund = (user: User) => {
     showConfirmDialog.value = true;
 };
 
-const validateForm = () => {
+const validateForm = () => { 
     errors.value = {
         id: "",
         email: "",
@@ -307,7 +307,19 @@ const validateForm = () => {
     };
 
     if (!userId.value) errors.value.id = "Vui lòng nhập mã nhân viên!";
-    if (!form.value.email) errors.value.email = "Vui lòng nhập email!";
+    if (!form.value.email) {
+        errors.value.email = "Vui lòng nhập email!";
+    } else {
+        // Kiểm tra email có bị trùng với users hay không
+        const emailExists = users.value.some(
+            user => user.email.toLowerCase() === form.value.email.toLowerCase() &&
+                    user.id !== userId.value // nếu đang edit thì bỏ qua chính mình
+        );
+        if (emailExists) {
+            errors.value.email = "Email đã tồn tại!";
+        }
+    }
+
     if (!form.value.fullName) errors.value.fullName = "Vui lòng nhập họ tên!";
     if (!selectedRole.value) errors.value.role = "Vui lòng chọn vai trò!";
     if (!seletedDob.value) errors.value.dob = "Vui lòng chọn ngày sinh!";
@@ -316,6 +328,8 @@ const validateForm = () => {
 
     return Object.values(errors.value).every(err => err === "");
 };
+
+
 const saveUser = async () => {
     try {
         if (!validateForm()) return;

@@ -357,31 +357,43 @@ const canPerformAction = (item) => {
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '350px' }">
-            <div class="confirmation-content">
-                <span>{{ confirmDialogMessage }}</span>
-            </div>
+  <div class="confirmation-content">
+    <span>{{ confirmDialogMessage }}</span>
+  </div>
 
-            <div v-if="selectedItemToConfirm && selectedItemToConfirm.itemType === 'invoice' && confirmAction === 'confirm'"
-                class="mt-3">
-                <label for="fundType" class="block mb-2">Chọn quỹ:</label>
-                <Dropdown id="fundType" v-model="selectedFundType" :options="fundOptions" optionLabel="label"
-                    optionValue="value" placeholder="Chọn quỹ" class="w-full" />
-                <small class="text-red-500">{{ errorMessage }}</small>
-            </div>
+  <div
+    v-if="selectedItemToConfirm && selectedItemToConfirm.itemType === 'invoice' && confirmAction === 'confirm'"
+    class="mt-3"
+  >
+    <label for="fundType" class="block mb-2">
+      Chọn quỹ: <span class="text-red-500">*</span>
+    </label>
+    <Dropdown
+      id="fundType"
+      v-model="selectedFundType"
+      :options="fundOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Chọn quỹ"
+      class="w-full"
+    />
+    <small class="text-red-500">{{ errorMessage }}</small>
+  </div>
 
-            <template #footer>
-                <Button label="Không" icon="pi pi-times" @click="showConfirmDialog = false" severity="secondary" />
-                <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
-            </template>
-        </Dialog>
+  <template #footer>
+    <Button label="Không" icon="pi pi-times" @click="showConfirmDialog = false" severity="secondary" />
+    <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
+  </template>
+</Dialog>
+
     </div>
 </template>
 
 <style>
 :global(.p-button) {
     margin-left: 10px;
-}
 
+}
 .left-10 {
     margin-left: 10px;
 }

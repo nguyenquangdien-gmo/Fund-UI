@@ -12,38 +12,48 @@
             <div class="stat-card">
                 <div class="icon bg-blue-100 text-blue-600"><i class="pi pi-dollar"></i></div>
                 <div>
-                    <h3 class="text-gray">Tiền chung</h3>
+                    <h3 class="text-gray">Quỹ chung</h3>
                     <p class="text-2xl font-semibold"> {{
                         balance.length > 1 ? `${formatCurrency(balance[0].totalAmount)}` : `0 VNĐ` }}
                     </p>
-                    <p class="text-green-500 text-sm">Tổng tiền chung của nhóm</p>
+                    <p class="text-green-500 text-sm">Tiền chung </p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="icon bg-yellow-100 text-yellow-600"><i class="pi pi-credit-card"></i></div>
                 <div>
-                    <h3 class="text-gray">Tiền ăn vặt</h3>
+                    <h3 class="text-gray">Quỹ ăn vặt</h3>
                     <p class="text-2xl font-semibold">
                         {{ balance.length > 1 ? `${formatCurrency(balance[1].totalAmount)}` : '0 VNĐ' }}
                     </p>
-                    <p class="text-green-500 text-sm">Tổng tiền ăn vặt của nhóm</p>
+                    <p class="text-green-500 text-sm">Tiền ăn vặt</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="icon bg-teal-100 text-teal-600"><i class="pi pi-wallet"></i></div>
                 <div>
-                    <h3 class="text-gray">Tiền thu</h3>
+                    <h3 class="text-gray">Tổng thu</h3>
                     <p class="text-2xl font-semibold">{{ formatCurrency(amountCharge + amountBillCharge +
                         incomeAmount) }}</p>
-                    <p class="text-green-500 text-sm">Tiền thu vào của nhóm</p>
+                    <p class="text-green-500 text-sm">Tiền thu</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="icon bg-purple-100 text-purple-600"><i class="pi pi-cart-plus"></i></div>
                 <div>
-                    <h3 class="text-gray">Tiền chi</h3>
+                    <h3 class="text-gray">Tổng chi</h3>
                     <p class="text-2xl font-semibold">{{ formatCurrency(expenseAmount) }}</p>
-                    <p class="text-green-500 text-sm">Tiền chi ra của nhóm</p>
+                    <p class="text-green-500 text-sm">Tiền chi ra </p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon bg-blue-100 text-blue-600"><i class="pi pi-dollar"></i></div>
+                <div>
+                    <h3 class="text-gray">Còn lại</h3>
+                    <p class="text-2xl font-semibold"> {{
+                        balance.length > 1 ? `${formatCurrency(balance[0].totalAmount+balance[1].totalAmount)}` : `0 VNĐ` }}
+                    </p>
+                    <p class="text-green-500 text-sm">Tổng tiền còn lại</p>
                 </div>
             </div>
         </div>
@@ -132,15 +142,16 @@ const combinedMonthlyData = computed(() => {
         labels: months,
         datasets: [
             {
-                label: 'Quỹ đóng góp',
+                label: 'Chung + Ăn vặt',
                 data: contributionData,
                 borderColor: '#42A5F5',
                 backgroundColor: 'rgba(66, 165, 245, 0.2)',
                 tension: 0.4,
+                fill: true,
                 borderWidth: 2
             },
             {
-                label: 'Quỹ phạt',
+                label: 'Tổng phạt',
                 data: penaltyData,
                 borderColor: '#FF9800',
                 backgroundColor: 'rgba(255, 152, 0, 0.2)',
@@ -153,6 +164,7 @@ const combinedMonthlyData = computed(() => {
                 borderColor: '#4CAF50',
                 backgroundColor: 'rgba(76, 175, 80, 0.2)',
                 tension: 0.4,
+                borderDash: [5, 5],
                 borderWidth: 2
             },
             {
@@ -161,6 +173,7 @@ const combinedMonthlyData = computed(() => {
                 borderColor: '#F44336',
                 backgroundColor: 'rgba(244, 67, 54, 0.2)',
                 tension: 0.4,
+                borderDash: [5, 5],
                 borderWidth: 2
             }
         ]
@@ -208,7 +221,7 @@ const combinedYearlyData = computed(() => {
         datasets: [
             {
                 type: 'bar',
-                label: 'Quỹ đóng góp',
+                label: 'Quỹ Chung + ăn vặt',
                 data: contributionData,
                 backgroundColor: 'rgba(66, 165, 245, 0.7)',
                 borderColor: '#42A5F5',
@@ -216,7 +229,7 @@ const combinedYearlyData = computed(() => {
             },
             {
                 type: 'bar',
-                label: 'Quỹ phạt',
+                label: 'Tổng phạt',
                 data: penaltyData,
                 backgroundColor: 'rgba(255, 152, 0, 0.7)',
                 borderColor: '#FF9800',
@@ -510,22 +523,24 @@ const onYearChange = () => {
 .stat-card {
     display: flex;
     align-items: center;
-    gap: 10px;
+    width: 52%;
+    gap: 5px;
     background: white;
-    padding: 20px;
+    padding: 10px;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .icon {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     background-color: rgb(207 250 254);
     color: rgb(6 182 212);
+    margin-bottom: 10px;
 }
 
 .sumary-stats {
@@ -534,12 +549,13 @@ const onYearChange = () => {
 }
 
 .stat-card {
-    width: 24%;
-    margin: 20px auto 20px;
+    width: 19%;
+    margin: 10px 5px 10px;
 }
 
 .select-year {
     margin: 20px 0 0 5px;
+    border-radius: 10px;
 }
 
 .text-gray {
@@ -550,22 +566,23 @@ const onYearChange = () => {
     color: #10b981;
 }
 
-.charts {
+/* .charts {
+    width: 100%;
     display: flex;
     justify-content: space-between;
-}
+} */
 
 .line {
-    width: 49%;
+    width: 99%;
     border-radius: 10px;
-    margin: 0 5px;
+    margin: 0 5px 10px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
 .column {
-    width: 49%;
+    width: 99%;
     border-radius: 10px;
     margin: 0 5px;
     padding: 0;

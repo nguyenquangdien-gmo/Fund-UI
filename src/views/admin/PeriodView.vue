@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="p-4">
-            <h2 class="text-xl">Danh Sách Kỳ Hạn</h2>
+            <h2 class="text-xl">Danh sách thông báo thu quỹ</h2>
             <div class="mb-3">
                 <InputText v-if="periods.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tháng, năm..."
                     class="w-full p-inputtext-sm" style="width: 20%;" />
@@ -37,36 +37,43 @@
         </div>
     </div>
 
-
-
     <Dialog v-model:visible="showPeriodDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" :style="{ width: '30rem' }"
-        @hide="resetErrors">
-        <div class="mb-3">
-            <label for="month" class="fw-bold">Tháng</label>
-            <Dropdown id="month" v-model="form.month" :options="months" optionLabel="label" optionValue="value"
-                class="w-100" />
-            <small class="text-danger" v-if="errors.month">{{ errors.month }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="year" class="fw-bold">Năm</label>
-            <InputText id="year" type="number" v-model="form.year" class="w-100" autocomplete="off" disabled />
-            <small class="text-danger" v-if="errors.year">{{ errors.year }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="deadline" class="fw-bold">Thời hạn</label>
-            <Calendar id="deadline" v-model="form.deadline" class="w-100" showIcon />
-            <small class="text-danger" v-if="errors.deadline">{{ errors.deadline }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="fw-bold">Mô Tả</label>
-            <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showPeriodDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button>
-        </div>
-    </Dialog>
+    @hide="resetErrors">
+    <div class="mb-3">
+        <label for="month" class="fw-bold">
+            Tháng <span class="text-danger">*</span>
+        </label>
+        <Dropdown id="month" v-model="form.month" :options="months" optionLabel="label" optionValue="value"
+            class="w-100" />
+        <small class="text-danger" v-if="errors.month">{{ errors.month }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="year" class="fw-bold">
+            Năm <span class="text-danger">*</span>
+        </label>
+        <InputText id="year" type="number" v-model="form.year" class="w-100" autocomplete="off" disabled />
+        <small class="text-danger" v-if="errors.year">{{ errors.year }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="deadline" class="fw-bold">
+            Thời hạn <span class="text-danger">*</span>
+        </label>
+        <Calendar id="deadline" v-model="form.deadline" class="w-100" showIcon />
+        <small class="text-danger" v-if="errors.deadline">{{ errors.deadline }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="fw-bold">
+            Mô Tả <span class="text-danger">*</span>
+        </label>
+        <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <Button type="button" label="Cancel" severity="secondary" @click="showPeriodDialog = false"></Button>
+        <Button type="button" label="Save" severity="primary" @click="savePeriod"></Button>
+    </div>
+</Dialog>
+
     <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">

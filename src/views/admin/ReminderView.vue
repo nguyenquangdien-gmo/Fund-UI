@@ -90,63 +90,71 @@
 
     <!-- Reminder Form Dialog (Only for Admin) -->
     <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal
-        :header="isUpdate ? 'Cập Nhật Nhắc Nhở' : 'Tạo Nhắc Nhở'" class="container-dialog">
-        <div class="col-12 mb-3 item-dialog">
-            <label for="title" class="font-bold mb-2">Tiêu Đề</label>
-            <InputText id="title" v-model="form.title" :class="{ 'p-invalid': errors.title }" class="w-full" />
-            <small class="p-error" v-if="errors.title">{{ errors.title }}</small>
+    :header="isUpdate ? 'Cập Nhật Nhắc Nhở' : 'Tạo Nhắc Nhở'" class="container-dialog">
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="title" class="font-bold mb-2">
+            Tiêu Đề <span class="text-danger">*</span>
+        </label>
+        <InputText id="title" v-model="form.title" :class="{ 'p-invalid': errors.title }" class="w-full" />
+        <small class="p-error" v-if="errors.title">{{ errors.title }}</small>
+    </div>
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="description" class="font-bold mb-2">
+            Mô Tả <span class="text-danger">*</span>
+        </label>
+        <Textarea id="description" v-model="form.description" rows="3" :class="{ 'p-invalid': errors.description }"
+            class="w-full" />
+        <small class="p-error" v-if="errors.description">{{ errors.description }}</small>
+    </div>
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="type" class="font-bold mb-2">
+            Loại Nhắc Nhở <span class="text-danger">*</span>
+        </label>
+        <Dropdown id="type" v-model="form.reminderType" :options="reminderTypes" optionLabel="name"
+            optionValue="value" placeholder="Chọn loại nhắc nhở" :class="{ 'p-invalid': errors.type }"
+            class="w-full" />
+        <small class="p-error" v-if="errors.type">{{ errors.type }}</small>
+    </div>
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="scheduledTime" class="font-bold mb-2">
+            Thời Gian Lên Lịch
+        </label>
+        <Calendar id="scheduledTime" v-model="form.scheduledTime" showTime hourFormat="24"
+            placeholder="Để trống nếu gửi ngay" class="w-full" />
+    </div>
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="users" class="font-bold mb-2">
+            Người Nhận <span class="text-danger">*</span>
+        </label>
+        <MultiSelect id="users" v-model="selectedUsers" :options="userOptions" optionLabel="fullName"
+            optionValue="id" placeholder="Chọn người nhận" :class="{ 'p-invalid': errors.users }" class="w-full" />
+        <!-- <small class="p-error" v-if="errors.users">{{ errors.users }}</small> -->
+    </div>
+
+    <div class="col-12 mb-3 item-dialog">
+        <label for="isSendChatGroup" class="font-bold mb-2">
+            Gửi Đến Nhóm
+        </label>
+        <ToggleButton v-model="form.isSendChatGroup" onLabel="Có" offLabel="Không" class="w-6" />
+    </div>
+
+    <div class="actions-dialog">
+        <div>
+            <Button label="Hủy" severity="secondary" @click="showReminderDialog = false"
+                class="p-button-outlined" />
         </div>
-
-        <div class="col-12 mb-3 item-dialog">
-            <label for="description" class="font-bold mb-2">Mô Tả</label>
-            <Textarea id="description" v-model="form.description" rows="3" :class="{ 'p-invalid': errors.description }"
-                class="w-full" />
-            <small class="p-error" v-if="errors.description">{{ errors.description }}</small>
+        <div>
+            <Button :label="isUpdate ? 'Cập Nhật' : 'Tạo'" severity="primary" @click="saveReminder"
+                class="p-button-raised" />
         </div>
+    </div>
+</Dialog>
 
-        <div class="col-12 mb-3 item-dialog">
-            <label for="type" class="font-bold mb-2">Loại Nhắc Nhở</label>
-            <Dropdown id="type" v-model="form.reminderType" :options="reminderTypes" optionLabel="name"
-                optionValue="value" placeholder="Chọn loại nhắc nhở" :class="{ 'p-invalid': errors.type }"
-                class="w-full" />
-            <small class="p-error" v-if="errors.type">{{ errors.type }}</small>
-        </div>
-
-        <div class="col-12 mb-3 item-dialog">
-            <label for="scheduledTime" class="font-bold mb-2">Thời Gian Lên Lịch</label>
-            <Calendar id="scheduledTime" v-model="form.scheduledTime" showTime hourFormat="24"
-                placeholder="Để trống nếu gửi ngay" class="w-full" />
-        </div>
-        <!-- <div class=" mb-3 item-dialog">
-            <label class="font-bold mb-2">Gửi Ngay</label>
-            <Checkbox v-model="sendNow" :binary="true" />
-        </div> -->
-
-        <div class="col-12 mb-3 item-dialog">
-            <label for="users" class="font-bold mb-2">Người Nhận</label>
-            <MultiSelect id="users" v-model="selectedUsers" :options="userOptions" optionLabel="fullName"
-                optionValue="id" placeholder="Chọn người nhận" :class="{ 'p-invalid': errors.users }" class="w-full" />
-            <!-- <small class="p-error" v-if="errors.users">{{ errors.users }}</small> -->
-        </div>
-
-        <div class="col-12 mb-3 item-dialog">
-            <label for="isSendChatGroup" class="font-bold mb-2">Gửi Đến Nhóm</label>
-            <ToggleButton v-model="form.isSendChatGroup" onLabel="Có" offLabel="Không" class="w-6" />
-        </div>
-
-        <div class="actions-dialog">
-            <div>
-                <Button label="Hủy" severity="secondary" @click="showReminderDialog = false"
-                    class="p-button-outlined" />
-
-            </div>
-            <div>
-                <Button :label="isUpdate ? 'Cập Nhật' : 'Tạo'" severity="primary" @click="saveReminder"
-                    class="p-button-raised" />
-            </div>
-
-        </div>
-    </Dialog>
 </template>
 
 <script setup lang="ts">

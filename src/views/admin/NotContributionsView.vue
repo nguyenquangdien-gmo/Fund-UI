@@ -62,25 +62,29 @@
             <Button label="Xóa" severity="danger" @click="deleteUser" />
         </div>
     </Dialog> -->
-
     <Dialog v-if="isAdmin" v-model:visible="showReminderDialog" modal :header="'Create Reminder'" @hide="resetErrors"
-        :style="{ width: '30rem' }">
-        <div class="mb-3">
-            <label for="title" class="fw-bold">Title</label>
-            <InputText id="title" v-model="form.title" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="fw-bold">Description</label>
-            <Textarea id="description" v-model="form.description" class="w-100" rows="5" cols="30" />
-            <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
-        </div>
+    :style="{ width: '30rem' }">
+    <div class="mb-3">
+        <label for="title" class="fw-bold">
+            Title <span class="text-danger">*</span>
+        </label>
+        <InputText id="title" v-model="form.title" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="fw-bold">
+            Description <span class="text-danger">*</span>
+        </label>
+        <Textarea id="description" v-model="form.description" class="w-100" rows="5" cols="30" />
+        <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
+    </div>
 
-        <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showReminderDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="saveReminder"></Button>
-        </div>
-    </Dialog>
+    <div class="d-flex justify-content-end gap-2">
+        <Button type="button" label="Cancel" severity="secondary" @click="showReminderDialog = false" />
+        <Button type="button" label="Save" severity="primary" @click="saveReminder" />
+    </div>
+</Dialog>
+
 </template>
 
 <script setup lang="ts">

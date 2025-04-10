@@ -44,33 +44,42 @@
     </Dialog> -->
 
     <Dialog v-model:visible="showFundDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
-        :style="{ width: '30rem' }">
-        <div class="mb-3">
-            <label for="name" class="fw-bold">Tên</label>
-            <InputText id="name" v-model="form.name" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="fw-bold">Mô tả</label>
-            <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="amount" class="fw-bold">Tổng tiền</label>
-            <InputText id="amount" type="number" v-model="form.amount" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
-        </div>
-        <div class="mb-3">
-            <label for="type" class="fw-bold">Loại quỹ</label>
-            <Dropdown v-model="selectedFund" :options="types" optionLabel="label" optionValue="value"
-                placeholder="Chọn loại quỹ" class="w-100 md:w-56" :disabled="true" />
-            <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Cancel" severity="secondary" @click="showFundDialog = false"></Button>
-            <Button type="button" label="Save" severity="primary" @click="saveFund"></Button>
-        </div>
-    </Dialog>
+    :style="{ width: '30rem' }">
+    <div class="mb-3">
+        <label for="name" class="fw-bold">
+            Tên <span class="text-danger">*</span>
+        </label>
+        <InputText id="name" v-model="form.name" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="fw-bold">
+            Mô tả <span class="text-danger">*</span>
+        </label>
+        <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="amount" class="fw-bold">
+            Tổng tiền <span class="text-danger">*</span>
+        </label>
+        <InputText id="amount" type="number" v-model="form.amount" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
+    </div>
+    <div class="mb-3">
+        <label for="type" class="fw-bold">
+            Loại quỹ <span class="text-danger">*</span>
+        </label>
+        <Dropdown v-model="selectedFund" :options="types" optionLabel="label" optionValue="value"
+            placeholder="Chọn loại quỹ" class="w-100 md:w-56" :disabled="true" />
+        <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <Button type="button" label="Cancel" severity="secondary" @click="showFundDialog = false"></Button>
+        <Button type="button" label="Save" severity="primary" @click="saveFund"></Button>
+    </div>
+</Dialog>
+
 </template>
 
 <script setup lang="ts">

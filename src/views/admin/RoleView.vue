@@ -33,20 +33,22 @@
             <Button label="Xóa" severity="danger" @click="deleteRole" />
         </div>
     </Dialog>
-
     <Dialog v-model:visible="showRoleDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
-        :style="{ width: '30rem' }">
-        <div class="mb-3">
-            <label for="name" class="fw-bold">Tên vai trò</label>
-            <InputText id="name" type="text" v-model="form.name" class="w-100" autocomplete="off" />
-            <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
-        </div>
+    :style="{ width: '30rem' }">
+    <div class="mb-3">
+        <label for="name" class="fw-bold">
+            Tên vai trò <span class="text-danger">*</span>
+        </label>
+        <InputText id="name" type="text" v-model="form.name" class="w-100" autocomplete="off" />
+        <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+    </div>
 
-        <div class="d-flex justify-content-end gap-2">
-            <Button type="button" label="Hủy" severity="secondary" @click="showRoleDialog = false" />
-            <Button type="button" label="Lưu" severity="primary" @click="saveRole" />
-        </div>
-    </Dialog>
+    <div class="d-flex justify-content-end gap-2">
+        <Button type="button" label="Hủy" severity="secondary" @click="showRoleDialog = false" />
+        <Button type="button" label="Lưu" severity="primary" @click="saveRole" />
+    </div>
+</Dialog>
+
 </template>
 
 <script setup lang="ts">

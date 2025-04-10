@@ -39,40 +39,41 @@
     </div>
 
     <Dialog v-model:visible="showTeamDialog" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetForm"
-        :style="{ width: '30rem' }">
-        <div class="mb-3">
-            <label class="fw-bold">Tên nhóm</label>
-            <InputText v-model="form.name" class="w-100" />
-            <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+    :style="{ width: '30rem' }">
+    <div class="mb-3">
+        <label class="fw-bold">Tên nhóm <span class="text-danger">*</span></label>
+        <InputText v-model="form.name" class="w-100" />
+        <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+    </div>
+    <div class="mb-3">
+        <label class="fw-bold">Slug <span class="text-danger">*</span></label>
+        <InputText v-model="form.slug" class="w-100" />
+        <small class="text-danger" v-if="errors.slug">{{ errors.slug }}</small>
+    </div>
+    <div class="mb-3">
+        <label class="fw-bold">Channel ID <span class="text-danger">*</span></label>
+        <InputText v-model="form.channelId" class="w-100" />
+        <small class="text-danger" v-if="errors.channelId">{{ errors.channelId }}</small>
+    </div>
+    <div class="mb-3">
+        <label class="fw-bold">Token <span class="text-danger">*</span></label>
+        <InputText v-model="form.token" class="w-100" />
+        <small class="text-danger" v-if="errors.token">{{ errors.token }}</small>
+    </div>
+    <div class="mb-3">
+        <label class="fw-bold">Mã QR <span class="text-danger">*</span></label>
+        <FileUpload mode="basic" accept="image/*" customUpload @select="handleFileUpload" />
+        <div class="qrcode-image">
+            <img v-if="qrPreview" :src="qrPreview" class="qr-preview" />
         </div>
-        <div class="mb-3">
-            <label class="fw-bold">Slug</label>
-            <InputText v-model="form.slug" class="w-100" />
-            <small class="text-danger" v-if="errors.slug">{{ errors.slug }}</small>
-        </div>
-        <div class="mb-3">
-            <label class="fw-bold">Channel ID</label>
-            <InputText v-model="form.channelId" class="w-100" />
-            <small class="text-danger" v-if="errors.channelId">{{ errors.channelId }}</small>
-        </div>
-        <div class="mb-3">
-            <label class="fw-bold">Token</label>
-            <InputText v-model="form.token" class="w-100" />
-            <small class="text-danger" v-if="errors.token">{{ errors.token }}</small>
-        </div>
-        <div class="mb-3">
-            <label class="fw-bold">Mã QR</label>
-            <FileUpload mode="basic" accept="image/*" customUpload @select="handleFileUpload" />
-            <div class="qrcode-image">
-                <img v-if="qrPreview" :src="qrPreview" class="qr-preview" />
-            </div>
-            <small class="text-danger" v-if="errors.qrCode">{{ errors.qrCode }}</small>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <Button label="Hủy" severity="secondary" @click="showTeamDialog = false" />
-            <Button label="Lưu" severity="primary" @click="saveTeam" />
-        </div>
-    </Dialog>
+        <small class="text-danger" v-if="errors.qrCode">{{ errors.qrCode }}</small>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <Button label="Hủy" severity="secondary" @click="showTeamDialog = false" />
+        <Button label="Lưu" severity="primary" @click="saveTeam" />
+    </div>
+</Dialog>
+
 
     <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <p>Bạn có chắc chắn muốn xóa team <strong>{{ teamToDelete?.name }}</strong> không?</p>

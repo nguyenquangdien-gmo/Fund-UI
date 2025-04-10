@@ -36,7 +36,7 @@
                         </div>
                         <Button v-if="unreadRemindersCount > 0" label="Đã xem tất cả"
                             class="p-button-sm p-button-text mark-all-read-btn" @click="markAllAsRead" />
-                    
+                        <div v-if="reminders.length ===0">Bạn không có thông báo nào!</div>
                     </OverlayPanel>
 
                     <!-- Nút Logout -->

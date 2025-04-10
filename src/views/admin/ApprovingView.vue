@@ -366,7 +366,7 @@ const canPerformAction = (item) => {
     class="mt-3"
   >
     <label for="fundType" class="block mb-2">
-      Chọn quỹ: <span class="text-red-500">*</span>
+      Chọn quỹ: <span class="text-danger">*</span>
     </label>
     <Dropdown
       id="fundType"
@@ -377,7 +377,7 @@ const canPerformAction = (item) => {
       placeholder="Chọn quỹ"
       class="w-full"
     />
-    <small class="text-red-500">{{ errorMessage }}</small>
+   <div> <small class="text-danger">{{ errorMessage }}</small></div>
   </div>
 
   <template #footer>
@@ -400,7 +400,7 @@ const canPerformAction = (item) => {
 
 #fundType {
     margin-top: 10px;
-    width: 70%;
+    width: 90%;
     margin-left: 10px;
 }
 

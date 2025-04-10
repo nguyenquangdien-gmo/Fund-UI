@@ -110,7 +110,7 @@
         <label for="type" class="fw-bold">
             Vai trò <span class="text-danger">*</span>
         </label>
-        <Dropdown :disabled="isAdmin" v-model="selectedRole" :options="roles" optionLabel="name" optionValue="name"
+        <Dropdown :disabled="isAdmin&&isUpdate" v-model="selectedRole" :options="roles" optionLabel="name" optionValue="name"
             placeholder="Chọn vai trò" class="w-100" />
         <small class="text-danger" v-if="errors.role">{{ errors.role }}</small>
     </div>
@@ -238,7 +238,7 @@ const openCreateDialog = () => {
 
     form.value = {
         id: 0,
-        email: form.value.email + emailDomain,
+        email: emailDomain,
         fullName: "",
         role: "",
         dob: "",
@@ -313,7 +313,7 @@ const validateForm = () => {
         // Kiểm tra email có bị trùng với users hay không
         const emailExists = users.value.some(
             user => user.email.toLowerCase() === form.value.email.toLowerCase() &&
-                    user.id !== userId.value // nếu đang edit thì bỏ qua chính mình
+                    user.id !== Number(userId.value) // nếu đang edit thì bỏ qua chính mình
         );
         if (emailExists) {
             errors.value.email = "Email đã tồn tại!";

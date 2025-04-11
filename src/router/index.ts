@@ -23,6 +23,7 @@ import ReminderView from '@/views/admin/ReminderView.vue'
 import UserReminderView from '@/views/UserReminderView.vue'
 import InvoiceView from '@/views/admin/InvoiceView.vue'
 import UserInvoiceView from '@/views/UserInvoiceView.vue'
+import axiosInstance from './Interceptor'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -195,7 +196,7 @@ const checkAdmin = async () => {
   const token = localStorage.getItem('accessToken')
   if (!token) return false
   try {
-    const response = await axios.get('http://localhost:8080/api/v1/tokens/is-admin', {
+    const response = await axiosInstance.get('/tokens/is-admin', {
       params: { token },
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -210,7 +211,7 @@ const checkExpired = async () => {
   const token = localStorage.getItem('accessToken')
   if (!token) return false
   try {
-    const response = await axios.get('http://localhost:8080/api/v1/tokens/expired', {
+    const response = await axiosInstance.get('/tokens/expired', {
       params: { token },
     })
     return response.data // Trả về true nếu là admin

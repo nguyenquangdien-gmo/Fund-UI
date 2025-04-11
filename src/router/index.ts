@@ -24,6 +24,8 @@ import UserReminderView from '@/views/UserReminderView.vue'
 import InvoiceView from '@/views/admin/InvoiceView.vue'
 import UserInvoiceView from '@/views/UserInvoiceView.vue'
 import axiosInstance from './Interceptor'
+import { jwtDecode } from 'jwt-decode'
+import type JwtPayload from '@/types/JwtPayload'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -207,16 +209,30 @@ const checkAdmin = async () => {
   }
 }
 
-const checkExpired = async () => {
+// const checkExpired = async () => {
+//   const token = localStorage.getItem('accessToken')
+//   if (!token) return false
+//   try {
+//     const response = await axiosInstance.get('/tokens/expired', {
+//       params: { token },
+//     })
+//     return response.data // Trả về true nếu là admin
+//   } catch (error) {
+//     console.error('Lỗi khi kiểm tra quyền admin:', error)
+//     return false
+//   }
+// }
+
+const checkToken = () => {
   const token = localStorage.getItem('accessToken')
   if (!token) return false
+
   try {
-    const response = await axiosInstance.get('/tokens/expired', {
-      params: { token },
-    })
-    return response.data // Trả về true nếu là admin
+    const decoded = jwtDecode<JwtPayload>(token)
+    const now = Date.now()
+    return decoded.exp > now
   } catch (error) {
-    console.error('Lỗi khi kiểm tra quyền admin:', error)
+    console.error('Token không hợp lệ:', error)
     return false
   }
 }
@@ -225,7 +241,7 @@ const checkExpired = async () => {
 router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('accessToken')
   const isAuthenticated = !!token
-  const isExpired = await checkExpired()
+  const isExpired = checkToken()
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     return next({ name: 'login' }) // Nếu chưa đăng nhập, chuyển đến login

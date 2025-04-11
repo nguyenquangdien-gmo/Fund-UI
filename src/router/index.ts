@@ -27,6 +27,14 @@ import axiosInstance from './Interceptor'
 import { jwtDecode } from 'jwt-decode'
 import type JwtPayload from '@/types/JwtPayload'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    requiresAdmin?: boolean
+    noLoader?: boolean
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

@@ -8,3 +8,9 @@ const formatDate = (dateString: string): string => {
 }
 
 export default formatDate
+
+export const formatDateToLocalISOString = (date: Date): string => {
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000
+  const localTime = new Date(date.getTime() - offsetMs)
+  return localTime.toISOString().slice(0, 19) // YYYY-MM-DDTHH:mm:ss
+}

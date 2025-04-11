@@ -60,7 +60,7 @@
               icon="pi pi-undo"
               severity="Warn"
               class="left-10"
-              @click="resetPassword(data.email)"
+              @click="confirmReset(data.email)"
               :hidden="data.email === user.email"
             />
             <Button
@@ -68,8 +68,8 @@
               class="left-10"
               icon="pi pi-trash"
               severity="danger"
-              @click="confirmDeleteFund(data)"
-              :hidden="data.role.name === 'ADMIN'"
+              @click="confirmDelete(data)"
+              :hidden="data.email === user.email"
             />
           </template>
         </Column>
@@ -80,13 +80,14 @@
     v-if="admin"
     v-model:visible="showConfirmDialog"
     modal
-    header="Xác nhận xóa"
+    :header="isDelete ? 'Xác nhận xóa' : 'Xác nhận tạo lại mật khẩu'"
     :style="{ width: '25rem' }"
   >
-    <div>Bạn có chắc chắn muốn xóa thành viên này?</div>
+    <div>Bạn có chắc chắn muốn {{ isDelete ? 'xóa thành viên này' : 'tạo lại mật khẩu' }}?</div>
     <div class="d-flex justify-content-end gap-2 mt-3">
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-      <Button label="Xóa" severity="danger" @click="deleteUser" />
+      <Button v-if="isDelete" label="Xóa" severity="danger" @click="deleteUser" />
+      <Button v-else label="Reset" severity="success" @click="resetPassword(emailToReset)" />
     </div>
   </Dialog>
 
@@ -204,6 +205,7 @@ const users = ref<User[]>([])
 const searchQuery = ref('')
 const showUserDialog = ref(false)
 const isUpdate = ref(false)
+const isDelete = ref(false)
 const isAdmin = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
@@ -346,9 +348,18 @@ const openUpdateDialog = (user: User) => {
   showUserDialog.value = true
 }
 
-const confirmDeleteFund = (user: User) => {
+const confirmDelete = (user: User) => {
   userToDelete.value = user
   showConfirmDialog.value = true
+  isDelete.value = true
+}
+
+//confirm reset password
+const emailToReset = ref('')
+const confirmReset = (email: string) => {
+  emailToReset.value = email
+  showConfirmDialog.value = true
+  isDelete.value = false
 }
 
 const validateForm = () => {
@@ -428,6 +439,7 @@ const resetPassword = async (email: string) => {
       userStore.logout()
       router.push('/')
     }
+    showConfirmDialog.value = false
   } catch (error) {
     console.error('Error resetting password:', error)
   }

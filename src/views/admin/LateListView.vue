@@ -22,8 +22,8 @@ interface LateRecord {
 }
 
 const token = localStorage.getItem('accessToken')
-const fromDate = ref<Date | null>(new Date())
-const toDate = ref<Date | null>(new Date(new Date().getTime() + 24 * 60 * 60 * 1000))
+const fromDate = ref<Date | null>(new Date(new Date().getTime() - 24 * 60 * 60 * 1000))
+const toDate = ref<Date | null>(new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000))
 const lateRecords = ref<LateRecord[]>([])
 const searchTerm = ref('')
 const isAdmin = ref(false)

@@ -22,8 +22,8 @@ interface LateRecord {
 }
 
 const token = localStorage.getItem('accessToken')
-const fromDate = ref<Date | null>(new Date())
-const toDate = ref<Date | null>(new Date(new Date().getTime() + 24 * 60 * 60 * 1000))
+const fromDate = ref<Date | null>(new Date(new Date().getTime() - 24 * 60 * 60 * 1000))
+const toDate = ref<Date | null>(new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000))
 const lateRecords = ref<LateRecord[]>([])
 const searchTerm = ref('')
 const isAdmin = ref(false)
@@ -289,7 +289,7 @@ const filteredRecords = computed(() => {
       </Column>
       <Column field="note" header="Ghi chú">
         <template #body="{ data }">
-          {{ data.note?.trim() ? data.note : '-' }}
+          {{ data.note?.trim() ? data.note : 'Không có' }}
         </template>
       </Column>
       <Column field="date" header="Ngày">

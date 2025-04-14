@@ -289,7 +289,7 @@ const filteredRecords = computed(() => {
       </Column>
       <Column field="note" header="Ghi chú">
         <template #body="{ data }">
-          {{ data.note?.trim() ? data.note : '-' }}
+          {{ data.note?.trim() ? data.note : 'Không có' }}
         </template>
       </Column>
       <Column field="date" header="Ngày">

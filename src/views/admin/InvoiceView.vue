@@ -1,42 +1,55 @@
 <template>
-    <div class="container">
-        <div class="p-4">
-            <h2 class="text-center text-xl">Danh sách Thu/Chi</h2>
-            <div class="mb-3">
-                <InputText v-if="invoices.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
-                    style="width: 20%; text-align: end;" class="w-full p-inputtext-sm" />
-                <!-- <Button label="Tạo phiếu chi" class="btn-create" severity="success" raised size="small"
+  <div class="container">
+    <div class="p-4">
+      <h2 class="text-center text-xl">Danh sách Thu/Chi</h2>
+      <div class="mb-3">
+        <InputText
+          v-if="invoices.length > 0"
+          v-model="searchQuery"
+          placeholder="Tìm kiếm theo tên chi tiêu..."
+          style="width: 20%"
+          class="w-full p-inputtext-sm"
+        />
+        <!-- <Button label="Tạo phiếu chi" class="btn-create" severity="success" raised size="small"
                     @click="openCreateDialog" /> -->
-            </div>
-            <DataTable v-if="invoices.length > 0" :value="filteredInvoice" paginator :rows="15"
-                :rowsPerPageOptions="[15, 20, 25]" class="p-datatable-sm">
-                <Column header="STT" sortable>
-                    <template #body="{ index }">
-                        {{ index + 1 }}
-                    </template>
-                </Column>
-                <Column field="name" header="Tên" sortable></Column>
-                <Column field="invoiceType" header="Loại" sortable>
-                    <template #body="{ data }">
-                        <Tag v-if="data.invoiceType !== 'null'" :value="getInvoiceTypeLabel(data.invoiceType)"
-                            :severity="getInvoiceTypeSeverity(data.invoiceType)" />
-                        <!-- <Tag v-else value="chưa duyệt" severity="warn" /> -->
-                    </template>
-
-                </Column>
-                <Column field="description" header="Mô tả" sortable></Column>
-                <Column field="amount" header="Số Tiền" sortable>
-                    <template #body="{ data }">
-                        {{ formatCurrency(data.amount) }}
-                    </template>
-                </Column>
-                <!-- <Column field="userId" header="Tạo bởi" sortable></Column> -->
-                <Column field="createdAt" header="Ngày Tạo" sortable>
-                    <template #body="{ data }">
-                        {{ formatDate(data.createdAt) }}
-                    </template>
-                </Column>
-                <!-- <Column header="Actions">
+      </div>
+      <DataTable
+        v-if="invoices.length > 0"
+        :value="filteredInvoice"
+        paginator
+        :rows="15"
+        :rowsPerPageOptions="[15, 20, 25]"
+        class="p-datatable-sm"
+      >
+        <Column header="STT" sortable>
+          <template #body="{ index }">
+            {{ index + 1 }}
+          </template>
+        </Column>
+        <Column field="name" header="Tên" sortable></Column>
+        <Column field="invoiceType" header="Loại" sortable>
+          <template #body="{ data }">
+            <Tag
+              v-if="data.invoiceType !== 'null'"
+              :value="getInvoiceTypeLabel(data.invoiceType)"
+              :severity="getInvoiceTypeSeverity(data.invoiceType)"
+            />
+            <!-- <Tag v-else value="chưa duyệt" severity="warn" /> -->
+          </template>
+        </Column>
+        <Column field="description" header="Mô tả" sortable></Column>
+        <Column field="amount" header="Số Tiền" sortable>
+          <template #body="{ data }">
+            {{ formatCurrency(data.amount) }}
+          </template>
+        </Column>
+        <!-- <Column field="userId" header="Tạo bởi" sortable></Column> -->
+        <Column field="createdAt" header="Ngày Tạo" sortable>
+          <template #body="{ data }">
+            {{ formatDate(data.createdAt) }}
+          </template>
+        </Column>
+        <!-- <Column header="Actions">
                     <template #body="{ data }">
                         <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)"
                             :hidden="data.status === 'APPROVED'" />
@@ -44,13 +57,13 @@
                             @click="confirmDeleteInvoice(data)" />
                     </template>
                 </Column> -->
-            </DataTable>
-            <div v-else>
-                <p class="text-center">Không tìm thấy phiếu chi nào</p>
-            </div>
-        </div>
+      </DataTable>
+      <div v-else>
+        <p class="text-center">Không tìm thấy phiếu chi nào</p>
+      </div>
     </div>
-    <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
+  </div>
+  <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
         <div class="d-flex justify-content-end gap-2 mt-3">
             <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
@@ -58,7 +71,7 @@
         </div>
     </Dialog> -->
 
-    <!-- <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
+  <!-- <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Update' : 'Create'" @hide="resetErrors"
         :style="{ width: '30rem' }">
         <div class="mb-3">
             <label for="name" class="fw-bold">Tên</label>
@@ -89,44 +102,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import InputText from 'primevue/inputtext';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import axiosInstance from '@/router/Interceptor';
-import { useRouter } from 'vue-router';
-import formatCurrency from '@/utils/FormatCurrency';
-import { useUserStore } from '@/pinia/userStore';
-import Dropdown from 'primevue/dropdown';
-import type Invoice from '@/types/Invoice';
-import InvoiceType from '@/types/InvoiceType';
-import Tag from 'primevue/tag';
+import { ref, computed, onMounted } from 'vue'
+import InputText from 'primevue/inputtext'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import axiosInstance from '@/router/Interceptor'
+import { useRouter } from 'vue-router'
+import formatCurrency from '@/utils/FormatCurrency'
+import { useUserStore } from '@/pinia/userStore'
+import Dropdown from 'primevue/dropdown'
+import type Invoice from '@/types/Invoice'
+import InvoiceType from '@/types/InvoiceType'
+import Tag from 'primevue/tag'
 
 // const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false);
-const expeneseToDelete = ref<Invoice | null>(null);
-const token = localStorage.getItem('accessToken');
-const invoices = ref<Invoice[]>([]);
-const searchQuery = ref("");
-const showInvoice = ref(false);
-const isUpdate = ref(false);
-const form = ref({ id: 0, name: "", invoiceType: "", description: "", userId: 0, amount: 0 });
-const errors = ref({ name: "", description: "", type: "", amount: "" });
-const router = useRouter();
-const userStore = useUserStore();
-const user = computed(() => userStore.user);
-const amount = ref('');
+const showConfirmDialog = ref(false)
+const expeneseToDelete = ref<Invoice | null>(null)
+const token = localStorage.getItem('accessToken')
+const invoices = ref<Invoice[]>([])
+const searchQuery = ref('')
+const showInvoice = ref(false)
+const isUpdate = ref(false)
+const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
+const errors = ref({ name: '', description: '', type: '', amount: '' })
+const router = useRouter()
+const userStore = useUserStore()
+const user = computed(() => userStore.user)
+const amount = ref('')
 
 //check role
-const admin =ref(false);
+const admin = ref(false)
 const checkAdmin = async () => {
   const token = localStorage.getItem('accessToken')
   if (!token) return false
   try {
     const response = await axiosInstance.get('/tokens/is-admin', {
-      params: { token }
+      params: { token },
     })
     return response.data // Trả về true nếu là admin
   } catch (error) {
@@ -135,35 +148,36 @@ const checkAdmin = async () => {
   }
 }
 
-const selectedType = ref<InvoiceType | null>(null);
+const selectedType = ref<InvoiceType | null>(null)
 // const types = ref([
 //     { label: "Quỹ thu", value: InvoiceType.INCOME },
 //     { label: "Quỹ chi", value: InvoiceType.EXPENSE }
 // ]);
 
 const getInvoiceTypeLabel = (type: string) => {
-    return type === "EXPENSE" ? "Chi" : "Thu";
-};
+  return type === 'EXPENSE' ? 'Chi' : 'Thu'
+}
 
 const getInvoiceTypeSeverity = (type: string) => {
-    return type === "EXPENSE" ? "warn" : "info";
-};
+  return type === 'EXPENSE' ? 'warn' : 'info'
+}
 
 const fetchInvoice = async () => {
-    try {
-        const response = await axiosInstance.get(`/invoices`);
-        invoices.value = response.data;
-        console.log('invoice', invoices.value);
-        
-    } catch (error) {
-        console.error('Error fetching invoices:', error);
-    }
-};
+  try {
+    const response = await axiosInstance.get(`/invoices`)
+    invoices.value = response.data
+    console.log('invoice', invoices.value)
+  } catch (error) {
+    console.error('Error fetching invoices:', error)
+  }
+}
 
 const filteredInvoice = computed(() => {
-    if (!searchQuery.value) return invoices.value;
-    return invoices.value.filter(invoice => invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
-});
+  if (!searchQuery.value) return invoices.value
+  return invoices.value.filter((invoice) =>
+    invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
+  )
+})
 
 // const openCreateDialog = () => {
 //     form.value = { id: 0, name: "", userId: 0, description: "", invoiceType: "", amount: 0 };
@@ -257,29 +271,28 @@ const filteredInvoice = computed(() => {
 //     }
 // };
 
-
 const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-};
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+}
 
 onMounted(async () => {
-    if (!token) {
-        router.push('/');
-    } else {
-        admin.value = await checkAdmin();
-        fetchInvoice();
-    }
-});
+  if (!token) {
+    router.push('/')
+  } else {
+    admin.value = await checkAdmin()
+    fetchInvoice()
+  }
+})
 </script>
 
 <style scoped>
 .p-datatable-sm {
-    font-size: 14px;
+  font-size: 14px;
 }
 
 .btn-create {
-    margin-left: 10px;
+  margin-left: 10px;
 }
 </style>

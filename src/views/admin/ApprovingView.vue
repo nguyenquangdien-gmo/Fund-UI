@@ -307,7 +307,7 @@ const canPerformAction = (item) => {
     <div class="mb-4 flex items-center gap-4">
       <InputText
         v-model="searchQuery"
-        placeholder="Tìm kiếm..."
+        placeholder="Tìm kiếm theo tên or mô tả..."
         class="p-inputtext w-64"
         style="width: 40%"
       />

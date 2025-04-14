@@ -5,8 +5,9 @@
       <div class="mb-3">
         <InputText
           v-model="searchQuery"
-          placeholder="Tìm kiếm theo tên, MNV..."
+          placeholder="Tìm kiếm theo email, tên, MNV..."
           class="w-full p-inputtext-sm"
+          style="width: 20%"
         />
         <Button
           v-if="admin"
@@ -296,6 +297,7 @@ const filteredFunds = computed(() => {
   return users.value.filter(
     (user) =>
       user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       user.id === parseInt(searchQuery.value),
   )
 })
@@ -397,7 +399,7 @@ const validateForm = () => {
   if (!form.value.fullName) errors.value.fullName = 'Vui lòng nhập họ tên!'
   if (!selectedRole.value) errors.value.role = 'Vui lòng chọn vai trò!'
   if (!seletedDob.value) errors.value.dob = 'Vui lòng chọn ngày sinh!'
-  if (!seletedJoinDate.value) errors.value.dob = 'Vui lòng chọn ngày tham gia!'
+  if (!seletedJoinDate.value) errors.value.joinDate = 'Vui lòng chọn ngày tham gia!'
   if (!selectedTeam.value) errors.value.slugTeam = 'Vui lòng nhập team!'
 
   return Object.values(errors.value).every((err) => err === '')

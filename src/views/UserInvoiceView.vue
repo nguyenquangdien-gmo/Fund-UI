@@ -79,6 +79,7 @@
               style="margin-left: 10px"
               :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'"
             />
+            <p v-if="data.status === 'APPROVED' || data.status === 'CANCELLED'">Đã duyệt</p>
           </template>
         </Column>
       </DataTable>

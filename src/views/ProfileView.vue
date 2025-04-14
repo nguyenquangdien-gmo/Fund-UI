@@ -19,7 +19,7 @@
           </div>
           <div>
             <span>Số Điện Thoại:</span>
-            <p>{{ form.phoneNumber ? form.position : 'Chưa cập nhật' }}</p>
+            <p>{{ form.phoneNumber ? form.phoneNumber : 'Chưa cập nhật' }}</p>
           </div>
           <div>
             <span>Ngày Sinh:</span>

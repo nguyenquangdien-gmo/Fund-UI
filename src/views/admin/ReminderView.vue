@@ -253,6 +253,7 @@ import formatTextWithLinks from '@/utils/FormateTextWithUrl'
 import { useUserStore } from '@/pinia/userStore'
 import { useToast } from 'primevue'
 import { formatDateToLocalISOString } from '@/utils/FormatDate'
+import { eventBus } from '@/event/EventBus'
 
 const toast = useToast()
 
@@ -463,8 +464,10 @@ const saveReminder = async () => {
 
     if (isUpdate.value) {
       await axiosInstance.put(`/reminders/${form.value.id}`, reminderData)
+      eventBus.emit('notifications:updated')
     } else {
       await axiosInstance.post(`/reminders/create`, reminderData)
+      eventBus.emit('notifications:updated')
       selectedUsers.value = []
     }
 

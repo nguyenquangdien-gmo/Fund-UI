@@ -323,7 +323,7 @@ const canPerformAction = (item) => {
     <DataTable
       v-if="filteredItems.length > 0"
       :value="filteredItems"
-      class="p-datatable-striped"
+      class="p-datatable"
       paginator
       :rows="15"
       :rowsPerPageOptions="[15, 20, 25]"
@@ -450,5 +450,8 @@ const canPerformAction = (item) => {
 /* Highlight pending rows */
 .bg-blue-50 {
   background-color: #eff6ff !important;
+}
+.p-tag {
+  width: 90%;
 }
 </style>

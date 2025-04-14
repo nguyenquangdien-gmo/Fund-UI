@@ -376,4 +376,8 @@ onMounted(() => {
 .btn-create {
   margin-left: 10px;
 }
+.p-tag {
+  width: 60%;
+  text-align: center;
+}
 </style>

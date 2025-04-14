@@ -103,7 +103,7 @@
   <Dialog
     v-model:visible="showInvoice"
     modal
-    :header="isUpdate ? 'Update' : 'Create'"
+    :header="isUpdate ? 'Cập nhật' : 'Tạo'"
     @hide="resetErrors"
     :style="{ width: '30rem' }"
   >
@@ -166,10 +166,10 @@ import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
 import { useUserStore } from '@/pinia/userStore'
 import Dropdown from 'primevue/dropdown'
-import type Invoice from '@/types/Invoice'
 import InvoiceType from '@/types/InvoiceType'
 import type InvoiceStatus from '@/types/InvoiceStatus'
 import Tag from 'primevue/tag'
+import type FundType from '@/types/FundType'
 
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false)
@@ -195,6 +195,17 @@ const status = ref([
   { label: 'Đã duyệt', value: InvoiceType.EXPENSE },
   { label: 'Bị hủy', value: InvoiceType.EXPENSE },
 ])
+
+interface Invoice {
+  id: number
+  name: string
+  description: string
+  userId: number
+  amount: number
+  invoiceType: InvoiceType
+  fundType: FundType
+  createdAt: string
+}
 
 const getInvoiceStatusSeverity = (status: string) => {
   switch (
@@ -247,6 +258,7 @@ const fetchInvoice = async () => {
   try {
     const response = await axiosInstance.get(`/invoices/user/${user.value.id}`)
     invoices.value = response.data
+    console.log(invoices.value)
   } catch (error) {
     console.error('Error fetching invoices:', error)
   }
@@ -262,6 +274,7 @@ const filteredInvoice = computed(() => {
 const openCreateDialog = () => {
   form.value = { id: 0, name: '', userId: 0, description: '', invoiceType: '', amount: 0 }
   isUpdate.value = false
+  selectedType.value = null
   showInvoice.value = true
 }
 
@@ -271,13 +284,12 @@ const openUpdateDialog = (invoice: Invoice) => {
     name: invoice.name,
     userId: user.value.id,
     description: invoice.description,
-    invoiceType: invoice.type,
+    invoiceType: invoice.invoiceType,
     amount: invoice.amount,
   }
 
   // Just use this line - set selectedType to the enum value directly
-  selectedType.value =
-    invoice.type === InvoiceType.INCOME ? InvoiceType.INCOME : InvoiceType.EXPENSE
+  selectedType.value = invoice.invoiceType === 'INCOME' ? InvoiceType.INCOME : InvoiceType.EXPENSE
 
   isUpdate.value = true
   showInvoice.value = true
@@ -315,6 +327,7 @@ const saveInvoice = async () => {
       if (selectedType.value) {
         form.value.invoiceType = selectedType.value
         form.value.userId = user.value.id
+        selectedType.value = null
         // console.log(form.value);
 
         // console.log(form.value);

@@ -38,7 +38,11 @@
             {{ formatDate(data.dob) }}
           </template>
         </Column>
-        <Column field="phone" header="SĐT" sortable></Column>
+        <Column field="phone" header="SĐT" sortable>
+          <template #body="{ data }">
+            {{ data.phone ? data.phone : 'Chưa cập nhật' }}
+          </template></Column
+        >
         <!-- <Column field="position" header="Chức vụ" sortable></Column> -->
         <Column field="role.name" header="Vai trò " sortable></Column>
 
@@ -158,7 +162,7 @@
     <div class="mb-3">
       <label for="type" class="fw-bold"> Vai trò <span class="text-danger">*</span> </label>
       <Dropdown
-        :disabled="isAdmin && isUpdate"
+        :disabled="form.email === user.email"
         v-model="selectedRole"
         :options="roles"
         optionLabel="name"

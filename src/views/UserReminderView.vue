@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import axiosInstance from '@/router/Interceptor'
 import InputText from 'primevue/inputtext'
@@ -74,6 +74,7 @@ import Tag from 'primevue/tag'
 import formatTextWithLinks from '@/utils/FormateTextWithUrl'
 import type Reminder from '@/types/Reminder'
 import { useUserStore } from '@/pinia/userStore'
+import { eventBus } from '@/event/EventBus'
 
 const router = useRouter()
 const token = localStorage.getItem('accessToken')
@@ -130,7 +131,11 @@ onMounted(() => {
     router.push('/login')
   } else {
     fetchReminders()
+    eventBus.on('reminder:updated', fetchReminders)
   }
+})
+onBeforeUnmount(() => {
+  eventBus.off('reminder:updated', fetchReminders)
 })
 </script>
 

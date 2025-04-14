@@ -127,7 +127,7 @@ const markAsReadAndGo = (reminderId: number) => {
     } else {
       router.push('/user/reminders')
     }
-
+    eventBus.emit('reminder:updated')
     if (reminderPanel.value) {
       reminderPanel.value.hide()
     }
@@ -145,6 +145,7 @@ const markAllAsRead = () => {
     localStorage.setItem('readReminders', JSON.stringify(reminderIds))
 
     reminders.value = reminders.value.map((r) => ({ ...r, isRead: true }))
+    eventBus.emit('reminder:updated')
 
     if (reminderPanel.value) {
       reminderPanel.value.hide()

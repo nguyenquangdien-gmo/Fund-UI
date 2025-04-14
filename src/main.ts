@@ -14,6 +14,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 import ToastService from 'primevue/toastservice'
 import Chart from 'chart.js/auto'
 import { setupAxiosInterceptors } from './router/Interceptor'
+import InputNumber from 'primevue/inputnumber'
 
 declare global {
   interface Window {
@@ -25,6 +26,7 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(ToastService)
+app.component('InputNumber', InputNumber)
 
 setupAxiosInterceptors()
 

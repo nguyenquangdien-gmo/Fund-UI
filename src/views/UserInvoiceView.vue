@@ -119,7 +119,15 @@
     </div>
     <div class="mb-3">
       <label for="amount" class="fw-bold">Số tiền<span class="text-danger">*</span></label>
-      <InputText id="amount" type="number" v-model="amount" class="w-100" autocomplete="off" />
+      <InputNumber
+        id="amount"
+        v-model="form.amount"
+        mode="currency"
+        currency="VND"
+        class="w-100"
+        locale="en-US"
+        :min="0"
+      />
       <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
     </div>
     <div class="mb-3">
@@ -176,7 +184,6 @@ const errors = ref({ name: '', description: '', type: '', amount: '' })
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
-const amount = ref('')
 
 const selectedType = ref<InvoiceType | null>(null)
 const types = ref([
@@ -267,7 +274,6 @@ const openUpdateDialog = (invoice: Invoice) => {
     invoiceType: invoice.type,
     amount: invoice.amount,
   }
-  amount.value = invoice.amount.toString()
 
   // Just use this line - set selectedType to the enum value directly
   selectedType.value =
@@ -289,7 +295,8 @@ const validateForm = () => {
   if (!form.value.name) errors.value.name = 'Vui lòng nhập tên phí!'
   if (!form.value.description) errors.value.name = 'Vui lòng nhập mô tả phí!'
   if (!selectedType.value) errors.value.type = 'Vui lòng chọn loại phí!'
-  if (!amount.value || Number(amount.value) < 0) errors.value.amount = 'Số tiền cần phải lớn hơn 0!'
+  if (!form.value.amount || form.value.amount <= 0)
+    errors.value.amount = 'Số tiền cần phải lớn hơn 0!'
   return Object.values(errors.value).every((err) => err === '')
 }
 
@@ -300,7 +307,6 @@ const saveInvoice = async () => {
       if (selectedType.value) {
         form.value.invoiceType = selectedType.value.toString()
       }
-      form.value.amount = Number(amount.value)
       console.log(form.value)
 
       await axiosInstance.put(`/invoices/${form.value.id}/update`, form.value)
@@ -309,7 +315,6 @@ const saveInvoice = async () => {
       if (selectedType.value) {
         form.value.invoiceType = selectedType.value
         form.value.userId = user.value.id
-        form.value.amount = Number(amount.value)
         // console.log(form.value);
 
         // console.log(form.value);
@@ -330,7 +335,6 @@ const resetErrors = () => {
 
 const resetForm = () => {
   form.value = { id: 0, name: '', userId: 0, description: '', invoiceType: '', amount: 0 }
-  amount.value = ''
   selectedType.value = null
 }
 

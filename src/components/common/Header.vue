@@ -85,6 +85,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 const isLoggedIn = computed(() => !!user.value.role)
+const isAdmin = ref(false)
 
 const reminders = ref<Reminder[]>([])
 const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null)
@@ -96,6 +97,20 @@ const fetchReminders = async () => {
     console.log('Reminders:', reminders.value)
   } catch (error) {
     console.error('Error fetching reminders:', error)
+  }
+}
+
+const checkAdmin = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axiosInstance.get('/tokens/is-admin', {
+      params: { token },
+    })
+    return response.data // Trả về true nếu là admin
+  } catch (error) {
+    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+    return false
   }
 }
 
@@ -121,12 +136,16 @@ const markAsReadAndGo = (reminderId: number) => {
       return r
     })
     console.log(reminder)
-
-    if (reminder.reminderType !== ReminderType.OTHER) {
+    if (reminder.reminderType === ReminderType.CONTRIBUTION) {
       router.push('/contributions')
+    } else if (reminder.reminderType === ReminderType.SURVEY && isAdmin.value) {
+      router.push(`/reminder/${reminderId}/survey`)
+    } else if (reminder.reminderType === ReminderType.OTHER && isAdmin.value) {
+      router.push('/reminders')
     } else {
       router.push('/user/reminders')
     }
+
     eventBus.emit('reminder:updated')
     if (reminderPanel.value) {
       reminderPanel.value.hide()
@@ -174,9 +193,10 @@ const handleClick = (event: Event) => {
   router.push('/user/reminders')
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (isLoggedIn.value) {
     fetchReminders()
+    isAdmin.value = await checkAdmin()
     eventBus.on('notifications:updated', fetchReminders)
   } else {
     router.push('/login')

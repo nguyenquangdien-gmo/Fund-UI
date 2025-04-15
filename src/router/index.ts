@@ -26,6 +26,7 @@ import UserInvoiceView from '@/views/UserInvoiceView.vue'
 import axiosInstance from './Interceptor'
 import { jwtDecode } from 'jwt-decode'
 import type JwtPayload from '@/types/JwtPayload'
+import SurveyView from '@/views/admin/SurveyView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -131,7 +132,7 @@ const router = createRouter({
       path: '/invoices',
       name: 'invoices',
       component: InvoiceView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/late-checkin',
@@ -152,10 +153,10 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
-      path: '/invoices',
-      name: 'invoices',
-      component: InvoiceView,
-      meta: { requiresAuth: true },
+      path: '/reminder/:reminderId/survey',
+      name: 'ReminderSurvey',
+      component: SurveyView,
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/approvals',
@@ -208,7 +209,6 @@ const checkAdmin = async () => {
   try {
     const response = await axiosInstance.get('/tokens/is-admin', {
       params: { token },
-      headers: { Authorization: `Bearer ${token}` },
     })
     return response.data // Trả về true nếu là admin
   } catch (error) {

@@ -47,7 +47,13 @@
         <Column field="type" header="Loại Nhắc Nhở" sortable>
           <template #body="{ data }">
             <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.type)">{{
-              data.type === 'CONTRIBUTION' ? 'Đóng quỹ' : data.type === 'PENALTY' ? 'Phạt' : 'Khác'
+              data.type === 'CONTRIBUTION'
+                ? 'Đóng quỹ'
+                : data.type === 'PENALTY'
+                  ? 'Phạt'
+                  : data.type === 'OTHER'
+                    ? 'Khác'
+                    : 'Khảo sát'
             }}</Tag>
           </template>
         </Column>
@@ -82,10 +88,7 @@
         <!-- Action Column (Only for Admin) -->
         <Column v-if="isAdmin" header="Thao Tác" style="width: 22%">
           <template #body="{ data }">
-            <div
-              class="flex gap-2"
-              v-if="!data.scheduledTime || new Date(data.scheduledTime) > new Date()"
-            >
+            <div class="flex gap-2">
               <Button
                 label="Sửa"
                 icon="pi pi-pencil"
@@ -93,6 +96,7 @@
                 severity="info"
                 size="small"
                 @click="openUpdateDialog(data)"
+                v-if="!data.scheduledTime || new Date(data.scheduledTime) > new Date()"
               />
               <Button
                 label="Xóa"
@@ -104,7 +108,6 @@
               />
             </div>
             <!-- Nếu đã quá hạn thì không hiển thị gì hoặc hiển thị message -->
-            <div v-else class="text-gray-400 italic">Đã hết hạn</div>
           </template>
         </Column>
       </DataTable>
@@ -296,6 +299,7 @@ const selectedUsers = ref<number[]>([])
 const reminderTypes = [
   { name: 'Đóng quỹ', value: 'CONTRIBUTION' },
   { name: 'Phạt', value: 'PENALTY' },
+  { name: 'Khảo sát', value: 'SURVEY' },
   { name: 'Khác', value: 'OTHER' },
 ]
 
@@ -485,6 +489,7 @@ const deleteReminder = async () => {
     await axiosInstance.delete(`/reminders/${reminderToDelete.value.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+    eventBus.emit('notifications:updated')
     fetchReminders()
   } catch (error) {
     console.error('Error deleting reminder:', error)
@@ -507,16 +512,18 @@ const getReminderTypeSeverity = (type: string): string => {
     case 'PENALTY':
       return 'danger'
     case 'OTHER':
-      return 'warning'
+      return 'success'
+    case 'SURVEY':
+      return 'warn'
     default:
       return 'info'
   }
 }
 
-const getUserNames = (reminder: Reminder): string => {
-  if (!reminder.users || reminder.users.length === 0) return 'Không có người nhận'
-  return reminder.users.map((user) => user.fullName || 'Không xác định').join(', ')
-}
+// const getUserNames = (reminder: Reminder): string => {
+//   if (!reminder.users || reminder.users.length === 0) return 'Không có người nhận'
+//   return reminder.users.map((user) => user.fullName || 'Không xác định').join(', ')
+// }
 
 // Lifecycle Hooks
 onMounted(() => {

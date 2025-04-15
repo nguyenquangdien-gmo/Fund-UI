@@ -7,7 +7,6 @@ import { eventBus } from './event/EventBus'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import Loader from '@/components/common/Loader.vue'
-import InputNumber from 'primevue/inputnumber'
 
 const toast = useToast()
 

@@ -81,13 +81,10 @@
       </div>
 
       <div class="bg-white shadow-lg rounded-lg p-5 column">
-        <p class="text-xl font-semibold text-gray-700 mb-4">Thống kê quỹ hàng năm</p>
-        <Chart
-          type="bar"
-          :data="combinedYearlyData"
-          :options="chartYearOptions"
-          class="h-[20rem]"
-        />
+        <p class="text-xl font-semibold text-gray-700 mb-4">
+          Thống kê quỹ theo quý năm {{ selectedYear }}
+        </p>
+        <Chart type="bar" :data="quarterlyData" :options="chartQuarterOptions" class="h-[20rem]" />
       </div>
     </div>
   </div>
@@ -198,51 +195,45 @@ const combinedMonthlyData = computed(() => {
   }
 })
 
-const combinedYearlyData = computed(() => {
-  const years = [
-    ...new Set([
-      ...contributionYearlyData.value.map((item) => item.year),
-      ...penaltyYearlyData.value.map((item) => item.year),
-      ...incomeYearlyData.value.map((item) => item.year),
-      ...expenseYearlyData.value.map((item) => item.year),
-    ]),
-  ].sort()
+// Tạo dữ liệu theo quý cho năm đã chọn thay vì nhiều năm
+const quarterlyData = computed(() => {
+  // Tạo mảng quý cho năm được chọn
+  const quarters = [`Quý 1`, `Quý 2`, `Quý 3`, `Quý 4`]
 
-  // Create labels array
-  const labels = years.map((year) => `Năm ${year}`)
+  // Tính toán dữ liệu theo quý từ dữ liệu hàng tháng
+  const contributionQuarterlyData = [0, 0, 0, 0]
+  const penaltyQuarterlyData = [0, 0, 0, 0]
+  const incomeQuarterlyData = [0, 0, 0, 0]
+  const expenseQuarterlyData = [0, 0, 0, 0]
 
-  // Prepare data arrays
-  const contributionData = []
-  const penaltyData = []
-  const incomeData = []
-  const expenseData = []
+  // Tính tổng cho quý từ dữ liệu hàng tháng
+  contributionMonthlyData.value.forEach((item) => {
+    const quarterIndex = Math.floor((item.month - 1) / 3)
+    contributionQuarterlyData[quarterIndex] += item.totalAmount
+  })
 
-  // Fill data arrays
-  years.forEach((year) => {
-    // For contributions
-    const contributionItem = contributionYearlyData.value.find((item) => item.year === year)
-    contributionData.push(contributionItem ? contributionItem.totalAmount : 0)
+  penaltyMonthlyData.value.forEach((item) => {
+    const quarterIndex = Math.floor((item.month - 1) / 3)
+    penaltyQuarterlyData[quarterIndex] += item.totalAmount
+  })
 
-    // For penalties
-    const penaltyItem = penaltyYearlyData.value.find((item) => item.year === year)
-    penaltyData.push(penaltyItem ? penaltyItem.totalAmount : 0)
+  incomeMonthlyData.value.forEach((item) => {
+    const quarterIndex = Math.floor((item.month - 1) / 3)
+    incomeQuarterlyData[quarterIndex] += item.totalAmount
+  })
 
-    // For income
-    const incomeItem = incomeYearlyData.value.find((item) => item.year === year)
-    incomeData.push(incomeItem ? incomeItem.totalAmount : 0)
-
-    // For expense
-    const expenseItem = expenseYearlyData.value.find((item) => item.year === year)
-    expenseData.push(expenseItem ? expenseItem.totalAmount : 0)
+  expenseMonthlyData.value.forEach((item) => {
+    const quarterIndex = Math.floor((item.month - 1) / 3)
+    expenseQuarterlyData[quarterIndex] += item.totalAmount
   })
 
   return {
-    labels: labels,
+    labels: quarters,
     datasets: [
       {
         type: 'bar',
         label: 'Quỹ Chung + ăn vặt',
-        data: contributionData,
+        data: contributionQuarterlyData,
         backgroundColor: 'rgba(66, 165, 245, 0.7)',
         borderColor: '#42A5F5',
         borderWidth: 1,
@@ -250,7 +241,7 @@ const combinedYearlyData = computed(() => {
       {
         type: 'bar',
         label: 'Tổng phạt',
-        data: penaltyData,
+        data: penaltyQuarterlyData,
         backgroundColor: 'rgba(255, 152, 0, 0.7)',
         borderColor: '#FF9800',
         borderWidth: 1,
@@ -258,7 +249,7 @@ const combinedYearlyData = computed(() => {
       {
         type: 'bar',
         label: 'Tổng thu',
-        data: incomeData,
+        data: incomeQuarterlyData,
         backgroundColor: 'rgba(76, 175, 80, 0.7)',
         borderColor: '#4CAF50',
         borderWidth: 1,
@@ -266,7 +257,7 @@ const combinedYearlyData = computed(() => {
       {
         type: 'bar',
         label: 'Tổng chi',
-        data: expenseData,
+        data: expenseQuarterlyData,
         backgroundColor: 'rgba(244, 67, 54, 0.7)',
         borderColor: '#F44336',
         borderWidth: 1,
@@ -323,7 +314,7 @@ const chartMonthOptions = ref({
   },
 })
 
-const chartYearOptions = ref({
+const chartQuarterOptions = ref({
   maintainAspectRatio: false,
   plugins: {
     legend: {
@@ -412,7 +403,7 @@ const fetchExpenseMonthlyData = async (year) => {
 
 const fetchContributionYearlyData = async () => {
   try {
-    const response = await axiosInstance.get(`/contributions/yearly-stats`)
+    const response = await axiosInstance.get(`/contributions/${selectedYear.value}/stats`)
     contributionYearlyData.value = response.data
   } catch (error) {
     console.error('Error fetching yearly contributions:', error.response?.data || error.message)
@@ -421,7 +412,7 @@ const fetchContributionYearlyData = async () => {
 
 const fetchPenaltyYearlyData = async () => {
   try {
-    const response = await axiosInstance.get(`/pen-bills/yearly-stats`)
+    const response = await axiosInstance.get(`/pen-bills/${selectedYear.value}/stats`)
     penaltyYearlyData.value = response.data
   } catch (error) {
     console.error('Error fetching yearly penalties:', error.response?.data || error.message)
@@ -430,7 +421,7 @@ const fetchPenaltyYearlyData = async () => {
 
 const fetchIncomeYearlyData = async () => {
   try {
-    const response = await axiosInstance.get(`/invoices/yearly-stats`, {
+    const response = await axiosInstance.get(`/invoices/${selectedYear.value}/stats`, {
       params: { type: 'income' },
     })
     incomeYearlyData.value = response.data
@@ -441,7 +432,7 @@ const fetchIncomeYearlyData = async () => {
 
 const fetchExpenseYearlyData = async () => {
   try {
-    const response = await axiosInstance.get(`/invoices/yearly-stats`, {
+    const response = await axiosInstance.get(`/invoices/${selectedYear.value}/stats`, {
       params: { type: 'expense' },
     })
     expenseYearlyData.value = response.data
@@ -536,6 +527,12 @@ const onYearChange = () => {
   fetchPenaltyTotal()
   fetchIncomeTotal()
   fetchExpenseTotal()
+
+  // Đảm bảo chúng ta cũng cập nhật dữ liệu hàng năm khi thay đổi năm
+  fetchContributionYearlyData()
+  fetchPenaltyYearlyData()
+  fetchIncomeYearlyData()
+  fetchExpenseYearlyData()
 }
 </script>
 
@@ -585,12 +582,6 @@ const onYearChange = () => {
 .text-2xl {
   color: #10b981;
 }
-
-/* .charts {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-} */
 
 .line {
   width: 99%;

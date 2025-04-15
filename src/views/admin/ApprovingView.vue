@@ -185,11 +185,11 @@ const getStatusSeverity = (item) => {
 
 const getItemDescription = (item) => {
   if (item.itemType === 'invoice') {
-    return item.description || ''
+    return item.description || '-'
   } else if (item.itemType === 'contribution') {
-    return item.periodName || ''
+    return item.periodName || '-'
   } else if (item.itemType === 'penBill') {
-    return item.description || ''
+    return item.description || '-'
   }
   return ''
 }
@@ -309,7 +309,7 @@ const canPerformAction = (item) => {
         v-model="searchQuery"
         placeholder="Tìm kiếm theo tên or mô tả..."
         class="p-inputtext w-64"
-        style="width: 40%"
+        style="width: 20%"
       />
       <!-- <div class="ml-auto">
                 <Tag value="Đang chờ" severity="info" class="mr-2" />

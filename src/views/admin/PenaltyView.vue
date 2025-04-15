@@ -30,7 +30,11 @@
           </template>
         </Column>
         <Column field="name" header="Tên quỹ phạt" sortable></Column>
-        <Column field="description" header="Mô tả" sortable></Column>
+        <Column field="description" header="Mô tả" sortable>
+          <template #body="{ data }">
+            {{ data.description !== '' ? data.description : '-' }}
+          </template>
+        </Column>
         <Column field="amount" header="Tổng cộng" sortable>
           <template #body="{ data }">
             {{ formatCurrency(data.amount) }}
@@ -89,7 +93,7 @@
       <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
     </div>
     <div class="mb-3">
-      <label for="description" class="fw-bold"> Mô tả <span class="text-danger">*</span> </label>
+      <label for="description" class="fw-bold"> Mô tả</label>
       <InputText
         id="description"
         type="text"
@@ -97,7 +101,6 @@
         class="w-100"
         autocomplete="off"
       />
-      <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
     </div>
     <div class="mb-3">
       <label for="slug" class="fw-bold"> Slug <span class="text-danger">*</span> </label>
@@ -151,7 +154,7 @@ const showPenaltyDialog = ref(false)
 const isUpdate = ref(false)
 const form = ref({ id: 0, name: '', description: '', amount: 0, slug: '' })
 const router = useRouter()
-const errors = ref({ name: '', description: '', amount: '', slug: '' })
+const errors = ref({ name: '', amount: '', slug: '' })
 
 const fetchPenalties = async () => {
   try {
@@ -165,10 +168,9 @@ const fetchPenalties = async () => {
 }
 
 const validateForm = () => {
-  errors.value = { name: '', description: '', amount: '', slug: '' }
+  errors.value = { name: '', amount: '', slug: '' }
 
   if (!form.value.name) errors.value.name = 'Vui lòng nhập tên quỹ phạt!'
-  if (!form.value.description) errors.value.description = 'Vui lòng nhập mô tả!'
   if (!form.value.amount || isNaN(Number(form.value.amount)))
     errors.value.amount = 'Vui lòng nhập số tiền hợp lệ!'
   if (!form.value.slug) errors.value.slug = 'Vui lòng nhập slug!'
@@ -177,7 +179,7 @@ const validateForm = () => {
 }
 
 const resetErrors = () => {
-  errors.value = { name: '', description: '', amount: '', slug: '' }
+  errors.value = { name: '', amount: '', slug: '' }
 }
 
 const filteredPeriods = computed(() => {

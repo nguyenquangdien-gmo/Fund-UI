@@ -34,7 +34,11 @@
         </Column>
         <Column field="name" header="Tên" sortable></Column>
 
-        <Column field="description" header="Mô tả" sortable></Column>
+        <Column field="description" header="Mô tả" sortable>
+          <template #body="{ data }">
+            {{ data.description !== '' ? data.description : '-' }}
+          </template>
+        </Column>
         <Column field="amount" header="Số Tiền" sortable>
           <template #body="{ data }">
             {{ formatCurrency(data.amount) }}
@@ -114,9 +118,8 @@
       <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
     </div>
     <div class="mb-3">
-      <label for="description" class="fw-bold">Mô tả<span class="text-danger">*</span></label>
+      <label for="description" class="fw-bold">Mô tả</label>
       <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
     </div>
     <div class="mb-3">
       <label for="amount" class="fw-bold">Số tiền<span class="text-danger">*</span></label>
@@ -181,7 +184,7 @@ const searchQuery = ref('')
 const showInvoice = ref(false)
 const isUpdate = ref(false)
 const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
-const errors = ref({ name: '', description: '', type: '', amount: '' })
+const errors = ref({ name: '', type: '', amount: '' })
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
@@ -304,9 +307,8 @@ const confirmDeleteInvoice = (invoice: Invoice) => {
 }
 
 const validateForm = () => {
-  errors.value = { name: '', description: '', type: '', amount: '' }
+  errors.value = { name: '', type: '', amount: '' }
   if (!form.value.name) errors.value.name = 'Vui lòng nhập tên phí!'
-  if (!form.value.description) errors.value.name = 'Vui lòng nhập mô tả phí!'
   if (!selectedType.value) errors.value.type = 'Vui lòng chọn loại phí!'
   if (!form.value.amount || form.value.amount <= 0)
     errors.value.amount = 'Số tiền cần phải lớn hơn 0!'
@@ -344,7 +346,7 @@ const saveInvoice = async () => {
 }
 
 const resetErrors = () => {
-  errors.value = { name: '', description: '', type: '', amount: '' }
+  errors.value = { name: '', type: '', amount: '' }
 }
 
 const resetForm = () => {

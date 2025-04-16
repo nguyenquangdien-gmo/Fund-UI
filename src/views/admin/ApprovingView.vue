@@ -8,6 +8,7 @@ import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
 import axiosInstance from '@/router/Interceptor'
 import Button from 'primevue/button'
+import Textarea from 'primevue/textarea'
 
 const token = localStorage.getItem('accessToken')
 const loading = ref(true)
@@ -26,6 +27,7 @@ const confirmDialogMessage = ref('')
 const selectedItemToConfirm = ref(null)
 const confirmAction = ref(null)
 const errorMessage = ref('')
+const rejectedReason = ref('')
 
 // Fetch all data and combine into one list
 const fetchAllData = async () => {
@@ -35,15 +37,9 @@ const fetchAllData = async () => {
 
     // Fetch all three types of data in parallel
     const [invoicesResponse, contributionsResponse, penBillsResponse] = await Promise.all([
-      axiosInstance.get(`/invoices/pending`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      axiosInstance.get(`/contributions/pending`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      axiosInstance.get(`/pen-bills/pending`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+      axiosInstance.get(`/invoices/pending`),
+      axiosInstance.get(`/contributions/pending`),
+      axiosInstance.get(`/pen-bills/pending`),
     ])
 
     // Transform invoices data
@@ -200,6 +196,9 @@ const validateForm = (action, item) => {
   if (action === 'confirm' && item.itemType === 'invoice' && !selectedFundType.value) {
     errorMessage.value = 'Vui lòng chọn quỹ trước khi phê duyệt!'
     return false
+  } else if (action !== 'confirm' && !rejectedReason.value) {
+    errorMessage.value = 'Vui lòng nhập lý do từ chối!'
+    return false
   }
 
   return true
@@ -211,6 +210,7 @@ const handleConfirmAction = async () => {
 
   const item = selectedItemToConfirm.value
   const action = confirmAction.value
+  console.log('reason:', rejectedReason.value)
 
   if (!validateForm(action, item)) return
 
@@ -241,23 +241,16 @@ const handleConfirmAction = async () => {
       method = 'post'
     }
 
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    }
-
     if (method === 'put') {
       if (Object.keys(params).length > 0) {
-        await axiosInstance.put(
-          `${endpoint}?fundType=${encodeURIComponent(params.fundType)}`,
-          {},
-          { headers },
-        )
+        await axiosInstance.put(`${endpoint}?fundType=${encodeURIComponent(params.fundType)}`, {
+          reason: rejectedReason.value,
+        })
       } else {
-        await axiosInstance.put(endpoint, {}, { headers })
+        await axiosInstance.put(endpoint, { reason: rejectedReason.value })
       }
     } else {
-      await axiosInstance.post(endpoint, {}, { headers })
+      await axiosInstance.post(endpoint, { reason: rejectedReason.value })
     }
 
     fetchAllData()
@@ -390,9 +383,13 @@ const canPerformAction = (item) => {
     </div>
 
     <!-- Confirmation Dialog -->
-    <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '350px' }">
+    <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '17%' }">
       <div class="confirmation-content">
         <span>{{ confirmDialogMessage }}</span>
+        <div class="flex col-2 mt-3" v-if="confirmAction !== 'confirm'">
+          <label for="reason">Lý do<span class="text-danger">*</span></label>
+          <Textarea v-model="rejectedReason" class="mt-3" rows="5" cols="30" />
+        </div>
       </div>
 
       <div

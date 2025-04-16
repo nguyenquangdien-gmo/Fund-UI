@@ -45,7 +45,7 @@
           </template></Column
         >
         <!-- <Column field="position" header="Chức vụ" sortable></Column> -->
-        <Column field="role.name" header="Vai trò " sortable></Column>
+        <Column field="role" header="Vai trò " sortable></Column>
 
         <Column field="joinDate" header="Ngày tham gia" sortable>
           <template #body="{ data }">
@@ -320,10 +320,10 @@ const openCreateDialog = () => {
   showUserDialog.value = true
   seletedDob.value = null
   seletedJoinDate.value = null
-  selectedTeam.value = findJavaTeam('java')
+  selectedTeam.value = findTeam('java')
 }
-const findJavaTeam = (slugTeam: string) => {
-  const team = teams.value.find((team) => team.name.toLowerCase() === slugTeam)
+const findTeam = (slugTeam: string) => {
+  const team = teams.value.find((team) => team.name === slugTeam)
   return team ? team.slug : ''
 }
 const openUpdateDialog = (user: User) => {
@@ -336,15 +336,21 @@ const openUpdateDialog = (user: User) => {
     phoneNumber: user.phone || '',
     position: user.position || '',
     joinDate: user.joinDate,
-    slugTeam: user.team.name || '',
+    slugTeam: findTeam(
+      typeof user.team === 'object' && user.team !== null ? user.team.name : user.team || '',
+    ),
   }
-  selectedTeam.value = findJavaTeam(user.team.slug)
+  selectedTeam.value = findTeam(
+    typeof user.team === 'object' && user.team !== null ? user.team.name : user.team || '',
+  )
 
   selectedRole.value =
     typeof user.role === 'object' && user.role !== null ? user.role.name : user.role || ''
   isAdmin.value = selectedRole.value === 'ADMIN'
   userId.value = user.id.toString()
   oldId.value = user.id
+
+  console.log('team', user.team, 'slug', user.team)
 
   // Chuyển đổi chuỗi ngày tháng thành đối tượng Date
   seletedDob.value = user.dob ? new Date(user.dob) : null

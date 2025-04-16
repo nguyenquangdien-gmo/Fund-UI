@@ -27,6 +27,7 @@ import axiosInstance from './Interceptor'
 import { jwtDecode } from 'jwt-decode'
 import type JwtPayload from '@/types/JwtPayload'
 import SurveyView from '@/views/admin/SurveyView.vue'
+import WorkCalendarView from '@/views/WorkCalendarView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -55,6 +56,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
+    },
+    {
+      path: '/work-calendar',
+      name: 'work-calendar',
+      component: WorkCalendarView,
     },
     {
       path: '/histories',

@@ -15,7 +15,7 @@
 
       <!-- Reminder DataTable -->
       <DataTable
-        :value="filteredReminders"
+        :value="filteredUserReminders"
         paginator
         :rows="10"
         :rowsPerPageOptions="[10, 15, 20]"
@@ -26,21 +26,21 @@
             {{ index + 1 }}
           </template>
         </Column>
-        <Column field="title" header="Tiêu Đề" sortable></Column>
-        <Column field="description" header="Mô Tả" sortable>
+        <Column field="reminder.title" header="Tiêu Đề" sortable></Column>
+        <Column field="reminder.description" header="Mô Tả" sortable>
           <template #body="{ data }">
-            <div v-html="formatTextWithLinks(data.description)"></div>
+            <div v-html="formatTextWithLinks(data.reminder.description)"></div>
           </template>
         </Column>
-        <Column field="type" header="Loại Nhắc Nhở" sortable>
+        <Column field="reminder.reminderType" header="Loại Nhắc Nhở" sortable>
           <template #body="{ data }">
-            <Tag style="width: 50%" :severity="getReminderTypeSeverity(data.reminderType)">
+            <Tag style="width: 50%" :severity="getReminderTypeSeverity(data.reminder.reminderType)">
               {{
-                data.reminderType === 'CONTRIBUTION'
+                data.reminder.reminderType === 'CONTRIBUTION'
                   ? 'Đóng quỹ'
-                  : data.reminderType === 'PENALTY'
+                  : data.reminder.reminderType === 'PENALTY'
                     ? 'Phạt'
-                    : data.reminderType === 'OTHER'
+                    : data.reminder.reminderType === 'OTHER'
                       ? 'Khác'
                       : 'Khảo sát'
               }}
@@ -49,21 +49,25 @@
         </Column>
         <Column field="status" header="Trạng Thái">
           <template #body="{ data }">
-            <Tag :severity="checkStatusReminder(data) === 'Đã đọc' ? 'secondary' : 'info'">
-              {{ checkStatusReminder(data) }}
+            <Tag :severity="data.status === 'READ' ? 'secondary' : 'info'">
+              {{ data.status === 'READ' ? 'Đã đọc' : 'Chưa đọc' }}
             </Tag>
           </template>
         </Column>
 
-        <Column field="scheduledTime" header="Thời Gian" sortable>
+        <Column field="reminder.scheduledTime" header="Thời Gian" sortable>
           <template #body="{ data }">
-            {{ data.scheduledTime ? formatDateTime(data.scheduledTime) : 'Ngay lập tức' }}
+            {{
+              data.reminder.scheduledTime
+                ? formatDateTime(data.reminder.scheduledTime)
+                : 'Ngay lập tức'
+            }}
           </template>
         </Column>
         <Column v-if="hasPendingSurvey" header="Thao tác" sortable>
           <template #body="{ data }">
             <Button
-              v-if="!surveyCompletionStatus[data.id]"
+              v-if="!data.completed && data.reminder.reminderType === 'SURVEY'"
               label="Hoàn thành"
               icon="pi pi-check"
               class="p-button-sm"
@@ -103,36 +107,61 @@ import { eventBus } from '@/event/EventBus'
 
 const router = useRouter()
 const token = localStorage.getItem('accessToken')
-const reminders = ref<Reminder[]>([])
-const searchQuery = ref('')
-
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+const searchQuery = ref('')
 
-const fetchReminders = async () => {
+// Interface for UserReminder from API
+interface UserReminder {
+  reminder: Reminder
+  userId: number
+  status: 'READ' | 'SENT'
+  completed: boolean
+  finishedAt: string | null
+}
+
+const userReminders = ref<UserReminder[]>([])
+const showConfirmDialog = ref(false)
+
+// Form data for survey completion
+const form = ref({
+  reminderId: 0,
+  userId: 0,
+})
+
+// Fetch user reminders from the API
+const fetchUserReminders = async () => {
   try {
-    const response = await axiosInstance.get<Reminder[]>(`users/${user.value.id}/reminders`, {
+    const response = await axiosInstance.get(`reminders/user`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    reminders.value = response.data
-    await loadSurveyCompletionStatus()
+    userReminders.value = response.data
+    console.log('User reminders:', userReminders.value)
   } catch (error) {
-    console.error('Error fetching reminders:', error)
+    console.error('Error fetching user reminders:', error)
   }
 }
 
-const filteredReminders = computed(() => {
-  if (!searchQuery.value) return reminders.value
-  return reminders.value.filter((reminder) =>
-    reminder.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
+// Filter reminders based on search query
+const filteredUserReminders = computed(() => {
+  if (!searchQuery.value) return userReminders.value
+  return userReminders.value.filter((userReminder) =>
+    userReminder.reminder.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
 
+// Format date for display
 const formatDateTime = (dateString: string) => {
   const date = new Date(dateString)
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}/${date.getFullYear()} ${date
+    .getHours()
+    .toString()
+    .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
+// Get severity class based on reminder type
 const getReminderTypeSeverity = (type: string): string => {
   switch (type) {
     case 'CONTRIBUTION':
@@ -148,88 +177,61 @@ const getReminderTypeSeverity = (type: string): string => {
   }
 }
 
-//check status reminder
-const checkStatusReminder = (reminder: Reminder) => {
-  const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]')
-  return readReminders.includes(reminder.id) ? 'Đã đọc' : 'Chưa đọc'
-}
-
-//check completed survey
-const surveyCompletionStatus = ref<Record<number, boolean>>({})
-
-const loadSurveyCompletionStatus = async () => {
-  const statusMap: Record<number, boolean> = {}
-
-  for (const r of reminders.value) {
-    if (r.reminderType === 'SURVEY') {
-      try {
-        const response = await axiosInstance.get(`/reminders/${r.id}/user/completed`)
-        statusMap[r.id] = response.data
-      } catch (error) {
-        console.error(`Error checking survey for reminder ${r.id}:`, error)
-        statusMap[r.id] = false
-      }
-    }
-  }
-
-  surveyCompletionStatus.value = statusMap
-}
-
-//handle confirm action
-const form = ref({
-  reminderId: 0,
-  userId: 0,
-})
-
+// Check if there are any pending surveys
 const hasPendingSurvey = computed(() =>
-  reminders.value.some(
-    (r) =>
-      r.reminderType === 'SURVEY' &&
-      r.status === 'SENT' &&
-      surveyCompletionStatus.value[r.id] === false,
-  ),
+  userReminders.value.some((ur) => ur.reminder.reminderType === 'SURVEY' && !ur.completed),
 )
 
-const showConfirmDialog = ref(false)
+// Open confirmation dialog for survey completion
+const openDialog = (userReminder: UserReminder) => {
+  showConfirmDialog.value = true
+  form.value.reminderId = userReminder.reminder.id
+  form.value.userId = user.value.id
+}
 
+// Handle survey completion confirmation
 const handleConfirm = async () => {
-  // const data =  {
-  //   reminderId: form.value.reminderId,
-  //   userId: form.value.userId,
-  // }
-  console.log('form.value', form.value)
-
   try {
     await axiosInstance.post(`/reminders/${form.value.reminderId}/survey/completed`, form.value)
+
+    // Update local state to reflect the completion
+    userReminders.value = userReminders.value.map((ur) => {
+      if (ur.reminder.id === form.value.reminderId) {
+        return { ...ur, completed: true }
+      }
+      return ur
+    })
+
     eventBus.emit('showMessage', {
       severity: 'success',
       summary: 'Thành công',
       detail: 'Đã hoàn thành khảo sát',
     })
+
     showConfirmDialog.value = false
-    await fetchReminders()
     eventBus.emit('reminder:updated')
   } catch (error) {
-    console.error('Error confirming reminder:', error)
+    console.error('Error confirming survey completion:', error)
+    eventBus.emit('showMessage', {
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể hoàn thành khảo sát. Vui lòng thử lại.',
+    })
   }
 }
-const openDialog = (remider: Reminder) => {
-  showConfirmDialog.value = true
 
-  form.value.reminderId = remider.id
-  form.value.userId = user.value.id
-}
-
+// Lifecycle hooks
 onMounted(() => {
   if (!token) {
     router.push('/login')
   } else {
-    fetchReminders()
-    eventBus.on('reminder:updated', fetchReminders)
+    fetchUserReminders()
+    eventBus.on('reminder:updated', fetchUserReminders)
   }
 })
+
 onBeforeUnmount(() => {
-  eventBus.off('reminder:updated', fetchReminders)
+  eventBus.off('reminder:updated', fetchUserReminders)
 })
 </script>
 

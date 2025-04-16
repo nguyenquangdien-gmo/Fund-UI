@@ -113,13 +113,13 @@
     :style="{ width: '30rem' }"
   >
     <div class="mb-3">
-      <label for="name" class="fw-bold">Tên<span class="text-danger">*</span></label>
-      <InputText id="name" v-model="form.name" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+      <label for="name" class="fw-bold">Tên</label>
+      <InputText id="name" v-model="user.fullName" class="w-100" autocomplete="off" disabled />
     </div>
     <div class="mb-3">
-      <label for="description" class="fw-bold">Mô tả</label>
+      <label for="description" class="fw-bold">Mô tả<span class="text-danger">*</span></label>
       <InputText id="description" v-model="form.description" class="w-100" autocomplete="off" />
+      <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
     </div>
     <div class="mb-3">
       <label for="amount" class="fw-bold">Số tiền<span class="text-danger">*</span></label>
@@ -183,8 +183,8 @@ const invoices = ref<Invoice[]>([])
 const searchQuery = ref('')
 const showInvoice = ref(false)
 const isUpdate = ref(false)
-const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
-const errors = ref({ name: '', type: '', amount: '' })
+const form = ref({ id: 0, invoiceType: '', description: '', userId: 0, amount: 0 })
+const errors = ref({ description: '', type: '', amount: '' })
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
@@ -276,7 +276,7 @@ const filteredInvoice = computed(() => {
 })
 
 const openCreateDialog = () => {
-  form.value = { id: 0, name: '', userId: 0, description: '', invoiceType: '', amount: 0 }
+  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0 }
   isUpdate.value = false
   selectedType.value = null
   showInvoice.value = true
@@ -285,7 +285,6 @@ const openCreateDialog = () => {
 const openUpdateDialog = (invoice: Invoice) => {
   form.value = {
     id: invoice.id,
-    name: invoice.name,
     userId: user.value.id,
     description: invoice.description,
     invoiceType: invoice.invoiceType,
@@ -307,8 +306,8 @@ const confirmDeleteInvoice = (invoice: Invoice) => {
 }
 
 const validateForm = () => {
-  errors.value = { name: '', type: '', amount: '' }
-  if (!form.value.name) errors.value.name = 'Vui lòng nhập tên phí!'
+  errors.value = { description: '', type: '', amount: '' }
+  if (!form.value.description) errors.value.description = 'Vui lòng nhập mô tả về phí!'
   if (!selectedType.value) errors.value.type = 'Vui lòng chọn loại phí!'
   if (!form.value.amount || form.value.amount <= 0)
     errors.value.amount = 'Số tiền cần phải lớn hơn 0!'
@@ -346,11 +345,11 @@ const saveInvoice = async () => {
 }
 
 const resetErrors = () => {
-  errors.value = { name: '', type: '', amount: '' }
+  errors.value = { description: '', type: '', amount: '' }
 }
 
 const resetForm = () => {
-  form.value = { id: 0, name: '', userId: 0, description: '', invoiceType: '', amount: 0 }
+  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0 }
   selectedType.value = null
 }
 

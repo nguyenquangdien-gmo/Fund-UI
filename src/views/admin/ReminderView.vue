@@ -481,7 +481,7 @@ const saveReminder = async () => {
     console.error('Error saving reminder:', error)
   }
 }
-
+//delete reminder
 const deleteReminder = async () => {
   if (!isAdmin.value || !reminderToDelete.value) return
 
@@ -489,7 +489,7 @@ const deleteReminder = async () => {
     await axiosInstance.delete(`/reminders/${reminderToDelete.value.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    eventBus.emit('notifications:updated')
+    eventBus.emit('reminder:updated')
     fetchReminders()
   } catch (error) {
     console.error('Error deleting reminder:', error)

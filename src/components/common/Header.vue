@@ -29,17 +29,17 @@
 
           <!-- Popup Reminders -->
           <OverlayPanel ref="reminderPanel">
-            <div v-if="reminders.length > 0" class="remainder-panel">
+            <div v-if="userReminders.length > 0" class="remainder-panel">
               <ul class="reminder-list">
                 <li
-                  v-for="reminder in reminders"
-                  :key="reminder.id"
-                  @click="markAsReadAndGo(reminder.id)"
+                  v-for="userReminder in userReminders"
+                  :key="userReminder.reminder.id"
+                  @click="markAsReadAndGo(userReminder)"
                   class="reminder-item"
                 >
-                  <div :style="getReminderStyle(reminder.id)">
-                    <strong>{{ reminder.title }}</strong>
-                    <p>{{ reminder.description }}</p>
+                  <div :style="getReminderStyle(userReminder.status)">
+                    <strong>{{ userReminder.reminder.title }}</strong>
+                    <p>{{ userReminder.reminder.description }}</p>
                   </div>
                 </li>
               </ul>
@@ -51,7 +51,7 @@
               class="p-button-sm p-button-text mark-all-read-btn"
               @click="markAllAsRead"
             />
-            <div v-if="reminders.length === 0">Bạn không có thông báo nào!</div>
+            <div v-if="userReminders.length === 0">Bạn không có thông báo nào!</div>
           </OverlayPanel>
 
           <!-- Nút Logout -->
@@ -87,14 +87,23 @@ const user = computed(() => userStore.user)
 const isLoggedIn = computed(() => !!user.value.role)
 const isAdmin = ref(false)
 
-const reminders = ref<Reminder[]>([])
+// New interface for the user reminder response
+interface UserReminder {
+  reminder: Reminder
+  userId: number
+  status: 'READ' | 'SENT'
+  completed: boolean
+  finishedAt: string | null
+}
+
+const userReminders = ref<UserReminder[]>([])
 const reminderPanel = ref<InstanceType<typeof OverlayPanel> | null>(null)
 
 const fetchReminders = async () => {
   try {
-    const response = await axiosInstance.get(`/users/${user.value.id}/reminders`)
-    reminders.value = response.data
-    console.log('Reminders:', reminders.value)
+    const response = await axiosInstance.get(`reminders/user`)
+    userReminders.value = response.data
+    console.log('User Reminders:', userReminders.value)
   } catch (error) {
     console.error('Error fetching reminders:', error)
   }
@@ -109,38 +118,36 @@ const checkAdmin = async () => {
     })
     return response.data // Trả về true nếu là admin
   } catch (error) {
-    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+    // console.error('Lỗi khi kiểm tra quyền admin:', error)
     return false
   }
 }
 
 const unreadRemindersCount = computed(() => {
-  const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]')
-  return reminders.value.filter((reminder) => !readReminders.includes(reminder.id)).length
+  return userReminders.value.filter((userReminder) => userReminder.status === 'SENT').length
 })
-const markAsReadAndGo = (reminderId: number) => {
-  try {
-    const reminder = reminders.value.find((r) => r.id === reminderId)
-    if (!reminder) return
 
-    const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]')
-    if (!readReminders.includes(reminderId)) {
-      readReminders.push(reminderId)
-      localStorage.setItem('readReminders', JSON.stringify(readReminders))
+const markAsReadAndGo = async (userReminder: UserReminder) => {
+  try {
+    if (userReminder.status === 'SENT') {
+      // Call API to mark reminder as read
+      await axiosInstance.put(`reminders/user/${userReminder.reminder.id}/read`)
+
+      // Update the local state
+      userReminders.value = userReminders.value.map((ur) => {
+        if (ur.reminder.id === userReminder.reminder.id) {
+          return { ...ur, status: 'READ' }
+        }
+        return ur
+      })
     }
 
-    reminders.value = reminders.value.map((r) => {
-      if (r.id === reminderId) {
-        return { ...r, isRead: true }
-      }
-      return r
-    })
-    console.log(reminder)
-    if (reminder.reminderType === ReminderType.CONTRIBUTION) {
+    // Navigate based on reminder type
+    if (userReminder.reminder.reminderType === ReminderType.CONTRIBUTION) {
       router.push('/contributions')
-    } else if (reminder.reminderType === ReminderType.SURVEY && isAdmin.value) {
-      router.push(`/reminder/${reminderId}/survey`)
-    } else if (reminder.reminderType === ReminderType.OTHER && isAdmin.value) {
+    } else if (userReminder.reminder.reminderType === ReminderType.SURVEY && isAdmin.value) {
+      router.push(`/reminder/${userReminder.reminder.id}/survey`)
+    } else if (userReminder.reminder.reminderType === ReminderType.OTHER && isAdmin.value) {
       router.push('/reminders')
     } else {
       router.push('/user/reminders')
@@ -155,15 +162,15 @@ const markAsReadAndGo = (reminderId: number) => {
   }
 }
 
-const markAllAsRead = () => {
-  if (reminders.value.length === 0) return
+const markAllAsRead = async () => {
+  if (userReminders.value.length === 0) return
 
   try {
-    const reminderIds = reminders.value.map((reminder) => reminder.id)
+    // Call API to mark all reminders as read
+    await axiosInstance.put(`reminders/user/read-all`)
 
-    localStorage.setItem('readReminders', JSON.stringify(reminderIds))
-
-    reminders.value = reminders.value.map((r) => ({ ...r, isRead: true }))
+    // Update local state
+    userReminders.value = userReminders.value.map((ur) => ({ ...ur, status: 'READ' }))
     eventBus.emit('reminder:updated')
 
     if (reminderPanel.value) {
@@ -174,9 +181,8 @@ const markAllAsRead = () => {
   }
 }
 
-const getReminderStyle = (reminderId: number) => {
-  const readReminders = JSON.parse(localStorage.getItem('readReminders') || '[]')
-  const isRead = readReminders.includes(reminderId)
+const getReminderStyle = (status: string) => {
+  const isRead = status === 'READ'
 
   return {
     fontWeight: isRead ? 'normal' : 'bold',
@@ -189,6 +195,7 @@ const toggleReminder = (event: Event) => {
     reminderPanel.value.toggle(event)
   }
 }
+
 const handleClick = (event: Event) => {
   router.push('/user/reminders')
 }
@@ -211,7 +218,7 @@ watch(user, (newUser) => {
   if (newUser?.id) {
     fetchReminders()
   } else {
-    reminders.value = []
+    userReminders.value = []
   }
 })
 
@@ -283,23 +290,13 @@ const filteredItems = computed(() => {
   return baseItems
 })
 
-// axiosInstance.interceptors.response.use(
-//     response => response,
-//     error => {
-//         if (error.response && error.response.status === 401) {
-//             alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-//             handleLogout();
-//         }
-//         return Promise.reject(error);
-//     }
-// );
 // Logout
 const handleLogout = async () => {
   try {
     await axiosInstance.post('/auth/logout', {})
     userStore.logout()
     router.push('/login')
-    reminders.value = []
+    userReminders.value = []
   } catch (error) {
     console.error('Logout error:', error)
   }

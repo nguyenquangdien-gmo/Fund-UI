@@ -16,6 +16,6 @@ export interface User {
   dob: string
   position: string
   phone: string
-  team: Team
+  team: string | Team
   joinDate: string
 }

@@ -468,13 +468,11 @@ const saveReminder = async () => {
 
     if (isUpdate.value) {
       await axiosInstance.put(`/reminders/${form.value.id}`, reminderData)
-      eventBus.emit('notifications:updated')
     } else {
       await axiosInstance.post(`/reminders/create`, reminderData)
-      eventBus.emit('notifications:updated')
       selectedUsers.value = []
     }
-
+    eventBus.emit('notifications:updated')
     showReminderDialog.value = false
     fetchReminders()
   } catch (error) {
@@ -486,10 +484,8 @@ const deleteReminder = async () => {
   if (!isAdmin.value || !reminderToDelete.value) return
 
   try {
-    await axiosInstance.delete(`/reminders/${reminderToDelete.value.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    eventBus.emit('reminder:updated')
+    await axiosInstance.delete(`/reminders/${reminderToDelete.value.id}`)
+    eventBus.emit('notifications:updated')
     fetchReminders()
   } catch (error) {
     console.error('Error deleting reminder:', error)

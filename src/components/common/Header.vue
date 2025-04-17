@@ -167,7 +167,7 @@ const markAllAsRead = async () => {
 
   try {
     // Call API to mark all reminders as read
-    await axiosInstance.put(`reminders/user/read-all`)
+    await axiosInstance.put(`reminders/user/read/all`)
 
     // Update local state
     userReminders.value = userReminders.value.map((ur) => ({ ...ur, status: 'READ' }))
@@ -201,10 +201,10 @@ const handleClick = (event: Event) => {
 }
 
 onMounted(async () => {
+  eventBus.on('notifications:updated', fetchReminders)
   if (isLoggedIn.value) {
     fetchReminders()
     isAdmin.value = await checkAdmin()
-    eventBus.on('notifications:updated', fetchReminders)
   } else {
     router.push('/login')
   }

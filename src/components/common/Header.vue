@@ -196,7 +196,8 @@ const toggleReminder = (event: Event) => {
   }
 }
 
-const handleClick = (event: Event) => {
+const handleClick = async () => {
+  await axiosInstance.put(`reminders/user/read/all`)
   router.push('/user/reminders')
 }
 

@@ -43,12 +43,14 @@
         :value="filteredEvents"
         paginator
         :rows="10"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[10, 15, 20]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="name" header="Tên Sự Kiện" sortable></Column>
@@ -262,6 +264,12 @@ import {
 } from '@/utils/ConvertTimeToDateTime'
 import { useToast } from 'primevue'
 
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 // Composition Setup
 const router = useRouter()
 const token = localStorage.getItem('accessToken')

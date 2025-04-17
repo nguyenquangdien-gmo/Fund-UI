@@ -21,12 +21,14 @@
         :value="filteredPeriods"
         paginator
         :rows="15"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="name" header="Tên quỹ phạt" sortable></Column>
@@ -156,6 +158,11 @@ const form = ref({ id: 0, name: '', description: '', amount: 0, slug: '' })
 const router = useRouter()
 const errors = ref({ name: '', amount: '', slug: '' })
 
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 const fetchPenalties = async () => {
   try {
     const response = await axiosInstance.get(`/penalties`, {

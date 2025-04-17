@@ -15,6 +15,8 @@
         :value="filteredTrans"
         paginator
         :rows="15"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
@@ -73,6 +75,12 @@ const getTransactionLabel = (type: string) => {
     EXPENSE: 'Chi tiêu',
   }
   return mapping[type] || 'Không xác định'
+}
+
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
 }
 
 const fetchExpense = async () => {

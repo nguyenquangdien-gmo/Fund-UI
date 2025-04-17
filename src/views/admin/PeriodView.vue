@@ -23,10 +23,17 @@
         v-if="periods.length > 0"
         :value="filteredPeriods"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="15"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
+        <Column header="STT" sortable>
+          <template #body="{ index }">
+            {{ first + index + 1 }}
+          </template>
+        </Column>
         <Column field="id" header="ID" sortable></Column>
         <Column field="month" header="Tháng" sortable></Column>
         <Column field="year" header="Năm" sortable></Column>
@@ -143,6 +150,11 @@ import type Period from '@/types/Period'
 import months from '@/utils/Months'
 import formatCurrency from '@/utils/FormatCurrency'
 
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false)
 const periodToDelete = ref<Period | null>(null)

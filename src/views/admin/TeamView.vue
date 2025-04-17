@@ -21,13 +21,15 @@
       <DataTable
         :value="filteredTeams"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="10"
         :rowsPerPageOptions="[10, 20, 30]"
         class="p-datatable-sm"
       >
         <Column header="STT">
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
 
@@ -92,7 +94,7 @@
       <InputText
         v-model="form.token"
         class="w-100"
-        placeholder="Nhập token của người quản lý team tuwf chatops"
+        placeholder="Nhập token của người quản lý team từ chatops"
       />
       <small class="text-danger" v-if="errors.token">{{ errors.token }}</small>
     </div>

@@ -20,13 +20,15 @@
       <DataTable
         :value="filteredRoles"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="15"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable style="width: 10%">
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="name" header="Tên vai trò" sortable style="width: 70%"></Column>
@@ -94,6 +96,12 @@ const isUpdate = ref(false)
 const form = ref({ id: 0, name: '' })
 const router = useRouter()
 const errors = ref({ name: '' })
+
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 
 const fetchRoles = async () => {
   try {

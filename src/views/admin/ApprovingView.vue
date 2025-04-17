@@ -1,3 +1,143 @@
+<template>
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
+
+    <div class="mb-4 flex items-center gap-4">
+      <InputText
+        v-model="searchQuery"
+        placeholder="Tìm kiếm theo tên or mô tả..."
+        class="p-inputtext w-64"
+        style="width: 20%"
+      />
+      <!-- <div class="ml-auto">
+                <Tag value="Đang chờ" severity="info" class="mr-2" />
+                <span class="text-sm">: Ưu tiên hiển thị</span>
+            </div> -->
+    </div>
+
+    <p v-if="loading">Đang tải dữ liệu...</p>
+
+    <!-- Unified Approval Table -->
+
+    <DataTable
+      v-if="filteredItems.length > 0"
+      :value="filteredItems"
+      class="p-datatable"
+      paginator
+      :first="first"
+      @page="onPage"
+      :rows="15"
+      :rowsPerPageOptions="[15, 20, 25]"
+      responsiveLayout="scroll"
+      :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
+    >
+      <Column header="STT" sortable>
+        <template #body="{ index }">
+          {{ first + index + 1 }}
+        </template>
+      </Column>
+      <Column field="displayName" header="Tên" sortable />
+      <Column header="Loại" sortable>
+        <template #body="slotProps">
+          <Tag :value="slotProps.data.typeLabel" :severity="slotProps.data.typeSeverity" />
+        </template>
+      </Column>
+      <Column header="Mô tả" sortable>
+        <template #body="slotProps">
+          {{ getItemDescription(slotProps.data) }}
+        </template>
+      </Column>
+      <Column header="Trạng thái" sortable style="text-align: center">
+        <template #body="slotProps">
+          <Tag
+            :value="getStatusLabel(slotProps.data)"
+            :severity="getStatusSeverity(slotProps.data)"
+          />
+        </template>
+      </Column>
+      <Column header="Số tiền" sortable>
+        <template #body="slotProps">
+          {{ formatCurrency(slotProps.data.displayAmount) }}
+        </template>
+      </Column>
+      <Column field="displayDate" header="Ngày tạo" sortable>
+        <template #body="slotProps">
+          {{ new Date(slotProps.data.displayDate).toLocaleDateString('vi-VN') }}
+        </template>
+      </Column>
+      <Column header="Hành động" style="width: 22%">
+        <template #body="{ data }">
+          <Button
+            label="Xác nhận"
+            icon="pi pi-check"
+            severity="success"
+            @click="openConfirmDialog(data, 'confirm')"
+            :hidden="!canPerformAction(data)"
+          />
+          <Button
+            label="Hủy"
+            icon="pi pi-times"
+            severity="danger"
+            class="ml-2 left-10"
+            @click="openConfirmDialog(data, 'cancel')"
+            :hidden="!canPerformAction(data)"
+          />
+        </template>
+      </Column>
+    </DataTable>
+
+    <div v-else>
+      <p class="text-center">Chưa có bất kỳ đơn nào cần phê duyệt.</p>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '17%' }">
+      <div class="confirmation-content">
+        <span>{{ confirmDialogMessage }}</span>
+        <div class="flex col-2 mt-3" v-if="confirmAction !== 'confirm'">
+          <label for="reason">Lý do<span class="text-danger">*</span></label>
+          <Textarea v-model="rejectedReason" class="mt-3" rows="5" cols="30" />
+        </div>
+      </div>
+
+      <div
+        v-if="
+          selectedItemToConfirm &&
+          selectedItemToConfirm.itemType === 'invoice' &&
+          confirmAction === 'confirm'
+        "
+        class="mt-3"
+      >
+        <label for="fundType" class="block mb-2">
+          Chọn quỹ: <span class="text-danger">*</span>
+        </label>
+        <Dropdown
+          id="fundType"
+          v-model="selectedFundType"
+          :options="fundOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn quỹ"
+          class="w-full"
+        />
+        <div>
+          <small class="text-danger">{{ errorMessage }}</small>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button
+          label="Không"
+          icon="pi pi-times"
+          @click="showConfirmDialog = false"
+          severity="secondary"
+        />
+        <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
+      </template>
+    </Dialog>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import DataTable from 'primevue/datatable'
@@ -29,6 +169,12 @@ const confirmAction = ref(null)
 const errorMessage = ref('')
 const rejectedReason = ref('')
 
+//pagenation
+const first = ref(0)
+
+const onPage = (event) => {
+  first.value = event.first
+}
 // Fetch all data and combine into one list
 const fetchAllData = async () => {
   try {
@@ -295,143 +441,6 @@ const canPerformAction = (item) => {
   }
 }
 </script>
-
-<template>
-  <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
-
-    <div class="mb-4 flex items-center gap-4">
-      <InputText
-        v-model="searchQuery"
-        placeholder="Tìm kiếm theo tên or mô tả..."
-        class="p-inputtext w-64"
-        style="width: 20%"
-      />
-      <!-- <div class="ml-auto">
-                <Tag value="Đang chờ" severity="info" class="mr-2" />
-                <span class="text-sm">: Ưu tiên hiển thị</span>
-            </div> -->
-    </div>
-
-    <p v-if="loading">Đang tải dữ liệu...</p>
-
-    <!-- Unified Approval Table -->
-    <DataTable
-      v-if="filteredItems.length > 0"
-      :value="filteredItems"
-      class="p-datatable"
-      paginator
-      :rows="15"
-      :rowsPerPageOptions="[15, 20, 25]"
-      responsiveLayout="scroll"
-      :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
-    >
-      <Column header="STT" sortable>
-        <template #body="{ index }">
-          {{ index + 1 }}
-        </template>
-      </Column>
-      <Column field="displayName" header="Tên" sortable />
-      <Column header="Loại" sortable>
-        <template #body="slotProps">
-          <Tag :value="slotProps.data.typeLabel" :severity="slotProps.data.typeSeverity" />
-        </template>
-      </Column>
-      <Column header="Mô tả" sortable>
-        <template #body="slotProps">
-          {{ getItemDescription(slotProps.data) }}
-        </template>
-      </Column>
-      <Column header="Trạng thái" sortable style="text-align: center">
-        <template #body="slotProps">
-          <Tag
-            :value="getStatusLabel(slotProps.data)"
-            :severity="getStatusSeverity(slotProps.data)"
-          />
-        </template>
-      </Column>
-      <Column header="Số tiền" sortable>
-        <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.displayAmount) }}
-        </template>
-      </Column>
-      <Column field="displayDate" header="Ngày tạo" sortable>
-        <template #body="slotProps">
-          {{ new Date(slotProps.data.displayDate).toLocaleDateString('vi-VN') }}
-        </template>
-      </Column>
-      <Column header="Hành động" style="width: 22%">
-        <template #body="{ data }">
-          <Button
-            label="Xác nhận"
-            icon="pi pi-check"
-            severity="success"
-            @click="openConfirmDialog(data, 'confirm')"
-            :hidden="!canPerformAction(data)"
-          />
-          <Button
-            label="Hủy"
-            icon="pi pi-times"
-            severity="danger"
-            class="ml-2 left-10"
-            @click="openConfirmDialog(data, 'cancel')"
-            :hidden="!canPerformAction(data)"
-          />
-        </template>
-      </Column>
-    </DataTable>
-
-    <div v-else>
-      <p class="text-center">Chưa có bất kỳ đơn nào cần phê duyệt.</p>
-    </div>
-
-    <!-- Confirmation Dialog -->
-    <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '17%' }">
-      <div class="confirmation-content">
-        <span>{{ confirmDialogMessage }}</span>
-        <div class="flex col-2 mt-3" v-if="confirmAction !== 'confirm'">
-          <label for="reason">Lý do<span class="text-danger">*</span></label>
-          <Textarea v-model="rejectedReason" class="mt-3" rows="5" cols="30" />
-        </div>
-      </div>
-
-      <div
-        v-if="
-          selectedItemToConfirm &&
-          selectedItemToConfirm.itemType === 'invoice' &&
-          confirmAction === 'confirm'
-        "
-        class="mt-3"
-      >
-        <label for="fundType" class="block mb-2">
-          Chọn quỹ: <span class="text-danger">*</span>
-        </label>
-        <Dropdown
-          id="fundType"
-          v-model="selectedFundType"
-          :options="fundOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Chọn quỹ"
-          class="w-full"
-        />
-        <div>
-          <small class="text-danger">{{ errorMessage }}</small>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button
-          label="Không"
-          icon="pi pi-times"
-          @click="showConfirmDialog = false"
-          severity="secondary"
-        />
-        <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
-      </template>
-    </Dialog>
-  </div>
-</template>
 
 <style>
 :global(.p-button) {

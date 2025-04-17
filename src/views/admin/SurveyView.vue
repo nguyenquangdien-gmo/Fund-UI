@@ -26,13 +26,15 @@
         v-if="survey.length > 0"
         :value="filteredSurveys"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="15"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
         <Column header="STT">
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="userId" header="Mã nhân viên" sortable></Column>
@@ -143,20 +145,26 @@ import { useRoute, useRouter } from 'vue-router'
 import type { Survey } from '@/types/Survey'
 import Tag from 'primevue/tag'
 
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 // const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false)
-const surveyToDelete = ref<Survey | null>(null)
+// const showConfirmDialog = ref(false)
+// const surveyToDelete = ref<Survey | null>(null)
 const token = localStorage.getItem('accessToken')
 const survey = ref<Survey[]>([])
 const searchQuery = ref('')
-const showSurveyDialog = ref(false)
-const isUpdate = ref(false)
-const form = ref({
-  userId: 0,
-  fullName: '',
-  completed: false,
-  finishedAt: new Date(),
-})
+// const showSurveyDialog = ref(false)
+// const isUpdate = ref(false)
+// const form = ref({
+//   userId: 0,
+//   fullName: '',
+//   completed: false,
+//   finishedAt: new Date(),
+// })
+
 const router = useRouter()
 const route = useRoute()
 const reminderId = route.params.reminderId as string

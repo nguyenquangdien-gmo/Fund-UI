@@ -93,10 +93,7 @@
         </template>
       </Column>
     </DataTable>
-
-    <div v-else class="text-center text-gray-500">
-      Không có dữ liệu để hiển thị.
-    </div>
+    <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
   </div>
 
   <!-- Dialog Cài đặt thông báo đi muộn -->

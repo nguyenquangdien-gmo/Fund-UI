@@ -6,7 +6,6 @@ import FundView from '@/views/admin/FundView.vue'
 import PeriodView from '@/views/admin/PeriodView.vue'
 import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
-import axios from 'axios'
 import StatsView from '@/views/StatsView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
 import UserView from '@/views/admin/UserView.vue'
@@ -28,6 +27,7 @@ import { jwtDecode } from 'jwt-decode'
 import type JwtPayload from '@/types/JwtPayload'
 import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
+import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -198,6 +198,12 @@ const router = createRouter({
       path: '/penalties',
       name: 'penalties',
       component: PenaltyView,
+      meta: { requiresAdmin: true, requiresAuth: true },
+    },
+    {
+      path: '/penalty-slips',
+      name: 'penalty-slips',
+      component: PenaltySlipsView,
       meta: { requiresAdmin: true, requiresAuth: true },
     },
     {

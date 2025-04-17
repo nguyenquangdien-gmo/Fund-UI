@@ -92,7 +92,7 @@
       <InputText
         v-model="form.token"
         class="w-100"
-        placeholder="Nhập token của người quản lý team tuwf chatops"
+        placeholder="Nhập token của người quản lý team từ chatops"
       />
       <small class="text-danger" v-if="errors.token">{{ errors.token }}</small>
     </div>

@@ -334,7 +334,7 @@ const openUpdateDialog = (user: User) => {
     fullName: user.fullName,
     role: typeof user.role === 'object' && user.role !== null ? user.role.name : user.role || '',
     dob: user.dob,
-    phoneNumber: user.phone || '',
+    phoneNumber: user.phoneNumber || '',
     position: user.position || '',
     joinDate: user.joinDate,
     slugTeam: findTeam(

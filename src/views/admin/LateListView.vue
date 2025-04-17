@@ -136,7 +136,8 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import Calendar from 'primevue/calendar'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -282,6 +283,31 @@ const fetchSchedule = async () => {
     console.error('Error fetching schedule:', error)
   }
 }
+const toast = useToast()
+
+watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
+  if (newFromDate && newToDate) {
+    if (newFromDate > newToDate) {
+      fromDate.value = toDate.value;
+      toDate.value = oldToDate;
+      toast.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
+        life: 3000,
+      });
+    } else if (newToDate < newFromDate) {
+      toDate.value = fromDate.value;
+      toast.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
+        life: 3000,
+      });
+    }
+  }
+});
+
 
 // Hàm định dạng hiển thị ngày tháng
 // const formatFullDateTime = (dateObj: Date) => {

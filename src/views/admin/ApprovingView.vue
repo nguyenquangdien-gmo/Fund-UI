@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -41,12 +41,15 @@ const fetchAllData = async () => {
       axiosInstance.get(`/contributions/pending`),
       axiosInstance.get(`/pen-bills/pending`),
     ])
+    // console.log('Invoices:', invoicesResponse.data)
+    // console.log('Contributions:', contributionsResponse.data)
+    // console.log('Pen Bills:', penBillsResponse.data)
 
     // Transform invoices data
     const invoicesData = invoicesResponse.data.map((item) => ({
       ...item,
       itemType: 'invoice',
-      displayName: item.name,
+      displayName: item.user?.fullName || 'N/A',
       displayAmount: item.amount,
       displayStatus: item.status,
       displayDate: item.createdAt,
@@ -62,7 +65,7 @@ const fetchAllData = async () => {
       displayName: item.memberName,
       displayAmount: item.totalAmount,
       displayStatus: item.paymentStatus,
-      displayDate: new Date().toISOString(), // Default to current date if not available
+      displayDate: item.createdAt, // Default to current date if not available
       typeSeverity: 'info',
       typeLabel: 'Đóng quỹ',
       sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority
@@ -72,10 +75,10 @@ const fetchAllData = async () => {
     const penBillsData = penBillsResponse.data.map((item) => ({
       ...item,
       itemType: 'penBill',
-      displayName: item.userDto?.fullName || 'N/A',
+      displayName: item.user?.fullName || 'N/A',
       displayAmount: item.amount,
       displayStatus: item.paymentStatus,
-      displayDate: new Date().toISOString(), // Default to current date if not available
+      displayDate: item.dueDate, // Default to current date if not available
       typeSeverity: 'warn',
       typeLabel: 'Nộp phạt',
       sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority

@@ -129,7 +129,7 @@ const unreadRemindersCount = computed(() => {
 
 const markAsReadAndGo = async (userReminder: UserReminder) => {
   try {
-    if (userReminder.status === 'SENT') {
+    if (userReminder.reminder.status === 'SENT') {
       // Call API to mark reminder as read
       await axiosInstance.put(`reminders/user/${userReminder.reminder.id}/read`)
 

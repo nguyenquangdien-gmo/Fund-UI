@@ -31,9 +31,9 @@
           </template>
         </Column>
 
-        <Column field="name" header="Tên Team" sortable></Column>
+        <Column field="name" header="Tên Team" sortable style="width: 20%"></Column>
         <Column field="slug" header="Slug" sortable></Column>
-        <Column header="QR Code">
+        <Column header="QR Code" style="width: 20%">
           <template #body="{ data }">
             <img v-if="data.qrCodeUrl" :src="data.qrCodeUrl" class="qr-code" />
             <span v-else>Chưa có QR</span>

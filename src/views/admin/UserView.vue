@@ -320,7 +320,7 @@ const openCreateDialog = () => {
   showUserDialog.value = true
   seletedDob.value = null
   seletedJoinDate.value = null
-  selectedTeam.value = findTeam('java')
+  selectedTeam.value = findTeam('Java')
 }
 const findTeam = (slugTeam: string) => {
   const team = teams.value.find((team) => team.name === slugTeam)
@@ -397,7 +397,7 @@ const validateForm = () => {
         user.email.toLowerCase() === form.value.email.toLowerCase() &&
         user.id !== Number(userId.value), // nếu đang edit thì bỏ qua chính mình
     )
-    if (emailExists) {
+    if (!isUpdate && emailExists) {
       errors.value.email = 'Email đã tồn tại!'
     }
   }

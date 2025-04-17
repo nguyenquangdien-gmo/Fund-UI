@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">Danh Sách Nhắc Nhở</h2>
+      <h2 class="text-center">Thông báo</h2>
 
       <!-- Search Bar -->
       <div class="mb-3 flex justify-content-between align-items-center">

@@ -21,13 +21,15 @@
       <DataTable
         :value="filteredTeams"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="10"
         :rowsPerPageOptions="[10, 20, 30]"
         class="p-datatable-sm"
       >
         <Column header="STT">
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
 

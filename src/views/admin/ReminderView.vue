@@ -29,13 +29,15 @@
         v-if="reminders.length > 0"
         :value="filteredReminders"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="10"
         :rowsPerPageOptions="[10, 15, 20]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="title" header="Tiêu Đề" sortable></Column>
@@ -268,6 +270,11 @@ const isAllUsersSelected = (users: User[]) => {
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 interface Reminder {
   id: number
   title: string

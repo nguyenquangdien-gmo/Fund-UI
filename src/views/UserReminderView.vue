@@ -18,6 +18,8 @@
         :value="filteredUserReminders"
         paginator
         :rows="10"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[10, 15, 20]"
         class="p-datatable-sm"
       >
@@ -118,6 +120,13 @@ interface UserReminder {
   status: 'READ' | 'SENT'
   completed: boolean
   finishedAt: string | null
+}
+
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
 }
 
 const userReminders = ref<UserReminder[]>([])

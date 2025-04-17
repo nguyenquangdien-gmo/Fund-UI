@@ -15,11 +15,13 @@
         paginator
         :rows="15"
         :rowsPerPageOptions="[15, 20, 25]"
+        :first="first"
+        @page="onPage"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="type" header="Mã Quỹ" sortable></Column>
@@ -127,8 +129,8 @@ import FundType from '@/types/FundType'
 import Dropdown from 'primevue/dropdown'
 
 // const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false)
-const fundToDelete = ref<Fund | null>(null)
+// const showConfirmDialog = ref(false)
+// const fundToDelete = ref<Fund | null>(null)
 const token = localStorage.getItem('accessToken')
 const funds = ref<Fund[]>([])
 const searchQuery = ref('')
@@ -137,6 +139,12 @@ const isUpdate = ref(false)
 const form = ref({ id: 0, name: '', description: '', type: '', amount: 0 })
 const errors = ref({ name: '', description: '', type: '', amount: '' })
 const router = useRouter()
+
+//pagenation
+const first = ref<number>(0)
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 
 const selectedFund = ref<FundType | null>(null)
 const types = ref([
@@ -190,7 +198,7 @@ const validateForm = () => {
   errors.value = { name: '', description: '', type: '', amount: '' }
   if (!form.value.name) errors.value.name = 'Name is required!'
   if (!form.value.description) errors.value.name = 'Description is required!'
-  if (!selectedFund) errors.value.type = 'Type is required!'
+  if (!selectedFund.value) errors.value.type = 'Type is required!'
   if (!form.value.amount || Number(form.value.amount) < 0)
     errors.value.amount = 'Amount is required and must be greater than 0!'
   return Object.values(errors.value).every((err) => err === '')

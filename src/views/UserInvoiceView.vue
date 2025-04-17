@@ -24,6 +24,8 @@
         :value="filteredInvoice"
         paginator
         :rows="15"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
@@ -171,7 +173,6 @@ import formatCurrency from '@/utils/FormatCurrency'
 import { useUserStore } from '@/pinia/userStore'
 import Dropdown from 'primevue/dropdown'
 import InvoiceType from '@/types/InvoiceType'
-import type InvoiceStatus from '@/types/InvoiceStatus'
 import Tag from 'primevue/tag'
 import type FundType from '@/types/FundType'
 
@@ -189,6 +190,12 @@ const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 const selectedType = ref<InvoiceType | null>(null)
 const types = ref([
   { label: 'Quỹ thu', value: InvoiceType.INCOME },

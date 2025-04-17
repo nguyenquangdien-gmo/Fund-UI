@@ -15,12 +15,14 @@
           :value="filteredBills"
           paginator
           :rows="15"
+          :first="first"
+          @page="onPage"
           :rowsPerPageOptions="[15, 20, 25]"
           class="p-datatable-sm"
         >
           <Column header="STT" sortable>
             <template #body="{ index }">
-              {{ index + 1 }}
+              {{ first + index + 1 }}
             </template>
           </Column>
           <Column field="description" header="Mô Tả" sortable></Column>
@@ -107,6 +109,13 @@ const fetchBills = async () => {
   } catch (error) {
     console.error('Error fetching periods:', error)
   }
+}
+
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
 }
 
 const qrCode = ref<string | undefined>(undefined)

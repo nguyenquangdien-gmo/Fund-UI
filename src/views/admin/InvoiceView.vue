@@ -18,12 +18,14 @@
         :value="filteredInvoice"
         paginator
         :rows="15"
+        :first="first"
+        @page="onPage"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="name" header="Tên" sortable></Column>
@@ -106,32 +108,35 @@ import { ref, computed, onMounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
 import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
 import { useUserStore } from '@/pinia/userStore'
-import Dropdown from 'primevue/dropdown'
 import type Invoice from '@/types/Invoice'
 import InvoiceType from '@/types/InvoiceType'
 import Tag from 'primevue/tag'
 
 // const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false)
-const expeneseToDelete = ref<Invoice | null>(null)
+// const showConfirmDialog = ref(false)
+// const expeneseToDelete = ref<Invoice | null>(null)
 const token = localStorage.getItem('accessToken')
 const invoices = ref<Invoice[]>([])
 const searchQuery = ref('')
-const showInvoice = ref(false)
-const isUpdate = ref(false)
-const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
-const errors = ref({ name: '', description: '', type: '', amount: '' })
+// const showInvoice = ref(false)
+// const isUpdate = ref(false)
+// const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
+// const errors = ref({ name: '', description: '', type: '', amount: '' })
 const router = useRouter()
 const userStore = useUserStore()
-const user = computed(() => userStore.user)
-const amount = ref('')
+// const user = computed(() => userStore.user)
+// const amount = ref('')
 
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 //check role
 const admin = ref(false)
 const checkAdmin = async () => {

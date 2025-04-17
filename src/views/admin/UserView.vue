@@ -22,13 +22,15 @@
       <DataTable
         :value="filteredFunds"
         paginator
+        :first="first"
+        @page="onPage"
         :rows="15"
         :rowsPerPageOptions="[15, 20, 25]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable style="width: 5%">
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="id" header="Mã nhân viên" sortable style="width: 10%"></Column>
@@ -202,6 +204,7 @@ import { useUserStore } from '@/pinia/userStore'
 // import UserRole from '@/types/UserRole';
 
 // const baseURL = "http://localhost:8080/api/v1";
+
 const toast = useToast()
 const showConfirmDialog = ref(false)
 const userToDelete = ref<User | null>(null)
@@ -215,6 +218,13 @@ const isAdmin = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+
+//pagenation
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
+}
 
 const admin = ref(false)
 const checkAdmin = async () => {

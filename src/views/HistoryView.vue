@@ -21,6 +21,13 @@ const listOptions = ref([
   { label: 'Lịch sử nộp phạt', value: 'penBills' },
 ])
 
+//pagenation
+const first = ref(0)
+
+const onPage = (event) => {
+  first.value = event.first
+}
+
 const contributions = ref([])
 const penBills = ref([])
 
@@ -192,12 +199,14 @@ const formatCurrency = (value) => value.toLocaleString() + ' VND'
       :value="filteredPenBills"
       paginator
       :rows="15"
+      :first="first"
+      @page="onPage"
       :rowsPerPageOptions="[15, 20, 25]"
       responsiveLayout=" scroll"
     >
       <Column header="STT" sortable>
         <template #body="{ index }">
-          {{ index + 1 }}
+          {{ first + index + 1 }}
         </template>
       </Column>
       <Column field="description" header="Mô Tả" sortable style="width: 50%"></Column>

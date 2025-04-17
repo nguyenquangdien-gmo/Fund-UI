@@ -1,8 +1,8 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Danh Sách Thành viên</h2>
-      <div class="mb-3">
+      <h2 class="text-xl">DANH SÁCH THÀNH VIÊN</h2>
+      <div class="mb-3 mt-3">
         <InputText
           v-model="searchQuery"
           placeholder="Tìm kiếm theo email, tên, MNV..."
@@ -39,9 +39,9 @@
             {{ formatDate(data.dob) }}
           </template>
         </Column>
-        <Column field="phone" header="SĐT" sortable>
+        <Column field="phoneNumber" header="SĐT" sortable>
           <template #body="{ data }">
-            {{ data.phone ? data.phone : 'Chưa cập nhật' }}
+            {{ data.phoneNumber ? data.phoneNumber : 'Chưa cập nhật' }}
           </template></Column
         >
         <!-- <Column field="position" header="Chức vụ" sortable></Column> -->
@@ -287,6 +287,7 @@ const fetchUsers = async () => {
   try {
     const response = await axiosInstance.get(`/users`)
     users.value = response.data
+    console.log(users.value)
   } catch (error) {
     console.error('Error fetching users:', error)
   }

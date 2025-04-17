@@ -298,7 +298,7 @@ const canPerformAction = (item) => {
 
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Quản lý phê duyệt</h2>
+    <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
 
     <div class="mb-4 flex items-center gap-4">
       <InputText

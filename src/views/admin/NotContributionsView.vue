@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Danh Sách thành viên chưa đóng quỹ hoặc nợ quỹ</h2>
+      <h2 class="text-xl">THÀNH VIÊN CHƯA ĐÓNG QUỸ</h2>
       <div class="mb-3">
         <select
           v-model="selectedMonth"
@@ -21,6 +21,15 @@
             {{ year }}
           </option>
         </select>
+        <Button
+          icon="pi pi-cog"
+          label="Cài đặt"
+          severity="success"
+          class="left-10"
+          raised
+          size="small"
+          @click="openScheduleDialog"
+        />
       </div>
       <div class="mb-3">
         <InputText
@@ -70,8 +79,39 @@
                     </template>
                 </Column> -->
       </DataTable>
-      <div v-else>Chưa có thành viên không đóng quỹ!😊</div>
+      <div v-else>Mọi người đều đã đóng quỹ đầy đủ tháng này!😊</div>
     </div>
+    <Dialog v-model:visible="showScheduleDialog" modal header="Cập nhật" class="container-dialog">
+      <!-- Thông tin hiện tại -->
+      <div class="col-12 mb-3 item-dialog lh-2">
+        <p class="text-sm text-gray-600">
+          🕒 <strong>Từ ngày:</strong> {{ formatFullDateTime(scheduleForm.fromDate) }}<br />
+          🕒 <strong>Đến ngày:</strong> {{ formatFullDateTime(scheduleForm.toDate) }}<br />
+          ⏰ <strong>Thời gian gửi:</strong> {{ formatTimeOnly(scheduleForm.sendTime) }}
+        </p>
+      </div>
+
+      <!-- Form chọn lại -->
+      <div class="col-12 mb-3 item-dialog">
+        <label class="font-bold mb-2">Từ ngày<span class="text-danger">*</span></label>
+        <Calendar v-model="scheduleForm.fromDate" date-format="dd/mm/yy" class="w-full" />
+      </div>
+
+      <div class="col-12 mb-3 item-dialog">
+        <label class="font-bold mb-2">Đến ngày<span class="text-danger">*</span></label>
+        <Calendar v-model="scheduleForm.toDate" date-format="dd/mm/yy" class="w-full" />
+      </div>
+
+      <div class="col-12 mb-3 item-dialog">
+        <label class="font-bold mb-2">Thời gian gửi<span class="text-danger">*</span></label>
+        <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+      </div>
+
+      <div class="actions-dialog">
+        <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+        <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
+      </div>
+    </Dialog>
   </div>
   <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa thành viên này?</div>
@@ -80,41 +120,10 @@
             <Button label="Xóa" severity="danger" @click="deleteUser" />
         </div>
     </Dialog> -->
-  <Dialog
-    v-if="isAdmin"
-    v-model:visible="showReminderDialog"
-    modal
-    :header="'Create Reminder'"
-    @hide="resetErrors"
-    :style="{ width: '30rem' }"
-  >
-    <div class="mb-3">
-      <label for="title" class="fw-bold"> Title <span class="text-danger">*</span> </label>
-      <InputText id="title" v-model="form.title" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
-    </div>
-    <div class="mb-3">
-      <label for="description" class="fw-bold">
-        Description <span class="text-danger">*</span>
-      </label>
-      <Textarea id="description" v-model="form.description" class="w-100" rows="5" cols="30" />
-      <small class="text-danger" v-if="errors.description">{{ errors.description }}</small>
-    </div>
-
-    <div class="d-flex justify-content-end gap-2">
-      <Button
-        type="button"
-        label="Cancel"
-        severity="secondary"
-        @click="showReminderDialog = false"
-      />
-      <Button type="button" label="Save" severity="primary" @click="saveReminder" />
-    </div>
-  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, type Ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -123,11 +132,13 @@ import Dialog from 'primevue/dialog'
 import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import type { User } from '@/types/User'
-import Textarea from 'primevue/textarea'
 import { useUserStore } from '@/pinia/userStore'
 import formatCurrency from '@/utils/FormatCurrency'
-import post from '@/functions/Reminder'
-import type UserRole from '@/types/UserRole'
+import {
+  convertToLocalDateTimeString,
+  convertToLocalTimeString,
+} from '@/utils/ConvertTimeToDateTime'
+import Calendar from 'primevue/calendar'
 
 interface UserData {
   user: User
@@ -143,11 +154,6 @@ const form = ref({ id: 0, title: '', description: '', type: '', status: '', crea
 const errors = ref({ name: '', description: '' })
 const router = useRouter()
 
-// const selectedRole = ref<UserRole | null>(null);
-// const roles = ref([
-//     { label: "Admin", value: UserRole.ADMIN },
-//     { label: "Member", value: UserRole.MEMBER }
-// ]);
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 const isAdmin = computed(() => user.value?.role === 'ADMIN')
@@ -155,8 +161,6 @@ const isAdmin = computed(() => user.value?.role === 'ADMIN')
 const currentYear = new Date().getFullYear()
 const selectedYear = ref(currentYear)
 const availableYears = ref<number[]>([])
-
-const showReminderDialog = ref(false)
 
 for (let year = 2020; year <= currentYear; year++) {
   availableYears.value.push(year)
@@ -176,16 +180,10 @@ for (let month = 1; month <= 12; month++) {
   availableMonths.value.push(month)
 }
 const onYearChange = () => {
-  // fetchDataMonths(selectedYear.value);
-  // fetchExpenseByYear();
-  // fetchChargeByYear();
   fetchUsers()
 }
 
 const onMonthChange = () => {
-  // fetchDataMonths(selectedYear.value);
-  // fetchExpenseByYear();
-  // fetchChargeByYear();
   fetchUsers()
 }
 
@@ -213,15 +211,6 @@ const filteredUsers = computed(() => {
   )
 })
 
-const openCreateDialog = () => {
-  form.value = { id: 0, title: '', description: '', type: '', status: '', created_at: '' }
-  showReminderDialog.value = true
-}
-// const confirmDeleteFund = (user: User) => {
-//     userToDelete.value = user;
-//     showConfirmDialog.value = true;
-// };
-
 const validateForm = () => {
   errors.value = { name: '', description: '' }
 
@@ -235,38 +224,79 @@ const validateForm = () => {
   return Object.values(errors.value).every((err) => err === '')
 }
 
-const message = ref('')
-const formatDebtMessageForExcel = (users: UserData[]): string => {
-  let message = '|STT | TÊN | TIỀN NỢ|\n'
-  message += '|--- | --- | ---|\n'
-
-  users.forEach((userDebt, index) => {
-    const stt = (index + 1).toString()
-    const name = userDebt.user.fullName
-    const amount = formatCurrency(userDebt.amountToPay.toLocaleString())
-
-    message += `|${stt} | ${name} | ${amount}|\n`
-  })
-
-  return message
+//setting schedule
+//setting time
+const showScheduleDialog = ref(false)
+const scheduleForm = ref({
+  fromDate: new Date(),
+  toDate: new Date(),
+  sendTime: new Date(),
+  type: 'event_notification',
+})
+const fetchSchedule = async () => {
+  try {
+    const response = await axiosInstance.get(`/schedules/type/late_contributed_notification`)
+    if (response.data && response.data.length > 0) {
+      const scheduleData = response.data[0] // Lấy phần tử đầu tiên từ mảng
+      scheduleForm.value = {
+        fromDate: new Date(scheduleData.fromDate),
+        toDate: new Date(scheduleData.toDate),
+        sendTime: new Date(`1970-01-01T${scheduleData.sendTime}`), // LocalTime convert
+        type: scheduleData.type.toLowerCase(),
+      }
+    } else if (response.data) {
+      // Nếu response không phải là mảng
+      scheduleForm.value = {
+        fromDate: new Date(response.data.fromDate),
+        toDate: new Date(response.data.toDate),
+        sendTime: new Date(`1970-01-01T${response.data.sendTime}`),
+        type: response.data.type.toLowerCase(),
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching schedule:', error)
+  }
 }
 
-const saveReminder = async () => {
-  if (!validateForm()) return
+const formatFullDateTime = (dateObj: Date) => {
+  if (!dateObj) return 'Không có dữ liệu'
+  return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`
+}
+
+// Định dạng chỉ thời gian
+const formatTimeOnly = (dateObj: Date) => {
+  if (!dateObj) return 'Không có dữ liệu'
+  return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
+}
+
+// 👉 Hàm mở dialog với schedule sẵn có
+const openScheduleDialog = () => {
+  fetchSchedule()
+  showScheduleDialog.value = true
+}
+
+const saveSchedule = async () => {
   try {
-    await axiosInstance.post(`/reminders/create/other`, form.value, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const fromDate = new Date(scheduleForm.value.fromDate)
+    const toDate = new Date(scheduleForm.value.toDate)
 
-    message.value = `@all **Các anh/chị/em chưa đóng quỹ tháng ${selectedMonth.value}**\n\n`
-    message.value += formatDebtMessageForExcel(users.value)
+    fromDate.setHours(0, 0, 0, 0)
 
-    await post(message.value)
+    toDate.setHours(23, 59, 59, 999)
 
-    showReminderDialog.value = false
-    fetchUsers()
+    const dataForm = {
+      fromDate: convertToLocalDateTimeString(fromDate),
+      toDate: convertToLocalDateTimeString(toDate),
+      sendTime: convertToLocalTimeString(scheduleForm.value.sendTime),
+      type: scheduleForm.value.type,
+    }
+
+    console.log('scheduleForm update gửi lên:', dataForm)
+
+    await axiosInstance.put(`/schedules/${dataForm.type}`, dataForm)
+    showScheduleDialog.value = false
   } catch (error) {
-    console.error('Error saving reminder:', error)
+    console.error('Lỗi khi cập nhật schedule:', error)
   }
 }
 

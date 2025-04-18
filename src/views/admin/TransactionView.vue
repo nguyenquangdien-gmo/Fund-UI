@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Lịch sử giao dịch</h2>
+      <h2 class="text-xl">LỊCH SỬ GIAO DỊCH</h2>
       <div class="mb-3">
         <InputText
           v-model="searchQuery"

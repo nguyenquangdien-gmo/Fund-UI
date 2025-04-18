@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Danh Sách nhóm</h2>
+      <h2 class="text-xl">NHÓM</h2>
       <div class="mb-3 flex justify-between">
         <InputText
           v-model="searchQuery"

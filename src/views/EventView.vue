@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">Danh Sách Sự Kiện</h2>
+      <h2 class="text-center">SỰ KIỆN</h2>
 
       <!-- Search and Create Button (Only for Admin) -->
       <div class="navbar-actions">

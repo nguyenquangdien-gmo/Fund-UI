@@ -253,11 +253,11 @@ const adminItems = [
       { label: 'Thành viên', icon: 'pi pi-user', command: () => router.push('/users') },
       { label: 'Phê duyệt', icon: 'pi pi-file-check', command: () => router.push('/approvals') },
       { label: 'Chưa đóng quỹ', icon: 'pi pi-bolt', command: () => router.push('/users/not-paid') },
-      {
-        label: 'Đóng muộn',
-        icon: 'pi pi-server',
-        command: () => router.push('/users/late-contributions'),
-      },
+      // {
+      //   label: 'Đóng muộn',
+      //   icon: 'pi pi-server',
+      //   command: () => router.push('/users/late-contributions'),
+      // },
       {
         label: 'Đi muộn',
         icon: 'pi pi-calendar-times',

@@ -43,7 +43,7 @@
             {{ formatCurrency(data.amount) }}
           </template>
         </Column>
-        <Column field="created" header="Ngày đến hạn" sortable>
+        <Column field="dueDate" header="Ngày đến hạn" sortable>
           <template #body="{ data }">
             {{ formatDate(data.dueDate) }}
           </template>
@@ -91,7 +91,6 @@
   </Dialog> -->
 
 
-  <!-- const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '' }) -->
   <Dialog
     v-model:visible="showPenaltyDialog"
     modal

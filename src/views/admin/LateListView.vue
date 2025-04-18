@@ -28,7 +28,6 @@
           placeholder="🔍 Tìm theo tên hoặc ID"
           class="p-inputtext-sm w-64"
         />
-
       </div>
       <div>
         <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
@@ -143,7 +142,7 @@ import axiosInstance from '@/router/Interceptor'
 import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
-import AutoComplete from 'primevue/autocomplete';
+import AutoComplete from 'primevue/autocomplete'
 
 interface User {
   id?: string | null
@@ -208,16 +207,14 @@ const fetchLateRecords = async () => {
     lateRecords.value = response.data
 
     // Trường hợp API trả về chuỗi JSON, cần parse
-    const parsedData = typeof response.data === 'string'
-      ? JSON.parse(response.data)
-      : response.data
+    const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 
     const plainRecords = JSON.parse(JSON.stringify(parsedData))
 
     // Lọc dữ liệu trùng lặp
     const uniqueRecords = plainRecords.filter(
       (record: LateRecord, index: number, self: LateRecord[]) =>
-        index === self.findIndex((r) => r.user?.id === record.user?.id)
+        index === self.findIndex((r) => r.user?.id === record.user?.id),
     )
 
     lateRecords.value = uniqueRecords
@@ -233,28 +230,25 @@ const fetchLateRecords = async () => {
 
 // Gợi ý tìm kiếm (AutoComplete)
 function searchItems(event: { query: string }) {
-  const query = event.query.toLowerCase();
+  const query = event.query.toLowerCase()
   suggestions.value = [
     { label: 'All Members', value: 'All Members' },
     ...lateRecords.value
-      .filter(item => item.user?.id || item.user?.fullName)
-      .map(item => ({
+      .filter((item) => item.user?.id || item.user?.fullName)
+      .map((item) => ({
         label: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
         value: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
       }))
-      .filter(item => item.label.toLowerCase().includes(query))
-  ];
+      .filter((item) => item.label.toLowerCase().includes(query)),
+  ]
 }
 
-
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
-  const selected = event.value;
-  const selectedId = selected.label === 'All Members' 
-    ? '' 
-    : selected.value.split(' - ')[0];
+  const selected = event.value
+  const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
 
-  searchTerm.value = selectedId;
-};
+  searchTerm.value = selectedId
+}
 
 // Hàm lấy thông tin cài đặt thông báo đi muộn
 const fetchSchedule = async () => {
@@ -285,26 +279,25 @@ const toast = useToast()
 watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
   if (newFromDate && newToDate) {
     if (newFromDate > newToDate) {
-      fromDate.value = toDate.value;
-      toDate.value = oldToDate;
+      fromDate.value = toDate.value
+      toDate.value = oldToDate
       toast.add({
         severity: 'error',
         summary: 'Lỗi',
         detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
         life: 3000,
-      });
+      })
     } else if (newToDate < newFromDate) {
-      toDate.value = fromDate.value;
+      toDate.value = fromDate.value
       toast.add({
         severity: 'error',
         summary: 'Lỗi',
         detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
         life: 3000,
-      });
+      })
     }
   }
-});
-
+})
 
 // Hàm định dạng hiển thị ngày tháng
 // const formatFullDateTime = (dateObj: Date) => {
@@ -396,6 +389,7 @@ const checkNow = async () => {
     await axiosInstance.post(`/late/check-now`, dataForm)
     showScheduleDialog.value = false
   } catch (error) {
+    toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
   }
 }

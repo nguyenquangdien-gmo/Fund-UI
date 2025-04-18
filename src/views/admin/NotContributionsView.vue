@@ -30,14 +30,23 @@
           size="small"
           @click="openScheduleDialog"
         />
+        <Button
+          icon="pi pi-verified"
+          label="Xác nhận"
+          severity="success"
+          class="left-10"
+          raised
+          size="small"
+          @click="openConfirmDialog"
+        />
       </div>
       <div class="mb-3">
         <InputText
           v-if="users.length > 0"
           v-model="searchQuery"
-          placeholder="Tìm kiếm theo mã thành viên or tên..."
+          placeholder="Tìm kiếm theo mã thành viên, email or tên..."
           class="w-full p-inputtext-sm"
-          style="width: 25%"
+          style="width: 22rem"
         />
         <!-- <Button label="Create reminder" severity="success" class="left-10" raised size="small"
                     @click="openCreateDialog" /> -->
@@ -112,6 +121,70 @@
         <Button label="Cập nhật" severity="primary" @click="saveSchedule" />
       </div>
     </Dialog>
+
+    <Dialog
+      v-model:visible="showConfirmDialog"
+      modal
+      header="Xác nhận đóng quỹ"
+      class="container-dialog"
+    >
+      <div class="col-12 mb-3 item-dialog">
+        <label for="name" class="font-bold mb-2"
+          >Chọn loại quỹ<span class="text-danger">*</span></label
+        >
+        <Dropdown
+          id="fundType"
+          v-model="selectedFund"
+          :options="fundOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn quỹ"
+          :class="{ 'p-invalid': errors.selectedType }"
+        />
+        <small class="p-error" v-if="errors.selectedType">{{ errors.selectedType }}</small>
+
+        <label class="font-bold mb-2 mt-2">Số tiền:</label>
+        <InputText
+          :value="formatCurrency(paymentAmount)"
+          type="text"
+          class="p-inputtext w-full"
+          disabled
+        />
+      </div>
+
+      <div class="col-12 mb-3 item-dialog">
+        <label for="hosts" class="font-bold mb-2"
+          >Thành viên<span class="text-danger">*</span></label
+        >
+        <MultiSelect
+          id="hosts"
+          v-model="selectedUsers"
+          :options="users"
+          optionLabel="user.fullName"
+          optionValue="user.id"
+          placeholder="Chọn thành viên"
+          class="w-full"
+          style="width: 100%"
+          :class="{ 'p-invalid': errors.users }"
+        />
+        <small class="p-error" v-if="errors.users">{{ errors.users }}</small>
+      </div>
+
+      <div class="actions-dialog">
+        <Button
+          label="Hủy"
+          severity="secondary"
+          @click="showConfirmDialog = false"
+          class="p-button-outlined"
+        />
+        <Button
+          label="Đồng ý"
+          severity="primary"
+          @click="confirmContribution"
+          class="p-button-raised"
+        />
+      </div>
+    </Dialog>
   </div>
   <!-- <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
         <div>Bạn có chắc chắn muốn xóa thành viên này?</div>
@@ -121,72 +194,148 @@
         </div>
     </Dialog> -->
 </template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import InputText from 'primevue/inputtext'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
-import axiosInstance from '@/router/Interceptor'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { User } from '@/types/User'
 import { useUserStore } from '@/pinia/userStore'
+import axiosInstance from '@/router/Interceptor'
 import formatCurrency from '@/utils/FormatCurrency'
 import {
   convertToLocalDateTimeString,
   convertToLocalTimeString,
 } from '@/utils/ConvertTimeToDateTime'
+
+// PrimeVue Components
+import InputText from 'primevue/inputtext'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import Calendar from 'primevue/calendar'
+import Dropdown from 'primevue/dropdown'
+import MultiSelect from 'primevue/multiselect'
+
+// Interfaces
+interface User {
+  id: number
+  fullName: string
+  email: string
+  role: {
+    name: string
+  }
+}
 
 interface UserData {
   user: User
   amountToPay: number
 }
-// const baseURL = "http://localhost:8080/api/v1";
-// const showConfirmDialog = ref(false);
-// const userToDelete = ref<User | null>(null);
-const token = localStorage.getItem('accessToken')
-const users = ref<UserData[]>([])
-const searchQuery = ref('')
-const form = ref({ id: 0, title: '', description: '', type: '', status: '', created_at: '' })
-const errors = ref({ name: '', description: '' })
-const router = useRouter()
 
+interface Fund {
+  id: number
+  name: string
+  description: string
+  type: string
+  amount: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface FundOption {
+  label: string
+  value: string
+}
+
+interface Period {
+  id: number
+  month: number
+  year: number
+  deadline: string
+  description: string
+  totalAmount: number
+  createdAt: string
+  updatedAt: string
+}
+
+// State
+const router = useRouter()
+const token = localStorage.getItem('accessToken')
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
+// User data
+const users = ref<UserData[]>([])
+const searchQuery = ref('')
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) return users.value
+  return users.value.filter(
+    (user) =>
+      user.user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      user.user.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      user.user.id.toString().toLowerCase().includes(searchQuery.value.toLowerCase()),
+  )
+})
+
+// Period and date filters
 const currentYear = new Date().getFullYear()
 const selectedYear = ref(currentYear)
+const selectedMonth = ref(new Date().getMonth() + 1)
+
 const availableYears = ref<number[]>([])
+const availableMonths = ref<number[]>([])
 
 for (let year = 2020; year <= currentYear; year++) {
   availableYears.value.push(year)
 }
 
-//pagenation
-const first = ref<number>(0)
+for (let month = 1; month <= 12; month++) {
+  availableMonths.value.push(month)
+}
 
+// Pagination
+const first = ref<number>(0)
 const onPage = (event: { first: number }) => {
   first.value = event.first
 }
 
-const selectedMonth = ref(new Date().getMonth() + 1)
-const availableMonths = ref<number[]>([])
+// Fund data
+const funds = ref<Fund[]>([])
+const fundOptions = ref<FundOption[]>([])
+const selectedFund = ref<string | null>(null)
+const paymentAmount = ref(0)
 
-for (let month = 1; month <= 12; month++) {
-  availableMonths.value.push(month)
-}
-const onYearChange = () => {
-  fetchUsers()
-}
+// Period data
+const periodId = ref<number | null>(null)
 
-const onMonthChange = () => {
-  fetchUsers()
-}
+// Contribution form
+const form = ref({
+  periodId: '',
+  totalAmount: 0,
+  note: '',
+  fundType: '',
+  userIds: [] as number[],
+})
 
+const errors = ref({
+  selectedType: '',
+  users: '',
+})
+
+const selectedUsers = ref<number[]>([])
+
+// Dialogs
+const showConfirmDialog = ref(false)
+const showScheduleDialog = ref(false)
+
+// Schedule form
+const scheduleForm = ref({
+  fromDate: new Date(),
+  toDate: new Date(),
+  sendTime: new Date(),
+  type: 'late_contributed_notification',
+})
+
+// Data fetching functions
 const fetchUsers = async () => {
   try {
     const response = await axiosInstance.get(`/users/no-contribution/period`, {
@@ -197,42 +346,51 @@ const fetchUsers = async () => {
       headers: { Authorization: `Bearer ${token}` },
     })
     users.value = response.data
-    console.log(users.value)
   } catch (error) {
     console.error('Error fetching users:', error)
   }
 }
-//crate  reminder
 
-const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value
-  return users.value.filter((user) =>
-    user.user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  )
-})
+const fetchFund = async () => {
+  try {
+    if (!token) {
+      throw new Error('Unauthorized')
+    }
 
-const validateForm = () => {
-  errors.value = { name: '', description: '' }
+    const response = await axiosInstance.get(`/funds`)
+    funds.value = response.data
 
-  if (!form.value.title) {
-    errors.value.name = 'Title is required!'
+    fundOptions.value = [
+      { label: 'Tất cả', value: 'ALL' },
+      ...funds.value.map((fund) => ({
+        label: fund.name,
+        value: fund.type,
+      })),
+    ]
+    if (!selectedFund.value) {
+      selectedFund.value = 'ALL'
+    }
+  } catch (error) {
+    console.error('Error fetching funds:', error)
   }
-  if (!form.value.description) {
-    errors.value.description = 'Description is required!'
-  }
-
-  return Object.values(errors.value).every((err) => err === '')
 }
 
-//setting schedule
-//setting time
-const showScheduleDialog = ref(false)
-const scheduleForm = ref({
-  fromDate: new Date(),
-  toDate: new Date(),
-  sendTime: new Date(),
-  type: 'event_notification',
-})
+const fetchPeriodByMonth = async () => {
+  try {
+    const response = await axiosInstance.get('/periods/get-by-month', {
+      params: {
+        month: selectedMonth.value,
+        year: selectedYear.value,
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    periodId.value = response.data.id
+  } catch (error) {
+    console.error('Error fetching period:', error)
+  }
+}
+
 const fetchSchedule = async () => {
   try {
     const response = await axiosInstance.get(`/schedules/type/late_contributed_notification`)
@@ -258,21 +416,118 @@ const fetchSchedule = async () => {
   }
 }
 
-const formatFullDateTime = (dateObj: Date) => {
-  if (!dateObj) return 'Không có dữ liệu'
-  return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`
+// Event handlers
+const onYearChange = () => {
+  fetchUsers()
+  fetchPeriodByMonth()
 }
 
-// Định dạng chỉ thời gian
-const formatTimeOnly = (dateObj: Date) => {
-  if (!dateObj) return 'Không có dữ liệu'
-  return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
+const onMonthChange = () => {
+  fetchUsers()
+  fetchPeriodByMonth()
 }
 
-// 👉 Hàm mở dialog với schedule sẵn có
+const openConfirmDialog = async () => {
+  resetErrors()
+  selectedUsers.value = []
+
+  // Make sure funds are loaded
+  if (funds.value.length === 0) {
+    await fetchFund()
+  }
+
+  // Set the selected fund to 'ALL' first
+  selectedFund.value = 'ALL'
+
+  // Calculate total amount from all funds and set it
+  const total = funds.value.reduce((sum, fund) => sum + Number(fund.amount), 0)
+  paymentAmount.value = total
+  form.value.fundType = 'ALL'
+
+  await fetchPeriodByMonth()
+  showConfirmDialog.value = true
+}
+
 const openScheduleDialog = () => {
   fetchSchedule()
   showScheduleDialog.value = true
+}
+
+// Form handling
+const resetErrors = () => {
+  errors.value = { selectedType: '', users: '' }
+}
+
+const validateForm = () => {
+  resetErrors()
+
+  if (!selectedFund.value) {
+    errors.value.selectedType = 'Vui lòng chọn loại quỹ!'
+  }
+
+  if (selectedUsers.value.length === 0) {
+    errors.value.users = 'Vui lòng chọn thành viên!'
+  }
+
+  return Object.values(errors.value).every((err) => err === '')
+}
+
+// Fund selection watcher
+watch(selectedFund, (newValue) => {
+  if (!newValue) {
+    paymentAmount.value = 0
+    form.value.fundType = ''
+    return
+  }
+
+  if (newValue === 'ALL') {
+    // If selecting "All", sum all funds
+    const total = funds.value.reduce((sum, fund) => sum + Number(fund.amount), 0)
+    paymentAmount.value = total
+    form.value.fundType = 'ALL'
+    return
+  }
+
+  // For single fund selection
+  const fund = funds.value.find((f) => f.type === newValue)
+  if (fund) {
+    paymentAmount.value = Number(fund.amount)
+    form.value.fundType = fund.type
+  } else {
+    paymentAmount.value = 0
+    form.value.fundType = ''
+  }
+})
+
+// API actions
+const confirmContribution = async () => {
+  if (!validateForm()) return
+
+  try {
+    // Make sure we have the period ID
+    if (!periodId.value) {
+      await fetchPeriodByMonth()
+    }
+
+    const requestData = {
+      periodId: periodId.value,
+      totalAmount: paymentAmount.value,
+      note: `Đóng quỹ tháng ${selectedMonth.value}`,
+      fundType: form.value.fundType || selectedFund.value,
+      userIds: selectedUsers.value,
+    }
+
+    const response = await axiosInstance.post(
+      `/contributions/confirm/dept-contribution`,
+      requestData,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+
+    showConfirmDialog.value = false
+    fetchUsers()
+  } catch (error) {
+    console.error('Error confirming contribution:', error)
+  }
 }
 
 const saveSchedule = async () => {
@@ -281,7 +536,6 @@ const saveSchedule = async () => {
     const toDate = new Date(scheduleForm.value.toDate)
 
     fromDate.setHours(0, 0, 0, 0)
-
     toDate.setHours(23, 59, 59, 999)
 
     const dataForm = {
@@ -291,8 +545,6 @@ const saveSchedule = async () => {
       type: scheduleForm.value.type,
     }
 
-    console.log('scheduleForm update gửi lên:', dataForm)
-
     await axiosInstance.put(`/schedules/${dataForm.type}`, dataForm)
     showScheduleDialog.value = false
   } catch (error) {
@@ -300,25 +552,18 @@ const saveSchedule = async () => {
   }
 }
 
-const resetErrors = () => {
-  errors.value = { name: '', description: '' }
+// Formatters
+const formatFullDateTime = (dateObj: Date) => {
+  if (!dateObj) return 'Không có dữ liệu'
+  return `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`
 }
 
-// const deleteUser = async () => {
-//     if (!userToDelete.value) return;
-//     try {
-//         await axiosInstance.delete(`${baseURL} /users/${userToDelete.value.id} `, {
-//             headers: { Authorization: `Bearer ${token} ` }
-//         });
-//         fetchUsers();
-//     } catch (error) {
-//         console.error('Error deleting user:', error);
-//     } finally {
-//         showConfirmDialog.value = false;
-//         userToDelete.value = null;
-//     }
-// };
+const formatTimeOnly = (dateObj: Date) => {
+  if (!dateObj) return 'Không có dữ liệu'
+  return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
+}
 
+// Lifecycle hooks
 onMounted(() => {
   if (!token) {
     router.push('/')
@@ -335,5 +580,13 @@ onMounted(() => {
 
 .left-10 {
   margin-left: 10px;
+}
+#fundType {
+  width: 100%;
+  margin-left: 0;
+}
+.border {
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 </style>

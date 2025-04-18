@@ -6,12 +6,10 @@ import FundView from '@/views/admin/FundView.vue'
 import PeriodView from '@/views/admin/PeriodView.vue'
 import PenaltyView from '@/views/admin/PenaltyView.vue'
 import PayPenView from '@/views/PayPenView.vue'
-import axios from 'axios'
 import StatsView from '@/views/StatsView.vue'
 import TransactionView from '@/views/admin/TransactionView.vue'
 import UserView from '@/views/admin/UserView.vue'
 import NotContributionsView from '@/views/admin/NotContributionsView.vue'
-import LateContributions from '@/views/admin/LateContributions.vue'
 import LateListView from '@/views/admin/LateListView.vue'
 import ApprovingView from '@/views/admin/ApprovingView.vue'
 import EventView from '@/views/EventView.vue'
@@ -96,12 +94,6 @@ const router = createRouter({
       path: '/users/not-paid',
       name: 'not-paid',
       component: NotContributionsView,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/users/late-contributions',
-      name: 'late-contributions',
-      component: LateContributions,
       meta: { requiresAuth: true },
     },
     {

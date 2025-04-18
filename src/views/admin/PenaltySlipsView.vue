@@ -9,7 +9,7 @@
           class="w-full p-inputtext-sm"
         />
         <Button
-          label="Tạo quỹ phạt"
+          label="Tạo phiếu phạt"
           severity="success"
           class="left-10"
           raised
@@ -31,7 +31,8 @@
             {{ first + index + 1 }}
           </template>
         </Column>
-        <Column field="name" header="Tên quỹ phạt" sortable></Column>
+        <Column field="user.fullName" header="Tên thành viên" sortable></Column>
+        <Column field="penalty.description" header="Loại phạt" sortable></Column>
         <Column field="description" header="Mô tả" sortable>
           <template #body="{ data }">
             {{ data.description !== '' ? data.description : '-' }}
@@ -42,13 +43,12 @@
             {{ formatCurrency(data.amount) }}
           </template>
         </Column>
-        <Column field="created" header="Ngày tạo" sortable>
+        <Column field="created" header="Ngày đến hạn" sortable>
           <template #body="{ data }">
-            {{ formatDate(data.createdAt) }}
+            {{ formatDate(data.dueDate) }}
           </template>
         </Column>
-        <Column field="slug" header="Slug" sortable></Column>
-        <Column header="Actions">
+        <!-- <Column header="Actions">
           <template #body="{ data }">
             <Button
               label="Sửa"
@@ -64,12 +64,20 @@
               @click="confirmDeletePenalty(data)"
             />
           </template>
+        </Column> -->
+        <Column header="Trạng thái">
+            <template #body="{ data }">
+            <Tag
+              :value="getPaymentStatusLabel(data.paymentStatus)"
+              :severity="getPaymentStatusSeverity(data.paymentStatus)"
+            />
+            </template>
         </Column>
       </DataTable>
     </div>
   </div>
 
-  <Dialog
+  <!-- <Dialog
     v-model:visible="showConfirmDialog"
     modal
     header="Xác nhận xóa"
@@ -80,19 +88,21 @@
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
       <Button label="Xóa" severity="danger" @click="deletePenalty" />
     </div>
-  </Dialog>
+  </Dialog> -->
 
+
+  <!-- const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' }) -->
   <Dialog
     v-model:visible="showPenaltyDialog"
     modal
-    :header="isUpdate ? 'Cập nhật' : 'Tạo'"
+    :header="isUpdate ? 'Cập nhật phiếu phạt' : 'Tạo phiếu phạt'"
     @hide="resetErrors"
     :style="{ width: '30rem' }"
   >
     <div class="mb-3">
-      <label for="id" class="fw-bold"> Tên quỹ <span class="text-danger">*</span> </label>
-      <InputText id="name" type="text" v-model="form.name" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.name">{{ errors.name }}</small>
+      <label for="id" class="fw-bold"> Loại phiếu phạt <span class="text-danger">*</span> </label>
+      <InputText id="slug" type="text" v-model="form.slug" class="w-100" autocomplete="off" />
+      <small class="text-danger" v-if="errors.slug">{{ errors.slug }}</small>
     </div>
     <div class="mb-3">
       <label for="description" class="fw-bold"> Mô tả</label>
@@ -105,9 +115,9 @@
       />
     </div>
     <div class="mb-3">
-      <label for="slug" class="fw-bold"> Slug <span class="text-danger">*</span> </label>
+      <label for="slug" class="fw-bold"> Thành Viên <span class="text-danger">*</span> </label>
       <InputText id="slug" type="text" v-model="form.slug" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.slug">{{ errors.slug }}</small>
+      <small class="text-danger" v-if="errors.slug">{{ errors.ids }}</small>
     </div>
     <div class="mb-3">
       <label for="amount" class="fw-bold"> Tổng tiền <span class="text-danger">*</span> </label>
@@ -139,24 +149,30 @@ import { ref, computed, onMounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Tag from 'primevue/tag'
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
+// import Dialog from 'primevue/dialog'
 import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
-import type Penalty from '@/types/Penalty'
+import type PenaltySlip from '@/types/PenaltySlip'
 
 // const baseURL = "http://localhost:8080/api/v1";
-const showConfirmDialog = ref(false)
-const penaltyDelete = ref<Penalty | null>(null)
+// const showConfirmDialog = ref(false)
+// const penaltyDelete = ref<Penalty | null>(null)
 const token = localStorage.getItem('accessToken')
-const penalties = ref<Penalty[]>([])
+const penaltySlips = ref<PenaltySlip[]>([])
 const searchQuery = ref('')
-const showPenaltyDialog = ref(false)
+
+
+// SHOW PENALTY DIALOG
+const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' })
 const isUpdate = ref(false)
-const form = ref({ id: 0, name: '', description: '', amount: 0, slug: '' })
+const showPenaltyDialog = ref(false)
+const errors = ref({ slug: '', amount: '', ids: '' })
+
 const router = useRouter()
-const errors = ref({ name: '', amount: '', slug: '' })
+
 
 //pagenation
 const first = ref<number>(0)
@@ -165,58 +181,95 @@ const onPage = (event: { first: number }) => {
 }
 const fetchPenalties = async () => {
   try {
-    const response = await axiosInstance.get(`/penalties`, {
+    const response = await axiosInstance.get(`/pen-bills`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    penalties.value = response.data
+    penaltySlips.value = response.data
   } catch (error) {
     console.error('Error fetching periods:', error)
   }
 }
 
-const validateForm = () => {
-  errors.value = { name: '', amount: '', slug: '' }
+const filteredPeriods = computed(() => {
+  console.log(
+    'penaltySlips.value',
+    penaltySlips.value,
+    'searchQuery.value',
+    searchQuery.value,
+  );
+  
+  if (!searchQuery.value) return penaltySlips.value
+  return penaltySlips.value.filter(
+    (pen) => pen.user.fullName.includes(searchQuery.value) || pen.user.id.toString().includes(searchQuery.value),
+  )
+})
 
-  if (!form.value.name) errors.value.name = 'Vui lòng nhập tên quỹ phạt!'
+const formatDate = (dateString: string) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+}
+
+const getPaymentStatusLabel = (status: string) => {
+  switch (status) {
+    case 'PAID':
+      return 'Đã thanh toán'
+    case 'PENDING':
+      return 'Chờ xử lý'
+    case 'UNPAID':
+      return 'Chưa thanh toán'
+    case 'CANCELED':
+      return 'Đã hủy'
+    default:
+      return 'Không xác định'
+  }
+}
+
+const getPaymentStatusSeverity = (status: string) => {
+  switch (status) {
+    case 'PAID':
+      return 'success'
+    case 'PENDING':
+      return 'warning'
+    case 'UNPAID':
+      return 'danger'
+    case 'CANCELED':
+      return 'info'
+    default:
+      return 'info'
+  }
+}
+
+onMounted(() => {
+  if (!token) {
+    router.push('/')
+  } else {
+    fetchPenalties()
+  }
+})
+
+
+// const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' })
+// const errors = ref({ slug: '', amount: 0, ids: '' })
+const validateForm = () => {
+  errors.value = { slug: '', amount: '', ids: '' }
+
+  if (!form.value.slug) errors.value.slug = 'Vui lòng chọn loại phiếu phạt!'
   if (!form.value.amount || isNaN(Number(form.value.amount)))
     errors.value.amount = 'Vui lòng nhập số tiền hợp lệ!'
-  if (!form.value.slug) errors.value.slug = 'Vui lòng nhập slug!'
+  if (!form.value.ids) errors.value.ids = 'Vui lòng chọn người bị phạt!'
 
   return Object.values(errors.value).every((err) => err === '')
 }
 
 const resetErrors = () => {
-  errors.value = { name: '', amount: '', slug: '' }
+  errors.value = { slug: '', amount: '', ids: '' }
 }
-
-const filteredPeriods = computed(() => {
-  if (!searchQuery.value) return penalties.value
-  return penalties.value.filter(
-    (pen) => pen.name.includes(searchQuery.value) || pen.id.toString().includes(searchQuery.value),
-  )
-})
 
 const openCreateDialog = () => {
-  form.value = { id: 0, name: '', description: '', amount: 0, slug: '' }
+  form.value = { id: 0, slug: '', description: '', amount: 0, ids: '' }
   isUpdate.value = false
   showPenaltyDialog.value = true
-}
-
-const openUpdateDialog = (penalty: Penalty) => {
-  form.value = {
-    id: penalty.id,
-    name: penalty.name,
-    description: penalty.description,
-    slug: penalty.slug,
-    amount: penalty.amount,
-  }
-  isUpdate.value = true
-  showPenaltyDialog.value = true
-}
-
-const confirmDeletePenalty = (pen: Penalty) => {
-  penaltyDelete.value = pen
-  showConfirmDialog.value = true
 }
 
 const savePenalty = async () => {
@@ -239,34 +292,38 @@ const savePenalty = async () => {
   }
 }
 
-const deletePenalty = async () => {
-  if (!penaltyDelete.value) return
-  try {
-    await axiosInstance.delete(`/penalties/${penaltyDelete.value.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    fetchPenalties()
-  } catch (error) {
-    console.error('Error deleting period:', error)
-  } finally {
-    showConfirmDialog.value = false
-    penaltyDelete.value = null
-  }
-}
+// const openUpdateDialog = (penalty: Penalty) => {
+//   form.value = {
+//     id: penalty.id,
+//     name: penalty.name,
+//     description: penalty.description,
+//     slug: penalty.slug,
+//     amount: penalty.amount,
+//   }
+//   isUpdate.value = true
+//   showPenaltyDialog.value = true
+// }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
-}
+// const confirmDeletePenalty = (pen: Penalty) => {
+//   penaltyDelete.value = pen
+//   showConfirmDialog.value = true
+// }
 
-onMounted(() => {
-  if (!token) {
-    router.push('/')
-  } else {
-    fetchPenalties()
-  }
-})
+// const deletePenalty = async () => {
+//   if (!penaltyDelete.value) return
+//   try {
+//     await axiosInstance.delete(`/penalties/${penaltyDelete.value.id}`, {
+//       headers: { Authorization: `Bearer ${token}` },
+//     })
+//     fetchPenalties()
+//   } catch (error) {
+//     console.error('Error deleting period:', error)
+//   } finally {
+//     showConfirmDialog.value = false
+//     penaltyDelete.value = null
+//   }
+// }
+
 </script>
 
 <style scoped>

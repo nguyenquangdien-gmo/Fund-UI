@@ -1,4 +1,4 @@
 const formatCurrency = (value: string) => {
-  return value.toLocaleString() + ' VND'
+  return value.toLocaleString('vi-VN') + ' VND'
 }
 export default formatCurrency

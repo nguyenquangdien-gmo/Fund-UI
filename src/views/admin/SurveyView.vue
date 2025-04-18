@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Danh sách chưa hoàn thành khỏa sát</h2>
+      <h2 class="text-xl">KHẢO SÁT</h2>
       <h4 class="text-center">
         {{ reminder.title }}
       </h4>

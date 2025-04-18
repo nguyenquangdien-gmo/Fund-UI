@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">Danh Sách Sự Kiện</h2>
+      <h2 class="text-center">SỰ KIỆN</h2>
 
       <!-- Search and Create Button (Only for Admin) -->
       <div class="navbar-actions">
@@ -270,11 +270,9 @@ const first = ref<number>(0)
 const onPage = (event: { first: number }) => {
   first.value = event.first
 }
-// Composition Setup
+
 const router = useRouter()
 const token = localStorage.getItem('accessToken')
-
-// Reactive State
 const events = ref<Event[]>([])
 const searchQuery = ref('')
 const showConfirmDialog = ref(false)
@@ -284,6 +282,7 @@ const eventToDelete = ref<Event | null>(null)
 const userOptions = ref<User[]>([])
 const isAdmin = ref(false)
 
+// check admin
 const checkIsAdmin = async () => {
   if (!token) return
   try {
@@ -294,7 +293,7 @@ const checkIsAdmin = async () => {
     isAdmin.value = false
   }
 }
-
+//create data to send request
 const form = ref({
   id: 0,
   name: '',
@@ -303,6 +302,8 @@ const form = ref({
 })
 
 const selectedHosts = ref<number[]>([])
+
+//create object to validate
 const errors = ref({
   name: '',
   eventTime: '',
@@ -310,6 +311,7 @@ const errors = ref({
   hosts: '',
 })
 
+// fetch user to multi select
 const fetchUsers = async () => {
   try {
     const token = localStorage.getItem('accessToken')
@@ -334,12 +336,14 @@ const fetchEvents = async () => {
   }
 }
 
+// search
 const filteredEvents = computed(() => {
   if (!searchQuery.value) return events.value
   return events.value.filter((event) =>
     event.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
+
 //send now
 const toast = useToast()
 const sendReminderToGroup = async (event: Event) => {
@@ -368,6 +372,7 @@ const scheduleForm = ref({
   sendTime: new Date(),
   type: 'event_notification',
 })
+
 const fetchSchedule = async () => {
   try {
     const response = await axiosInstance.get(`/schedules/type/event_notification`)
@@ -404,7 +409,7 @@ const formatTimeOnly = (dateObj: Date) => {
   return `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
 }
 
-// 👉 Hàm mở dialog với schedule sẵn có
+// Hàm mở dialog với schedule sẵn có
 const openScheduleDialog = () => {
   fetchSchedule()
   showScheduleDialog.value = true
@@ -433,14 +438,6 @@ const saveSchedule = async () => {
   } catch (error) {
     console.error('Lỗi khi cập nhật schedule:', error)
   }
-}
-
-function parseTimeWithDate(dateStr: string, timeStr: string): Date | null {
-  if (!dateStr || !timeStr) return null
-  const baseDate = dateStr.split('T')[0]
-  const combined = `${baseDate}T${timeStr}`
-  const parsed = new Date(combined)
-  return isNaN(parsed.getTime()) ? null : parsed
 }
 
 // Dialog and Form Methods
@@ -493,6 +490,8 @@ const formatDateToLocalISOString = (date: Date): string => {
   const localTime = new Date(date.getTime() - offsetMs)
   return localTime.toISOString().slice(0, 19) // YYYY-MM-DDTHH:mm:ss
 }
+
+//save event
 const saveEvent = async () => {
   if (!isAdmin.value || !validateForm()) return
 

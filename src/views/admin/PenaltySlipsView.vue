@@ -209,7 +209,7 @@ const user = ref<User[]>([])
 
 
 // SHOW PENALTY DIALOG
-const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: Date })
+const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: new Date() })
 const errors = ref({ penaltySlug: '', amount: '', userIds: '', dueDate: "" })
 const isUpdate = ref(false)
 const showPenaltyDialog = ref(false)

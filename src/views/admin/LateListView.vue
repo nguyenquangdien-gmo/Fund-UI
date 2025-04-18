@@ -10,6 +10,7 @@
           dateFormat="dd-mm-yy"
           placeholder="Từ ngày"
           @date-select="fetchLateRecords"
+          @click="$toast.add({ severity: 'warn', summary: 'Chú ý', detail: 'Vui lòng chọn ngày bắt đầu bé hơn ngày kết thúc', life: 3000 })"
         />
         đến
         <Calendar

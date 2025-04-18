@@ -157,8 +157,8 @@ interface LateRecord {
 }
 
 const token = localStorage.getItem('accessToken')
-const fromDate = ref<Date | null>(new Date(new Date().getTime() - 24 * 60 * 60 * 1000))
-const toDate = ref<Date | null>(new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000))
+const fromDate = ref<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+const toDate = ref<Date | null>(new Date(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)))
 const lateRecords = ref<LateRecord[]>([])
 const searchTerm = ref('')
 const isAdmin = ref(false)
@@ -194,6 +194,28 @@ const checkIsAdmin = async () => {
 
 const fetchLateRecords = async () => {
   if (!fromDate.value || !toDate.value) return
+
+  if (fromDate.value > toDate.value) {
+    toDate.value = fromDate.value
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
+      life: 3000,
+    })
+    return
+  }
+
+  if (toDate.value < fromDate.value) {
+    toDate.value = fromDate.value
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
+      life: 3000,
+    })
+    return
+  }
   try {
     const response = await axiosInstance.get(`/late/users`, {
       params: {
@@ -276,28 +298,29 @@ const fetchSchedule = async () => {
 }
 const toast = useToast()
 
-watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
-  if (newFromDate && newToDate) {
-    if (newFromDate > newToDate) {
-      fromDate.value = toDate.value
-      toDate.value = oldToDate
-      toast.add({
-        severity: 'error',
-        summary: 'Lỗi',
-        detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
-        life: 3000,
-      })
-    } else if (newToDate < newFromDate) {
-      toDate.value = fromDate.value
-      toast.add({
-        severity: 'error',
-        summary: 'Lỗi',
-        detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
-        life: 3000,
-      })
-    }
-  }
-})
+// watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
+//   if (newFromDate && newToDate) {
+//     if (newToDate < newFromDate) {
+//       fromDate.value = toDate.value;
+//       toDate.value = oldToDate;
+//       toast.add({
+//         severity: 'error',
+//         summary: 'Lỗi',
+//         detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
+//         life: 3000,
+//       });
+//     } else if (newFromDate > newToDate) {
+//       toDate.value = fromDate.value;
+//       fromDate.value = oldFromDate;
+//       toast.add({
+//         severity: 'error',
+//         summary: 'Lỗi',
+//         detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
+//         life: 3000,
+//       });
+//     }
+//   }
+// });
 
 // Hàm định dạng hiển thị ngày tháng
 // const formatFullDateTime = (dateObj: Date) => {

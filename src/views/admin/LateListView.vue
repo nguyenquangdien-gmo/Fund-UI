@@ -304,29 +304,29 @@ const fetchSchedule = async () => {
 }
 const toast = useToast()
 
-watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
-  if (newFromDate && newToDate) {
-    if (newToDate < newFromDate) {
-      fromDate.value = toDate.value;
-      toDate.value = oldToDate;
-      toast.add({
-        severity: 'error',
-        summary: 'Lỗi',
-        detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
-        life: 3000,
-      });
-    } else if (newFromDate > newToDate) {
-      toDate.value = fromDate.value;
-      fromDate.value = oldFromDate;
-      toast.add({
-        severity: 'error',
-        summary: 'Lỗi',
-        detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
-        life: 3000,
-      });
-    }
-  }
-});
+// watch([fromDate, toDate], ([newFromDate, newToDate], [oldFromDate, oldToDate]) => {
+//   if (newFromDate && newToDate) {
+//     if (newToDate < newFromDate) {
+//       fromDate.value = toDate.value;
+//       toDate.value = oldToDate;
+//       toast.add({
+//         severity: 'error',
+//         summary: 'Lỗi',
+//         detail: 'Ngày bắt đầu không được lớn hơn ngày kết thúc',
+//         life: 3000,
+//       });
+//     } else if (newFromDate > newToDate) {
+//       toDate.value = fromDate.value;
+//       fromDate.value = oldFromDate;
+//       toast.add({
+//         severity: 'error',
+//         summary: 'Lỗi',
+//         detail: 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu',
+//         life: 3000,
+//       });
+//     }
+//   }
+// });
 
 
 // Hàm định dạng hiển thị ngày tháng

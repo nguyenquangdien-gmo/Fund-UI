@@ -91,7 +91,7 @@
   </Dialog> -->
 
 
-  <!-- const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' }) -->
+  <!-- const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '' }) -->
   <Dialog
     v-model:visible="showPenaltyDialog"
     modal
@@ -100,9 +100,16 @@
     :style="{ width: '30rem' }"
   >
     <div class="mb-3">
-      <label for="id" class="fw-bold"> Loại phiếu phạt <span class="text-danger">*</span> </label>
-      <InputText id="slug" type="text" v-model="form.slug" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.slug">{{ errors.slug }}</small>
+      <label for="penaltySlug" class="fw-bold"> Loại phiếu phạt <span class="text-danger">*</span> </label>
+      <Select
+        v-model="form.penaltySlug"
+        :options="penaltyTypes"
+        optionLabel="description"
+        optionValue="slug"
+        placeholder="Chọn loại phiếu phạt"
+        class="w-100"
+      />
+      <small class="text-danger" v-if="errors.penaltySlug">{{ errors.penaltySlug }}</small>
     </div>
     <div class="mb-3">
       <label for="description" class="fw-bold"> Mô tả</label>
@@ -115,10 +122,31 @@
       />
     </div>
     <div class="mb-3">
-      <label for="slug" class="fw-bold"> Thành Viên <span class="text-danger">*</span> </label>
-      <InputText id="slug" type="text" v-model="form.slug" class="w-100" autocomplete="off" />
-      <small class="text-danger" v-if="errors.slug">{{ errors.ids }}</small>
+      <label for="userIds" class="fw-bold"> Thành Viên <span class="text-danger">*</span> </label>
+      <MultiSelect
+        filter
+        v-model="form.userIds"
+        :options="user"
+        optionLabel="fullName"
+        optionValue="id"
+        placeholder="Chọn thành viên"
+        class="w-100"
+      />
+      <small class="text-danger" v-if="errors.userIds">{{ errors.userIds }}</small>
     </div>
+
+    <div class="mb-3">
+      <label for="dueDate" class="fw-bold"> Ngày đến hạn <span class="text-danger">*</span> </label>
+      <Calendar
+        id="dueDate"
+        v-model="form.dueDate"
+        dateFormat="dd/mm/yy"
+        class="w-100"
+        placeholder="Chọn ngày đến hạn"
+      />
+      <small class="text-danger" v-if="errors.dueDate">{{ errors.dueDate }}</small>
+    </div>
+
     <div class="mb-3">
       <label for="amount" class="fw-bold"> Tổng tiền <span class="text-danger">*</span> </label>
       <InputNumber
@@ -132,6 +160,7 @@
       />
       <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
     </div>
+    
     <div class="d-flex justify-content-end gap-2">
       <Button
         type="button"
@@ -139,8 +168,10 @@
         severity="secondary"
         @click="showPenaltyDialog = false"
       ></Button>
-      <Button type="button" label="Save" severity="primary" @click="savePenalty"></Button>
+      <Button type="button" label="Save" severity="primary" @click="savePenaltySlips"></Button>
     </div>
+
+
   </Dialog>
 </template>
 
@@ -151,11 +182,17 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
+import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
+import Calendar from 'primevue/calendar'
+
 // import Dialog from 'primevue/dialog'
 import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
 import type PenaltySlip from '@/types/PenaltySlip'
+import type Penalty from '@/types/Penalty'
+import type { User } from '@/types/User'
 
 // const baseURL = "http://localhost:8080/api/v1";
 // const showConfirmDialog = ref(false)
@@ -164,12 +201,18 @@ const token = localStorage.getItem('accessToken')
 const penaltySlips = ref<PenaltySlip[]>([])
 const searchQuery = ref('')
 
+// DATA FOR PENALTY DIALOG
+const penaltyTypes = ref<Penalty[]>([])
+
+// DATA FOR USER
+const user = ref<User[]>([])
+
 
 // SHOW PENALTY DIALOG
-const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' })
+const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: Date })
+const errors = ref({ penaltySlug: '', amount: '', userIds: '', dueDate: "" })
 const isUpdate = ref(false)
 const showPenaltyDialog = ref(false)
-const errors = ref({ slug: '', amount: '', ids: '' })
 
 const router = useRouter()
 
@@ -179,7 +222,7 @@ const first = ref<number>(0)
 const onPage = (event: { first: number }) => {
   first.value = event.first
 }
-const fetchPenalties = async () => {
+const fetchPenaltySlips = async () => {
   try {
     const response = await axiosInstance.get(`/pen-bills`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -190,14 +233,37 @@ const fetchPenalties = async () => {
   }
 }
 
+const fetchPenaltyTypes = async () => {
+  try {
+    const response = await axiosInstance.get(`/penalties`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })    
+    penaltyTypes.value = response.data.map((penalty: { name: string; slug: string }) => ({
+      description: penalty.name,
+      slug: penalty.slug,
+    }))
+  } catch (error) {
+    console.error('Error fetching penalty types:', error)
+  }
+}
+
+const fetchUsers = async () => {
+  try {
+    const response = await axiosInstance.get(`/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    user.value = response.data.map((user: { id: number; fullName: string }) => ({
+      id: user.id,
+      fullName: `${user.id} - ${user.fullName}`,
+    }))
+
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
+}
+
+
 const filteredPeriods = computed(() => {
-  console.log(
-    'penaltySlips.value',
-    penaltySlips.value,
-    'searchQuery.value',
-    searchQuery.value,
-  );
-  
   if (!searchQuery.value) return penaltySlips.value
   return penaltySlips.value.filter(
     (pen) => pen.user.fullName.includes(searchQuery.value) || pen.user.id.toString().includes(searchQuery.value),
@@ -244,49 +310,54 @@ onMounted(() => {
   if (!token) {
     router.push('/')
   } else {
-    fetchPenalties()
+    fetchPenaltySlips()
+    fetchPenaltyTypes()
+    fetchUsers()
   }
 })
 
 
-// const form = ref({ id: 0, slug: '', description: '', amount: 0, ids: '' })
-// const errors = ref({ slug: '', amount: 0, ids: '' })
+// const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '' })
+// const errors = ref({ penaltySlug: '', amount: 0, userIds: '' })
 const validateForm = () => {
-  errors.value = { slug: '', amount: '', ids: '' }
+  errors.value = { penaltySlug: '', amount: '', userIds: '', dueDate: '' }
 
-  if (!form.value.slug) errors.value.slug = 'Vui lòng chọn loại phiếu phạt!'
+  if (!form.value.penaltySlug) errors.value.penaltySlug = 'Vui lòng chọn loại phiếu phạt!'
   if (!form.value.amount || isNaN(Number(form.value.amount)))
     errors.value.amount = 'Vui lòng nhập số tiền hợp lệ!'
-  if (!form.value.ids) errors.value.ids = 'Vui lòng chọn người bị phạt!'
+  if (!form.value.userIds) errors.value.userIds = 'Vui lòng chọn người bị phạt!'
+  if (!form.value.dueDate) errors.value.dueDate = 'Vui lòng chọn ngày đến hạn!'
 
   return Object.values(errors.value).every((err) => err === '')
 }
 
 const resetErrors = () => {
-  errors.value = { slug: '', amount: '', ids: '' }
+  errors.value = { penaltySlug: '', amount: '', userIds: '', dueDate: '' }
 }
 
 const openCreateDialog = () => {
-  form.value = { id: 0, slug: '', description: '', amount: 0, ids: '' }
+  form.value = { id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: new Date() }
   isUpdate.value = false
   showPenaltyDialog.value = true
 }
 
-const savePenalty = async () => {
+const savePenaltySlips = async () => {
   if (!validateForm()) return
+  console.log('Form Data:', form.value)
   try {
-    const penaltyData = { ...form.value }
+    const penaltyData = { ...form.value, paymentStatus: 'UNPAID' }
+    console.log('Penalty Data:', penaltyData)
     if (isUpdate.value) {
-      await axiosInstance.put(`/penalties/${form.value.id}`, penaltyData, {
+      await axiosInstance.put(`/pen-bills/${form.value.id}`, penaltyData, {
         headers: { Authorization: `Bearer ${token}` },
       })
     } else {
-      await axiosInstance.post(`/penalties`, penaltyData, {
+      await axiosInstance.post(`/pen-bills`, penaltyData, {
         headers: { Authorization: `Bearer ${token}` },
       })
     }
     showPenaltyDialog.value = false
-    fetchPenalties()
+    fetchPenaltySlips()
   } catch (error) {
     console.error('Error saving penalty:', error)
   }
@@ -297,7 +368,7 @@ const savePenalty = async () => {
 //     id: penalty.id,
 //     name: penalty.name,
 //     description: penalty.description,
-//     slug: penalty.slug,
+//     penaltySlug: penalty.penaltySlug,
 //     amount: penalty.amount,
 //   }
 //   isUpdate.value = true
@@ -315,7 +386,7 @@ const savePenalty = async () => {
 //     await axiosInstance.delete(`/penalties/${penaltyDelete.value.id}`, {
 //       headers: { Authorization: `Bearer ${token}` },
 //     })
-//     fetchPenalties()
+//     fetchPenaltySlips()
 //   } catch (error) {
 //     console.error('Error deleting period:', error)
 //   } finally {

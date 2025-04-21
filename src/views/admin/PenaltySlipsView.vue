@@ -194,7 +194,7 @@
       <small class="text-danger" v-if="errors.dueDate">{{ errors.dueDate }}</small>
     </div>
 
-    <div class="mb-3">
+    <!-- <div class="mb-3">
       <label for="amount" class="fw-bold"> Tổng tiền <span class="text-danger">*</span> </label>
       <InputNumber
         id="amount"
@@ -206,7 +206,7 @@
         :min="0"
       />
       <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
-    </div>
+    </div> -->
     
     <div class="d-flex justify-content-end gap-2">
       <Button
@@ -429,8 +429,8 @@ const validateForm = () => {
   errors.value = { penaltySlug: '', amount: '', userIds: '', dueDate: '' }
 
   if (!form.value.penaltySlug) errors.value.penaltySlug = 'Vui lòng chọn loại phiếu phạt!'
-  if (!form.value.amount || isNaN(Number(form.value.amount)))
-    errors.value.amount = 'Vui lòng nhập số tiền hợp lệ!'
+  // if (!form.value.amount || isNaN(Number(form.value.amount)))
+  //   errors.value.amount = 'Vui lòng nhập số tiền hợp lệ!'
   if (!form.value.userIds) errors.value.userIds = 'Vui lòng chọn người bị phạt!'
   if (!form.value.dueDate) errors.value.dueDate = 'Vui lòng chọn ngày đến hạn!'
 

@@ -169,7 +169,6 @@ import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
-import { da } from 'date-fns/locale'
 
 interface User {
   id?: string | null

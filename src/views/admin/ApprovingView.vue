@@ -2,7 +2,10 @@
   <div class="p-4">
     <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
 
-    <div class="mb-4 flex items-center gap-4">
+    <div class="mb-4">
+      <div>
+        
+      </div>
       <InputText
         v-model="searchQuery"
         placeholder="Tìm kiếm theo tên or mô tả..."
@@ -37,17 +40,17 @@
         </template>
       </Column>
       <Column field="displayName" header="Tên" sortable />
-      <Column header="Loại" sortable>
+      <Column field="typeLabel" header="Loại" sortable>
         <template #body="slotProps">
           <Tag :value="slotProps.data.typeLabel" :severity="slotProps.data.typeSeverity" />
         </template>
       </Column>
-      <Column header="Mô tả" sortable>
+      <Column field="description" header="Mô tả" sortable>
         <template #body="slotProps">
           {{ getItemDescription(slotProps.data) }}
         </template>
       </Column>
-      <Column header="Trạng thái" sortable style="text-align: center">
+      <Column field="displayStatus" header="Trạng thái" sortable style="text-align: center">
         <template #body="slotProps">
           <Tag
             :value="getStatusLabel(slotProps.data)"
@@ -55,7 +58,7 @@
           />
         </template>
       </Column>
-      <Column header="Số tiền" sortable>
+      <Column field="displayAmount" header="Số tiền" sortable>
         <template #body="slotProps">
           {{ formatCurrency(slotProps.data.displayAmount) }}
         </template>
@@ -146,6 +149,7 @@ import Tag from 'primevue/tag'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
+import Select from 'primevue/selectbutton'
 import axiosInstance from '@/router/Interceptor'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
@@ -232,6 +236,8 @@ const fetchAllData = async () => {
 
     // Combine all data
     allItems.value = [...invoicesData, ...contributionsData, ...penBillsData]
+
+    console.log('Combined Data:', allItems.value)
   } catch (err) {
     console.error(err)
   } finally {

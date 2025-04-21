@@ -145,7 +145,7 @@
 
         <label class="font-bold mb-2 mt-2">Số tiền:</label>
         <InputText
-          :value="formatCurrency(paymentAmount)"
+          :value="formatCurrency(paymentAmount.toString())"
           type="text"
           class="p-inputtext w-full"
           disabled

@@ -91,7 +91,7 @@
           {{ formatDate(data.date) }}
         </template>
       </Column>
-      <Column field="penBill" header="Trạng thái đóng phạt">
+      <Column field="penBill" header="Trạng thái">
         <template #body="{ data }">
           <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
             {{
@@ -101,7 +101,7 @@
             ? 'Chưa đóng'
             : data.penBill?.paymentStatus === 'PENDING'
               ? 'Đang chờ'
-              : 'Không có phiếu phạt'
+              : 'Lần 1'
             }}
           </Tag>
         </template>
@@ -474,7 +474,7 @@ const getReminderTypeSeverity = (status: string | undefined): string => {
     case 'PENDING':
       return 'warning'
     default:
-      return 'info'
+      return 'secondary'
   }
 }
 

@@ -279,6 +279,7 @@ const adminItems = [
       { label: 'Quỹ mới', icon: 'pi pi-bolt', command: () => router.push('/funds') },
       { label: 'Quỹ Phạt', icon: 'pi pi-server', command: () => router.push('/penalties') },
       { label: 'Quỹ hàng tháng', icon: 'pi pi-file-edit', command: () => router.push('/periods') },
+      { label: 'Phiếu phạt', icon: 'pi pi-file', command: () => router.push('/penalty-slips') },
       // { label: "Tạo nhắc nhở", icon: "pi pi-pencil", command: () => router.push("/reminders") }
     ],
   },

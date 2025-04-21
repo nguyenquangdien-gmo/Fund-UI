@@ -26,6 +26,7 @@ import { jwtDecode } from 'jwt-decode'
 import type JwtPayload from '@/types/JwtPayload'
 import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
+import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -190,6 +191,12 @@ const router = createRouter({
       path: '/penalties',
       name: 'penalties',
       component: PenaltyView,
+      meta: { requiresAdmin: true, requiresAuth: true },
+    },
+    {
+      path: '/penalty-slips',
+      name: 'penalty-slips',
+      component: PenaltySlipsView,
       meta: { requiresAdmin: true, requiresAuth: true },
     },
     {

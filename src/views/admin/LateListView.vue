@@ -106,7 +106,7 @@
           </Tag>
         </template>
       </Column>
-      <Column header="Hành động"> 
+      <Column header="Hành động" v-if="isAdmin"> 
         <template #body="{ data }">
           <Button
             label="Xóa"
@@ -169,6 +169,7 @@ import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
+import { da } from 'date-fns/locale'
 
 interface User {
   id?: string | null
@@ -177,6 +178,7 @@ interface User {
 
 
 interface LateRecord {
+  id: number
   user?: User | null
   checkinAt: string
   note: string | null
@@ -268,11 +270,6 @@ const fetchLateRecords = async () => {
     const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 
     const plainRecords = JSON.parse(JSON.stringify(parsedData))
-
-    console.log('Dữ liệu đi trễ:', plainRecords)
-    plainRecords.forEach((record: LateRecord) => {
-      console.log('Record:', record.penBill);
-    });
 
     lateRecords.value = plainRecords
 
@@ -479,6 +476,36 @@ const getReminderTypeSeverity = (status: string | undefined): string => {
       return 'warning'
     default:
       return 'info'
+  }
+}
+
+const deleteRecord = async (data: LateRecord) => {
+  if (!data || !data.user?.id) return
+
+  try {
+    await axiosInstance.delete(`/late/users/${data.id}?penBillId=${data.penBill?.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Xóa bản ghi thành công',
+      life: 3000,
+    })
+
+    // Cập nhật danh sách sau khi xóa
+    fetchLateRecords()
+  } catch (error) {
+    console.error('Lỗi khi xóa bản ghi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể xóa bản ghi',
+      life: 3000,
+    })
   }
 }
 

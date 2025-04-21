@@ -2,8 +2,9 @@
   <div class="container">
     <div class="p-4">
       <h2 class="text-xl">Danh sách phiếu phạt</h2>
-      <div class="mb-3">
-        <InputText
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div>
+          <InputText
           v-model="searchQuery"
           placeholder="Tìm kiếm theo id, tên..."
           class="w-full p-inputtext-sm"
@@ -16,6 +17,17 @@
           size="small"
           @click="openCreateDialog"
         />
+        </div>
+        <div>
+          <Button
+          label="Thông báo"
+          icon="pi pi-cog"
+          class="p-button-sm"
+          severity="success"
+          raised
+          @click="openScheduleDialog"
+        />
+        </div>
       </div>
       <DataTable
         :value="filteredPeriods"
@@ -89,6 +101,42 @@
       <Button label="Xóa" severity="danger" @click="deletePenalty" />
     </div>
   </Dialog> -->
+
+    <!-- Dialog Cài đặt thông báo đi muộn -->
+    <Dialog v-model:visible="showScheduleDialog" header="Thông báo đóng tiền phạt" modal class="container-dialog">
+    <!-- Thông tin hiện tại -->
+    <!-- <div class="col-12 mb-3 item-dialog lh-2">
+      <p class="text-sm text-gray-600">
+        ⏰ <strong>Thông báo đóng tiền phạt</strong>
+      </p>
+    </div> -->
+
+    <!-- Form chọn lại -->
+    <!-- <div class="col-12 mb-3 item-dialog">
+      <label class="font-bold mb-2">
+        Channel id <span class="text-danger">*</span></label
+      >
+      <InputText
+        v-model="scheduleForm.channelId"
+        placeholder="Vui lòng nhập channel id của chatops"
+        class="w-full"
+      />
+      <small class="text-danger" v-if="errorsForm.channelId">{{
+        errorsForm.channelId
+      }}</small>
+      <label class="font-bold mb-2"> Thời gian gửi <span class="text-danger">*</span> </label>
+      <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
+    </div> -->
+
+    <div class="actions-dialog">
+      <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
+      <Button
+        label="Gửi thông báo ngay"
+        severity="primary"
+        @click="sendLateNotification"
+      />
+    </div>
+  </Dialog>
 
 
   <Dialog
@@ -176,6 +224,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -193,6 +242,8 @@ import type PenaltySlip from '@/types/PenaltySlip'
 import type Penalty from '@/types/Penalty'
 import type { User } from '@/types/User'
 
+const toast = useToast()
+
 // const baseURL = "http://localhost:8080/api/v1";
 // const showConfirmDialog = ref(false)
 // const penaltyDelete = ref<Penalty | null>(null)
@@ -205,6 +256,62 @@ const penaltyTypes = ref<Penalty[]>([])
 
 // DATA FOR USER
 const user = ref<User[]>([])
+
+
+// FORM FOR LATE DIALOG
+const showScheduleDialog = ref(false)
+// const scheduleForm = ref({
+//   fromDate: new Date(),
+//   sendTime: new Date(),
+//   type: 'late_notification',
+//   channelId: '',
+// })
+
+// Hàm lưu cài đặt thông báo
+const sendLateNotification = async () => {
+  // try {
+  //   const dataForm = {
+  //     fromDate: formatDateToApiString(scheduleForm.value.fromDate),
+  //     sendTime: formatTimeToApiString(scheduleForm.value.sendTime),
+  //     type: scheduleForm.value.type,
+  //     channelId: scheduleForm.value.channelId,
+  //   }
+
+  //   console.log('scheduleForm update gửi lên:', dataForm)
+
+  //   await axiosInstance.put(`/schedules/${dataForm.type}`, dataForm)
+  //   showScheduleDialog.value = false
+  // } catch (error) {
+  //   console.error('Lỗi khi cập nhật schedule:', error)
+  // }
+  try {
+    const response = await axiosInstance.post(`/pen-bills/notification`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log('Notification sent successfully:', response.data);
+    toast.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Gửi thông báo thành công!',
+      life: 3000,
+    });
+    showScheduleDialog.value = false;
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Gửi thông báo thất bại!',
+      life: 3000,
+    });
+  }
+}
+
+
+// Hàm mở dialog cài đặt
+const openScheduleDialog = () => {
+  showScheduleDialog.value = true
+}
 
 
 // SHOW PENALTY DIALOG
@@ -360,6 +467,22 @@ const savePenaltySlips = async () => {
   } catch (error) {
     console.error('Error saving penalty:', error)
   }
+}
+
+// Hàm định dạng ngày tháng theo yêu cầu API (yyyy-MM-dd)
+const formatDateToApiString = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}T00:00:00`
+}
+
+// Hàm định dạng thời gian theo yêu cầu API (HH:mm:ss)
+const formatTimeToApiString = (date: Date): string => {
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${hours}:${minutes}:${seconds}`
 }
 
 // const openUpdateDialog = (penalty: Penalty) => {

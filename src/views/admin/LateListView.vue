@@ -233,18 +233,25 @@ const fetchLateRecords = async () => {
 
     const plainRecords = JSON.parse(JSON.stringify(parsedData))
 
-    // Lọc dữ liệu trùng lặp
-    const uniqueRecords = plainRecords.filter(
+    console.log('Dữ liệu đi trễ:', plainRecords)
+
+    lateRecords.value = plainRecords
+
+    // Lọc dữ liệu trùng lặp chỉ cho suggestions
+    const uniqueSuggestions = plainRecords.filter(
       (record: LateRecord, index: number, self: LateRecord[]) =>
         index === self.findIndex((r) => r.user?.id === record.user?.id),
     )
 
-    lateRecords.value = uniqueRecords
+    console.log('Dữ liệu đi trễ sau khi lọc:', uniqueSuggestions)
 
-    suggestions.value = uniqueRecords.map((record: LateRecord) => ({
+    suggestions.value = uniqueSuggestions.map((record: LateRecord) => ({
       label: `${record.user?.id ?? ''} - ${record.user?.fullName ?? ''}`,
       value: record.user?.id ?? '',
     }))
+
+    console.log('Gợi ý tìm kiếm:', suggestions.value)
+
   } catch (error) {
     console.error('Lỗi khi lấy danh sách đi trễ:', error)
   }
@@ -253,15 +260,25 @@ const fetchLateRecords = async () => {
 // Gợi ý tìm kiếm (AutoComplete)
 function searchItems(event: { query: string }) {
   const query = event.query.toLowerCase()
+  const uniqueSuggestions = new Map()
+
+  lateRecords.value.forEach((item) => {
+    if (item.user?.id || item.user?.fullName) {
+      const label = `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`
+      if (!uniqueSuggestions.has(label)) {
+        uniqueSuggestions.set(label, {
+          label,
+          value: label,
+        })
+      }
+    }
+  })
+
   suggestions.value = [
     { label: 'All Members', value: 'All Members' },
-    ...lateRecords.value
-      .filter((item) => item.user?.id || item.user?.fullName)
-      .map((item) => ({
-        label: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
-        value: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
-      }))
-      .filter((item) => item.label.toLowerCase().includes(query)),
+    ...Array.from(uniqueSuggestions.values()).filter((item) =>
+      item.label.toLowerCase().includes(query),
+    ),
   ]
 }
 

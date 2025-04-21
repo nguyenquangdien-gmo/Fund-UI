@@ -106,6 +106,16 @@
           </Tag>
         </template>
       </Column>
+      <Column header="Hành động"> 
+        <template #body="{ data }">
+          <Button
+            label="Xóa"
+            icon="pi pi-trash"
+            class="p-button-danger p-button-sm"
+            @click="deleteRecord(data)"
+          />
+        </template>
+      </Column>
     </DataTable>
     <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
   </div>
@@ -147,7 +157,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted} from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Calendar from 'primevue/calendar'
 import DataTable from 'primevue/datatable'
@@ -159,8 +169,6 @@ import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
-
-import type PenBill from '@/types/PenBill'
 
 interface User {
   id?: string | null

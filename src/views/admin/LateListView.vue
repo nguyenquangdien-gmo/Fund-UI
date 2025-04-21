@@ -91,6 +91,21 @@
           {{ formatDate(data.date) }}
         </template>
       </Column>
+      <Column field="penBill" header="Trạng thái đóng phạt">
+        <template #body="{ data }">
+          <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
+            {{
+              data.penBill?.paymentStatus === 'PAID'
+          ? 'Đã đóng'
+          : data.penBill?.paymentStatus === 'UNPAID'
+            ? 'Chưa đóng'
+            : data.penBill?.paymentStatus === 'PENDING'
+              ? 'Đang chờ'
+              : 'Không có phiếu phạt'
+            }}
+          </Tag>
+        </template>
+      </Column>
     </DataTable>
     <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
   </div>
@@ -138,22 +153,36 @@ import Calendar from 'primevue/calendar'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
+import Tag from 'primevue/tag'
 import axiosInstance from '@/router/Interceptor'
 import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
 
+import type PenBill from '@/types/PenBill'
+
 interface User {
   id?: string | null
   fullName?: string | null
 }
+
 
 interface LateRecord {
   user?: User | null
   checkinAt: string
   note: string | null
   date: string
+  penBill?: {
+    id: number
+    userId: number
+    penaltySlug: string
+    dueDate: string
+    amount: number
+    description: string
+    paymentStatus: 'PAID' | 'UNPAID' | 'PENDING'
+    userIds: number[] | null
+  } | null
 }
 
 const token = localStorage.getItem('accessToken')
@@ -227,13 +256,15 @@ const fetchLateRecords = async () => {
       },
     })
     lateRecords.value = response.data
-
     // Trường hợp API trả về chuỗi JSON, cần parse
     const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 
     const plainRecords = JSON.parse(JSON.stringify(parsedData))
 
     console.log('Dữ liệu đi trễ:', plainRecords)
+    plainRecords.forEach((record: LateRecord) => {
+      console.log('Record:', record.penBill);
+    });
 
     lateRecords.value = plainRecords
 
@@ -243,14 +274,10 @@ const fetchLateRecords = async () => {
         index === self.findIndex((r) => r.user?.id === record.user?.id),
     )
 
-    console.log('Dữ liệu đi trễ sau khi lọc:', uniqueSuggestions)
-
     suggestions.value = uniqueSuggestions.map((record: LateRecord) => ({
       label: `${record.user?.id ?? ''} - ${record.user?.fullName ?? ''}`,
       value: record.user?.id ?? '',
     }))
-
-    console.log('Gợi ý tìm kiếm:', suggestions.value)
 
   } catch (error) {
     console.error('Lỗi khi lấy danh sách đi trễ:', error)
@@ -431,6 +458,19 @@ const checkNow = async () => {
   } catch (error) {
     toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
+  }
+}
+
+const getReminderTypeSeverity = (status: string | undefined): string => {
+  switch (status) {
+    case 'PAID':
+      return 'success'
+    case 'UNPAID':
+      return 'danger'
+    case 'PENDING':
+      return 'warning'
+    default:
+      return 'info'
   }
 }
 

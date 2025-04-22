@@ -1,5 +1,4 @@
 import type Team from './Team'
-import type UserRole from './UserRole'
 
 export interface User {
   id: number

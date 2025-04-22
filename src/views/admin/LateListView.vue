@@ -91,6 +91,31 @@
           {{ formatDate(data.date) }}
         </template>
       </Column>
+      <Column field="penBill" header="Trạng thái đóng phạt">
+        <template #body="{ data }">
+          <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
+            {{
+              data.penBill?.paymentStatus === 'PAID'
+          ? 'Đã đóng'
+          : data.penBill?.paymentStatus === 'UNPAID'
+            ? 'Chưa đóng'
+            : data.penBill?.paymentStatus === 'PENDING'
+              ? 'Đang chờ'
+              : 'Không có phiếu phạt'
+            }}
+          </Tag>
+        </template>
+      </Column>
+      <Column header="Hành động" v-if="isAdmin"> 
+        <template #body="{ data }">
+          <Button
+            label="Xóa"
+            icon="pi pi-trash"
+            class="p-button-danger p-button-sm"
+            @click="deleteRecord(data)"
+          />
+        </template>
+      </Column>
     </DataTable>
     <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
   </div>
@@ -132,28 +157,42 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted} from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Calendar from 'primevue/calendar'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
+import Tag from 'primevue/tag'
 import axiosInstance from '@/router/Interceptor'
 import formatDate from '@/utils/FormatDate'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
+import { da } from 'date-fns/locale'
 
 interface User {
   id?: string | null
   fullName?: string | null
 }
 
+
 interface LateRecord {
+  id: number
   user?: User | null
   checkinAt: string
   note: string | null
   date: string
+  penBill?: {
+    id: number
+    userId: number
+    penaltySlug: string
+    dueDate: string
+    amount: number
+    description: string
+    paymentStatus: 'PAID' | 'UNPAID' | 'PENDING'
+    userIds: number[] | null
+  } | null
 }
 
 const token = localStorage.getItem('accessToken')
@@ -227,24 +266,24 @@ const fetchLateRecords = async () => {
       },
     })
     lateRecords.value = response.data
-
     // Trường hợp API trả về chuỗi JSON, cần parse
     const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 
     const plainRecords = JSON.parse(JSON.stringify(parsedData))
 
-    // Lọc dữ liệu trùng lặp
-    const uniqueRecords = plainRecords.filter(
+    lateRecords.value = plainRecords
+
+    // Lọc dữ liệu trùng lặp chỉ cho suggestions
+    const uniqueSuggestions = plainRecords.filter(
       (record: LateRecord, index: number, self: LateRecord[]) =>
         index === self.findIndex((r) => r.user?.id === record.user?.id),
     )
 
-    lateRecords.value = uniqueRecords
-
-    suggestions.value = uniqueRecords.map((record: LateRecord) => ({
+    suggestions.value = uniqueSuggestions.map((record: LateRecord) => ({
       label: `${record.user?.id ?? ''} - ${record.user?.fullName ?? ''}`,
       value: record.user?.id ?? '',
     }))
+
   } catch (error) {
     console.error('Lỗi khi lấy danh sách đi trễ:', error)
   }
@@ -253,15 +292,25 @@ const fetchLateRecords = async () => {
 // Gợi ý tìm kiếm (AutoComplete)
 function searchItems(event: { query: string }) {
   const query = event.query.toLowerCase()
+  const uniqueSuggestions = new Map()
+
+  lateRecords.value.forEach((item) => {
+    if (item.user?.id || item.user?.fullName) {
+      const label = `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`
+      if (!uniqueSuggestions.has(label)) {
+        uniqueSuggestions.set(label, {
+          label,
+          value: label,
+        })
+      }
+    }
+  })
+
   suggestions.value = [
     { label: 'All Members', value: 'All Members' },
-    ...lateRecords.value
-      .filter((item) => item.user?.id || item.user?.fullName)
-      .map((item) => ({
-        label: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
-        value: `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`,
-      }))
-      .filter((item) => item.label.toLowerCase().includes(query)),
+    ...Array.from(uniqueSuggestions.values()).filter((item) =>
+      item.label.toLowerCase().includes(query),
+    ),
   ]
 }
 
@@ -414,6 +463,49 @@ const checkNow = async () => {
   } catch (error) {
     toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
+  }
+}
+
+const getReminderTypeSeverity = (status: string | undefined): string => {
+  switch (status) {
+    case 'PAID':
+      return 'success'
+    case 'UNPAID':
+      return 'danger'
+    case 'PENDING':
+      return 'warning'
+    default:
+      return 'info'
+  }
+}
+
+const deleteRecord = async (data: LateRecord) => {
+  if (!data || !data.user?.id) return
+
+  try {
+    await axiosInstance.delete(`/late/users/${data.id}?penBillId=${data.penBill?.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Xóa bản ghi thành công',
+      life: 3000,
+    })
+
+    // Cập nhật danh sách sau khi xóa
+    fetchLateRecords()
+  } catch (error) {
+    console.error('Lỗi khi xóa bản ghi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể xóa bản ghi',
+      life: 3000,
+    })
   }
 }
 

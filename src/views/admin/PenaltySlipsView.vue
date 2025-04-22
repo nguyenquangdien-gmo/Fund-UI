@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">Danh sách phiếu phạt</h2>
+      <h2 class="text-xl">PHIẾU PHẠT</h2>
       <div class="mb-3 d-flex justify-content-between align-items-center">
         <div>
           <InputText

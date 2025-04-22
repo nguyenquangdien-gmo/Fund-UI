@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center text-xl">HÓA ĐƠN</h2>
+      <h2 class="text-center text-xl">THU CHI CỦA NHÓM</h2>
       <div class="mb-3">
         <InputText
           v-if="invoices.length > 0"

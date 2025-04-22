@@ -1,6 +1,6 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Danh sách đi muộn</h2>
+    <h2 class="text-xl font-bold mb-4">ĐI MUỘN</h2>
 
     <div class="navbar-actions">
       <div class="flex gap-4">
@@ -260,9 +260,6 @@ const fetchLateRecords = async () => {
       params: {
         fromDate: fromDate.value.toISOString().split('T')[0],
         toDate: toDate.value.toISOString().split('T')[0],
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
       },
     })
     lateRecords.value = response.data

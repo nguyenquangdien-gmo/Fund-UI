@@ -3,9 +3,7 @@
     <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
 
     <div class="mb-4">
-      <div>
-        
-      </div>
+      <div></div>
       <InputText
         v-model="searchQuery"
         placeholder="Tìm kiếm theo tên or mô tả..."

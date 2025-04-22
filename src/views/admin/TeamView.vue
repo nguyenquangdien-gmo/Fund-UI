@@ -151,6 +151,7 @@ const fetchTeams = async () => {
   try {
     const response = await axiosInstance.get(`/teams`)
     teams.value = response.data
+    console.log('Fetched teams:', teams.value)
 
     // Lấy ảnh QR code cho từng team
     for (const team of teams.value) {
@@ -251,6 +252,7 @@ const saveTeam = async () => {
       await axiosInstance.put(`/teams/${encodeURIComponent(form.value.slug)}`, formData, {
         headers,
       })
+      console.log('Cập nhật thành công', form.value)
     } else {
       await axiosInstance.post(`/teams`, formData, { headers })
     }

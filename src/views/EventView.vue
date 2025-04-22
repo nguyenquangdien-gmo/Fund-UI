@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">SỰ KIỆN</h2>
+      <h2 class="text-center text-xl">SỰ KIỆN</h2>
 
       <!-- Search and Create Button (Only for Admin) -->
       <div class="navbar-actions">
@@ -610,5 +610,9 @@ onMounted(() => {
 }
 .p-error {
   color: red;
+}
+.text-xl {
+  text-align: center;
+  font: 1.5em sans-serif;
 }
 </style>

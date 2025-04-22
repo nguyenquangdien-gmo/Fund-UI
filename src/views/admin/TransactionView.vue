@@ -23,7 +23,7 @@
         <!-- <Column field="id" header="ID" sortable></Column> -->
         <Column header="STT" sortable>
           <template #body="{ index }">
-            {{ index + 1 }}
+            {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="transactionType" header="Loại giao dịch" sortable>

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center text-xl">Danh sách Thu/Chi</h2>
+      <h2 class="text-center text-xl">DANH SÁCH THU CHI</h2>
       <div class="mb-3">
         <InputText
           v-if="invoices.length > 0"
@@ -34,7 +34,6 @@
             {{ index + 1 }}
           </template>
         </Column>
-        <Column field="name" header="Tên" sortable></Column>
 
         <Column field="description" header="Mô tả" sortable>
           <template #body="{ data }">
@@ -201,11 +200,11 @@ const types = ref([
   { label: 'Quỹ thu', value: InvoiceType.INCOME },
   { label: 'Quỹ chi', value: InvoiceType.EXPENSE },
 ])
-const status = ref([
-  { label: 'Chưa duyệt', value: InvoiceType.INCOME },
-  { label: 'Đã duyệt', value: InvoiceType.EXPENSE },
-  { label: 'Bị hủy', value: InvoiceType.EXPENSE },
-])
+// const status = ref([
+//   { label: 'Chưa duyệt', value: InvoiceType.INCOME },
+//   { label: 'Đã duyệt', value: InvoiceType.EXPENSE },
+//   { label: 'Bị hủy', value: InvoiceType.EXPENSE },
+// ])
 
 interface Invoice {
   id: number

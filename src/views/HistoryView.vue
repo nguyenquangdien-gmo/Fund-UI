@@ -112,7 +112,7 @@ const formatCurrency = (value) => value.toLocaleString() + ' VND'
 
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Lịch sử đóng quỹ</h2>
+    <h2 class="text-xl font-bold mb-4">LỊCH SỬ ĐÓNG QUỸ</h2>
 
     <div class="mb-4 flex items-center gap-4">
       <Dropdown
@@ -259,11 +259,6 @@ const formatCurrency = (value) => value.toLocaleString() + ' VND'
 .p-datatable th {
   background-color: #f4f4f4;
   text-align: center;
-}
-
-.text-xl {
-  text-align: center;
-  font: 2em sans-serif;
 }
 
 .status {

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">NỢ PHẠT</h2>
+      <h2 class="text-center text-xl">NỢ PHẠT</h2>
       <div v-if="bills.length > 0">
         <div class="mb-3">
           <div class="mb-3 flex gap-2">
@@ -242,10 +242,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.text-xl {
-  text-align: center;
-  font: 2em sans-serif;
-}
 .p-select {
   margin-right: 5px;
 }

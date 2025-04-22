@@ -1,6 +1,6 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4" style="text-align: center">Danh sách quỹ chưa đóng</h2>
+    <h2 class="text-xl font-bold mb-4" style="text-align: center">THÔNG BÁO ĐÓNG QUỸ</h2>
 
     <!-- <p v-if="error" class="text-red-500">{{ error }}</p> -->
     <p v-if="loading">Đang tải dữ liệu...</p>
@@ -268,11 +268,6 @@ const confirmPayment = async () => {
 .p-datatable th {
   background-color: #f4f4f4;
   text-align: left;
-}
-
-.text-xl {
-  text-align: center;
-  font: 2em sans-serif;
 }
 
 .p-fluid {

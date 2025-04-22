@@ -272,7 +272,7 @@ const filteredUsers = computed(() => {
     (user) =>
       user.user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       user.user.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.user.id.toString().toLowerCase().includes(searchQuery.value.toLowerCase()),
+      user.user.fullName.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
 
@@ -513,9 +513,10 @@ const confirmContribution = async () => {
       periodId: periodId.value,
       totalAmount: paymentAmount.value,
       note: `Đóng quỹ tháng ${selectedMonth.value}`,
-      fundType: form.value.fundType || selectedFund.value,
+      fundType: selectedFund.value === 'ALL' ? '' : selectedFund.value,
       userIds: selectedUsers.value,
     }
+    console.log('Request data:', requestData)
 
     const response = await axiosInstance.post(
       `/contributions/confirm/dept-contribution`,

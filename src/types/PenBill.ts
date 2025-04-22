@@ -5,4 +5,5 @@ export default interface PenBill {
   dueDate: string
   description: string
   status: string
+  createdAt: string
 }

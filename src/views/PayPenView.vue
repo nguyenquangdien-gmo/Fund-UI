@@ -1,17 +1,31 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-center">Danh Sách nợ phạt</h2>
+      <h2 class="text-center">NỢ PHẠT</h2>
       <div v-if="bills.length > 0">
         <div class="mb-3">
-          <InputText
-            v-model="searchQuery"
-            placeholder="Tìm kiếm theo id, tên..."
-            class="w-full p-inputtext-sm"
-          />
+          <div class="mb-3 flex gap-2">
+            <Dropdown
+              v-model="selectedMonth"
+              :options="months"
+              optionLabel="label"
+              placeholder="Chọn tháng"
+              class="w-1/2 p-inputtext-sm"
+            />
+
+            <Dropdown
+              v-model="selectedYear"
+              :options="years"
+              optionLabel="label"
+              placeholder="Chọn năm"
+              class="w-1/2 p-inputtext-sm"
+            />
+          </div>
+
           <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
         </div>
         <DataTable
+          v-if="filteredBills.length > 0"
           :value="filteredBills"
           paginator
           :rows="15"
@@ -32,9 +46,9 @@
             </template>
           </Column>
 
-          <Column field="created" header="Ngày tạo" sortable>
+          <Column field="createdAt" header="Ngày tạo" sortable>
             <template #body="{ data }">
-              {{ formatDate(data.dueDate) }}
+              {{ formatDate(data.createdAt) }}
             </template>
           </Column>
           <Column header="Actions">
@@ -57,9 +71,9 @@
             </template>
           </Column>
         </DataTable>
-      </div>
-      <div v-else>
-        <p>Bạn không có bất kỳ nợ phạt nào!</p>
+        <div v-else>
+          <p>Bạn không có bất kỳ nợ phạt nào!🎉</p>
+        </div>
       </div>
     </div>
   </div>
@@ -81,7 +95,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -90,22 +103,22 @@ import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
 import type PenBill from '@/types/PenBill'
+import Dropdown from 'primevue/dropdown'
 
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false)
 const token = localStorage.getItem('accessToken')
 const bills = ref<PenBill[]>([])
-const searchQuery = ref('')
 const form = ref({ id: 0, userId: 0, penaltyId: 0, dueDate: '', description: '', amount: '' })
 const router = useRouter()
 const user = ref(JSON.parse(sessionStorage.getItem('user') || '{}'))
+
+//fetch pen bill
 const fetchBills = async () => {
   try {
-    const response = await axiosInstance.get(`/pen-bills/user/${user.value.id}/unpaid`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const response = await axiosInstance.get(`/pen-bills/user/${user.value.id}/unpaid`)
     bills.value = response.data
-    console.log(response.data)
+    console.log(bills.value)
   } catch (error) {
     console.error('Error fetching periods:', error)
   }
@@ -125,13 +138,8 @@ const fetchTeam = async () => {
       throw new Error('Unauthorized')
     }
 
-    const response = await axiosInstance.get(`/teams/${user.value.id}/team`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: 'blob',
-    })
+    const response = await axiosInstance.get(`/teams/${user.value.id}/team`)
+    const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`)
     const qrBlob = new Blob([qrResponse.data], { type: 'image/png' })
     qrCode.value = URL.createObjectURL(qrBlob)
     // team.value = response.data;
@@ -140,14 +148,45 @@ const fetchTeam = async () => {
   }
 }
 
-const filteredBills = computed(() => {
-  if (!searchQuery.value) return bills.value
-  return bills.value.filter(
-    (bill) =>
-      bill.description.includes(searchQuery.value) || bill.dueDate.includes(searchQuery.value),
-  )
-})
+//filter by month and year
+interface DropdownOption {
+  label: string
+  value: number
+}
 
+const selectedMonth = ref<DropdownOption | null>(null)
+const selectedYear = ref<DropdownOption | null>(null)
+
+const months = Array.from({ length: 12 }, (_, i) => ({
+  label: `Tháng ${i + 1}`,
+  value: i + 1,
+}))
+
+const currentYear = new Date().getFullYear()
+const startYear = 2022
+
+const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => ({
+  label: `${startYear + i}`,
+  value: startYear + i,
+}))
+
+// In your filteredBills computed property
+const filteredBills = computed(() => {
+  return bills.value.filter((bill) => {
+    const created = new Date(bill.createdAt)
+    const billMonth = created.getMonth() + 1
+    const billYear = created.getFullYear()
+
+    // Check if selectedMonth is null or if it contains the value property
+    const monthValue = selectedMonth.value?.value || null
+    const yearValue = selectedYear.value?.value || null
+
+    const matchMonth = monthValue ? billMonth === monthValue : true
+    const matchYear = yearValue ? billYear === yearValue : true
+
+    return matchMonth && matchYear
+  })
+})
 const confirmPay = (bill: PenBill) => {
   form.value = {
     id: bill.id,
@@ -189,6 +228,9 @@ onMounted(() => {
   if (!token) {
     router.push('/')
   } else {
+    const now = new Date()
+    selectedMonth.value = months.find((month) => month.value === now.getMonth() + 1) || null
+    selectedYear.value = years.find((year) => year.value === currentYear) || null
     fetchBills()
     fetchTeam()
   }
@@ -203,5 +245,8 @@ onMounted(() => {
 .text-xl {
   text-align: center;
   font: 2em sans-serif;
+}
+.p-select {
+  margin-right: 5px;
 }
 </style>

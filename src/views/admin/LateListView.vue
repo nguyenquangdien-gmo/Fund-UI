@@ -96,17 +96,17 @@
           <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
             {{
               data.penBill?.paymentStatus === 'PAID'
-          ? 'Đã đóng'
-          : data.penBill?.paymentStatus === 'UNPAID'
-            ? 'Chưa đóng'
-            : data.penBill?.paymentStatus === 'PENDING'
-              ? 'Đang chờ'
-              : 'Lần 1'
+                ? 'Đã đóng'
+                : data.penBill?.paymentStatus === 'UNPAID'
+                  ? 'Chưa đóng'
+                  : data.penBill?.paymentStatus === 'PENDING'
+                    ? 'Đang chờ'
+                    : 'Lần 1'
             }}
           </Tag>
         </template>
       </Column>
-      <Column header="Hành động" v-if="isAdmin"> 
+      <Column header="Hành động" v-if="isAdmin">
         <template #body="{ data }">
           <Button
             label="Xóa"
@@ -157,7 +157,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted} from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Calendar from 'primevue/calendar'
 import DataTable from 'primevue/datatable'
@@ -174,7 +174,6 @@ interface User {
   id?: string | null
   fullName?: string | null
 }
-
 
 interface LateRecord {
   id: number
@@ -196,7 +195,9 @@ interface LateRecord {
 
 const token = localStorage.getItem('accessToken')
 const fromDate = ref<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-const toDate = ref<Date | null>(new Date(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)))
+const toDate = ref<Date | null>(
+  new Date(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
+)
 const lateRecords = ref<LateRecord[]>([])
 const searchTerm = ref('')
 const isAdmin = ref(false)
@@ -282,7 +283,6 @@ const fetchLateRecords = async () => {
       label: `${record.user?.id ?? ''} - ${record.user?.fullName ?? ''}`,
       value: record.user?.id ?? '',
     }))
-
   } catch (error) {
     console.error('Lỗi khi lấy danh sách đi trễ:', error)
   }
@@ -482,11 +482,7 @@ const deleteRecord = async (data: LateRecord) => {
   if (!data || !data.user?.id) return
 
   try {
-    await axiosInstance.delete(`/late/users/${data.id}?penBillId=${data.penBill?.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    await axiosInstance.delete(`/late/users/${data.id}?penBillId=${data.penBill?.id}`)
 
     toast.add({
       severity: 'success',

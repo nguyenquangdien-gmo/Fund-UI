@@ -151,6 +151,7 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import axiosInstance from '@/router/Interceptor'
+import formatDate from '@/utils/FormatDate'
 
 // Define enums
 enum InvoiceType {
@@ -314,6 +315,7 @@ const fetchAllData = async (): Promise<void> => {
       axiosInstance.get('/contributions/pending'),
       axiosInstance.get('/pen-bills/pending'),
     ])
+    console.log('Penpill:', penBillsResponse.data)
 
     // Transform invoices data
     const invoicesData: DisplayItem[] = invoicesResponse.data.map((item: Invoice) => ({
@@ -353,7 +355,7 @@ const fetchAllData = async (): Promise<void> => {
       displayName: item.user?.fullName || 'N/A',
       displayAmount: item.amount,
       displayStatus: item.paymentStatus,
-      displayDate: item.dueDate,
+      displayDate: item.createdAt,
       typeSeverity: 'warn',
       typeLabel: 'Nộp phạt',
       sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority

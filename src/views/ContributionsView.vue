@@ -67,7 +67,9 @@
     <Dialog v-model:visible="showDialog" header="Đóng Quỹ" :modal="true">
       <div class="p-fluid">
         <!-- <p class="mb-2">Bạn có chắc muốn đóng quỹ?</p> -->
-        <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
+        <div>
+          <img :src="qrCode" alt="Mã QR" class="w-full mt-4" />
+        </div>
         <Dropdown
           id="fundType"
           v-model="selectedFundType"

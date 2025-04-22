@@ -25,7 +25,7 @@
           <!-- <Button label="Create" severity="success" raised size="small" @click="openCreateDialog" /> -->
         </div>
         <DataTable
-          v-if="filteredBills.length > 0"
+          v-if="bills.length > 0"
           :value="filteredBills"
           paginator
           :rows="15"
@@ -39,7 +39,11 @@
               {{ first + index + 1 }}
             </template>
           </Column>
-          <Column field="description" header="Mô Tả" sortable></Column>
+          <Column field="description" header="Mô Tả" sortable>
+            <template #body="{ data }">
+              {{ data.description === '' ? '-' : data.description }}
+            </template>
+          </Column>
           <Column field="amount" header="Tổng cộng" sortable>
             <template #body="{ data }">
               {{ formatCurrency(data.amount) }}
@@ -71,9 +75,9 @@
             </template>
           </Column>
         </DataTable>
-        <div v-else>
-          <p>Bạn không có bất kỳ nợ phạt nào!🎉</p>
-        </div>
+      </div>
+      <div v-else>
+        <p>Bạn không có bất kỳ nợ phạt nào!🎉</p>
       </div>
     </div>
   </div>
@@ -84,7 +88,7 @@
     header="Xác nhận đóng phạt"
     style="text-align: center"
   >
-    <div><img :src="qrCode" alt="Mã QR" class="w-full mt-4" /></div>
+    <div><img :src="qrCode || ''" alt="Mã QR" class="w-full mt-4" /></div>
 
     <div class="d-flex justify-content-center gap-2">
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
@@ -131,7 +135,7 @@ const onPage = (event: { first: number }) => {
   first.value = event.first
 }
 
-const qrCode = ref<string | undefined>(undefined)
+const qrCode = ref<string | null>(null)
 const fetchTeam = async () => {
   try {
     if (!token) {
@@ -139,9 +143,12 @@ const fetchTeam = async () => {
     }
 
     const response = await axiosInstance.get(`/teams/${user.value.id}/team`)
-    const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`)
+    const qrResponse = await axiosInstance.get(`/teams/${response.data.slug}/qrcode`, {
+      responseType: 'blob',
+    })
     const qrBlob = new Blob([qrResponse.data], { type: 'image/png' })
     qrCode.value = URL.createObjectURL(qrBlob)
+    console.log('Fetched team:', qrCode.value)
     // team.value = response.data;
   } catch (err) {
     console.error(err)
@@ -242,6 +249,11 @@ onMounted(() => {
   font-size: 14px;
 }
 
+/* .text-xl {
+  text-align: center;
+  font: 1.5em sans-serif;
+  font-weight: bold;
+} */
 .p-select {
   margin-right: 5px;
 }

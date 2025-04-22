@@ -57,13 +57,15 @@
       :value="filteredRecords"
       :paginator="true"
       :rows="15"
+      :first="first"
+      @page="onPage"
       :rowsPerPageOptions="[15, 20, 25]"
       stripedRows
       responsiveLayout="scroll"
     >
       <Column header="STT" sortable>
         <template #body="{ index }">
-          {{ index + 1 }}
+          {{ first + index + 1 }}
         </template>
       </Column>
       <Column field="user.id" header="Mã nhân viên">
@@ -191,6 +193,13 @@ interface LateRecord {
     paymentStatus: 'PAID' | 'UNPAID' | 'PENDING'
     userIds: number[] | null
   } | null
+}
+
+//pagination
+const first = ref<number>(0)
+
+const onPage = (event: { first: number }) => {
+  first.value = event.first
 }
 
 const token = localStorage.getItem('accessToken')

@@ -2,24 +2,25 @@
   <div class="p-4">
     <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
 
-    <div class="mb-4">
-      <div></div>
+    <div class="mb-4 flex items-center">
       <InputText
         v-model="searchQuery"
         placeholder="Tìm kiếm theo tên or mô tả..."
-        class="p-inputtext w-64"
-        style="width: 20%"
+        class="p-inputtext w-64 mr-3"
       />
-      <!-- <div class="ml-auto">
-                <Tag value="Đang chờ" severity="info" class="mr-2" />
-                <span class="text-sm">: Ưu tiên hiển thị</span>
-            </div> -->
+      <Dropdown
+        v-model="selectedType"
+        :options="typeFilterOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Tất cả loại"
+        class="w-48"
+      />
     </div>
 
     <p v-if="loading">Đang tải dữ liệu...</p>
 
     <!-- Unified Approval Table -->
-
     <DataTable
       v-if="filteredItems.length > 0"
       :value="filteredItems"
@@ -66,7 +67,7 @@
           {{ new Date(slotProps.data.displayDate).toLocaleDateString('vi-VN') }}
         </template>
       </Column>
-      <Column header="Hành động" style="width: 22%">
+      <Column header="Hành động" style="width: 22%" v-if="hasActionableItems">
         <template #body="{ data }">
           <Button
             label="Xác nhận"
@@ -139,7 +140,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -147,54 +148,175 @@ import Tag from 'primevue/tag'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
-import Select from 'primevue/selectbutton'
-import axiosInstance from '@/router/Interceptor'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
+import axiosInstance from '@/router/Interceptor'
 
+// Define enums
+enum InvoiceType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+}
+
+enum FundType {
+  COMMON = 'COMMON',
+  SNACK = 'SNACK',
+}
+
+enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  CANCELED = 'CANCELED',
+  LATE = 'LATE',
+}
+
+enum InvoiceStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  CANCELLED = 'CANCELLED',
+}
+
+// Define interfaces
+interface Invoice {
+  id: number
+  name: string
+  description: string
+  userId: number
+  amount: number
+  type: InvoiceType
+  fundType: FundType
+  createdAt: string
+  status: InvoiceStatus
+  user?: {
+    fullName: string
+  }
+  invoiceType?: string
+}
+
+interface Contribution {
+  id: number
+  memberId: number
+  memberName: string
+  periodId: number
+  periodName: string
+  totalAmount: number
+  paymentStatus: PaymentStatus
+  note: string
+  deadline: string
+  isLate: boolean
+  owedAmount: number
+  overPaidAmount: number
+  createdAt: string
+}
+
+interface PenBill {
+  id: number
+  penaltyId: string
+  amount: number
+  dueDate: string
+  description: string
+  status: string
+  paymentStatus: PaymentStatus
+  createdAt: string
+  user?: {
+    fullName: string
+  }
+  penalty?: {
+    name: string
+  }
+}
+
+interface FundOption {
+  label: string
+  value: FundType
+}
+
+interface TypeFilterOption {
+  label: string
+  value: string | null
+}
+
+interface DisplayItem {
+  id: number
+  itemType: 'invoice' | 'contribution' | 'penBill'
+  displayName: string
+  displayAmount: number
+  displayStatus: string
+  displayDate: string
+  typeSeverity: string
+  typeLabel: string
+  sortOrder: number
+  description?: string
+  periodName?: string
+  status?: string
+  paymentStatus?: string
+  user?: {
+    fullName: string
+  }
+  invoiceType?: string
+  penalty?: {
+    name: string
+  }
+  [key: string]: any // For additional properties
+}
+
+//hide action button if no items to approve
+const hasActionableItems = computed<boolean>(() => {
+  return filteredItems.value.some((item) => canPerformAction(item))
+})
+
+// Component setup
 const token = localStorage.getItem('accessToken')
-const loading = ref(true)
-const searchQuery = ref('')
-const allItems = ref([])
+const loading = ref<boolean>(true)
+const searchQuery = ref<string>('')
+const selectedType = ref<string | null>(null)
+const allItems = ref<DisplayItem[]>([])
 
-const fundOptions = ref([
-  { label: 'Quỹ chung', value: 'COMMON' },
-  { label: 'Quỹ ăn vặt', value: 'SNACK' },
+// Type filter options
+const typeFilterOptions = ref<TypeFilterOption[]>([
+  { label: 'Tất cả', value: null },
+  { label: 'Phiếu thu', value: 'income' },
+  { label: 'Phiếu chi', value: 'expense' },
+  { label: 'Đóng quỹ', value: 'contribution' },
+  { label: 'Nộp phạt', value: 'penBill' },
 ])
 
-const selectedFundType = ref(null)
+const fundOptions = ref<FundOption[]>([
+  { label: 'Quỹ chung', value: FundType.COMMON },
+  { label: 'Quỹ ăn vặt', value: FundType.SNACK },
+])
+
+const selectedFundType = ref<FundType | null>(null)
 // Confirmation dialog state
-const showConfirmDialog = ref(false)
-const confirmDialogMessage = ref('')
-const selectedItemToConfirm = ref(null)
-const confirmAction = ref(null)
-const errorMessage = ref('')
-const rejectedReason = ref('')
+const showConfirmDialog = ref<boolean>(false)
+const confirmDialogMessage = ref<string>('')
+const selectedItemToConfirm = ref<DisplayItem | null>(null)
+const confirmAction = ref<'confirm' | 'cancel' | null>(null)
+const errorMessage = ref<string>('')
+const rejectedReason = ref<string>('')
 
 //pagenation
-const first = ref(0)
+const first = ref<number>(0)
 
-const onPage = (event) => {
+const onPage = (event: { first: number }) => {
   first.value = event.first
 }
+
 // Fetch all data and combine into one list
-const fetchAllData = async () => {
+const fetchAllData = async (): Promise<void> => {
   try {
     loading.value = true
     if (!token) throw new Error('Unauthorized')
 
     // Fetch all three types of data in parallel
     const [invoicesResponse, contributionsResponse, penBillsResponse] = await Promise.all([
-      axiosInstance.get(`/invoices/pending`),
-      axiosInstance.get(`/contributions/pending`),
-      axiosInstance.get(`/pen-bills/pending`),
+      axiosInstance.get('/invoices/pending'),
+      axiosInstance.get('/contributions/pending'),
+      axiosInstance.get('/pen-bills/pending'),
     ])
-    // console.log('Invoices:', invoicesResponse.data)
-    // console.log('Contributions:', contributionsResponse.data)
-    // console.log('Pen Bills:', penBillsResponse.data)
 
     // Transform invoices data
-    const invoicesData = invoicesResponse.data.map((item) => ({
+    const invoicesData: DisplayItem[] = invoicesResponse.data.map((item: Invoice) => ({
       ...item,
       itemType: 'invoice',
       displayName: item.user?.fullName || 'N/A',
@@ -204,32 +326,38 @@ const fetchAllData = async () => {
       typeSeverity: item.invoiceType === 'INCOME' ? 'success' : 'danger',
       typeLabel: item.invoiceType === 'INCOME' ? 'Phiếu thu' : 'Phiếu chi',
       sortOrder: isPending(item.status) ? 0 : 1, // Pending items get priority
+      // Add a property to filter by type
+      filterType: item.invoiceType === 'INCOME' ? 'income' : 'expense',
     }))
 
     // Transform contributions data
-    const contributionsData = contributionsResponse.data.map((item) => ({
-      ...item,
-      itemType: 'contribution',
-      displayName: item.memberName,
-      displayAmount: item.totalAmount,
-      displayStatus: item.paymentStatus,
-      displayDate: item.createdAt, // Default to current date if not available
-      typeSeverity: 'info',
-      typeLabel: 'Đóng quỹ',
-      sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority
-    }))
+    const contributionsData: DisplayItem[] = contributionsResponse.data.map(
+      (item: Contribution) => ({
+        ...item,
+        itemType: 'contribution',
+        displayName: item.memberName,
+        displayAmount: item.totalAmount,
+        displayStatus: item.paymentStatus,
+        displayDate: item.createdAt,
+        typeSeverity: 'info',
+        typeLabel: 'Đóng quỹ',
+        sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority
+        filterType: 'contribution',
+      }),
+    )
 
     // Transform penalty bills data
-    const penBillsData = penBillsResponse.data.map((item) => ({
+    const penBillsData: DisplayItem[] = penBillsResponse.data.map((item: PenBill) => ({
       ...item,
       itemType: 'penBill',
       displayName: item.user?.fullName || 'N/A',
       displayAmount: item.amount,
       displayStatus: item.paymentStatus,
-      displayDate: item.dueDate, // Default to current date if not available
+      displayDate: item.dueDate,
       typeSeverity: 'warn',
       typeLabel: 'Nộp phạt',
       sortOrder: isPending(item.paymentStatus) ? 0 : 1, // Pending items get priority
+      filterType: 'penBill',
     }))
 
     // Combine all data
@@ -244,7 +372,7 @@ const fetchAllData = async () => {
 }
 
 // Helper function to check if status is pending
-const isPending = (status) => {
+const isPending = (status: string): boolean => {
   return status === 'PENDING'
 }
 
@@ -253,7 +381,7 @@ onMounted(() => {
 })
 
 // Filter and sort function for combined list - now puts pending items first
-const filteredItems = computed(() => {
+const filteredItems = computed<DisplayItem[]>(() => {
   let items = allItems.value
 
   // Apply search filter if query exists
@@ -283,24 +411,50 @@ const filteredItems = computed(() => {
     })
   }
 
+  // Apply type filter if selected
+  if (selectedType.value) {
+    items = items.filter((item) => item.filterType === selectedType.value)
+  }
+
   // Sort by sortOrder (pending first) and then by date (newest first)
   return items.sort((a, b) => {
-    // First sort by pending status
+    // Ưu tiên đơn phạt chưa duyệt lên đầu
+    if (selectedType.value === null) {
+      // Chỉ áp dụng khi xem tất cả loại
+      // Nếu a là đơn phạt đang chờ và b không phải
+      if (
+        a.itemType === 'penBill' &&
+        isPending(a.displayStatus) &&
+        (b.itemType !== 'penBill' || !isPending(b.displayStatus))
+      ) {
+        return -1
+      }
+      // Nếu b là đơn phạt đang chờ và a không phải
+      if (
+        b.itemType === 'penBill' &&
+        isPending(b.displayStatus) &&
+        (a.itemType !== 'penBill' || !isPending(a.displayStatus))
+      ) {
+        return 1
+      }
+    }
+
+    // Tiếp tục sắp xếp theo trạng thái pending
     if (a.sortOrder !== b.sortOrder) {
       return a.sortOrder - b.sortOrder
     }
 
-    // Then sort by date (newest first)
+    // Sau đó sắp xếp theo ngày (mới nhất lên đầu)
     const dateA = new Date(a.displayDate)
     const dateB = new Date(b.displayDate)
-    return dateB - dateA
+    return dateB.getTime() - dateA.getTime()
   })
 })
 
-const formatCurrency = (value) => value.toLocaleString() + ' VND'
+const formatCurrency = (value: number): string => value.toLocaleString() + ' VND'
 
 // Get status label and severity for any item type
-const getStatusLabel = (item) => {
+const getStatusLabel = (item: DisplayItem): string => {
   const status = item.displayStatus
 
   if (item.itemType === 'invoice') {
@@ -316,7 +470,7 @@ const getStatusLabel = (item) => {
   }
 }
 
-const getStatusSeverity = (item) => {
+const getStatusSeverity = (item: DisplayItem): string => {
   const status = item.displayStatus
 
   if (item.itemType === 'invoice') {
@@ -332,7 +486,7 @@ const getStatusSeverity = (item) => {
   }
 }
 
-const getItemDescription = (item) => {
+const getItemDescription = (item: DisplayItem): string => {
   if (item.itemType === 'invoice') {
     return item.description || '-'
   } else if (item.itemType === 'contribution') {
@@ -343,7 +497,7 @@ const getItemDescription = (item) => {
   return ''
 }
 
-const validateForm = (action, item) => {
+const validateForm = (action: string, item: DisplayItem): boolean => {
   errorMessage.value = ''
 
   if (action === 'confirm' && item.itemType === 'invoice' && !selectedFundType.value) {
@@ -358,21 +512,21 @@ const validateForm = (action, item) => {
 }
 
 // Unified action handler
-const handleConfirmAction = async () => {
+const handleConfirmAction = async (): Promise<void> => {
   if (!selectedItemToConfirm.value) return
 
   const item = selectedItemToConfirm.value
   const action = confirmAction.value
   console.log('reason:', rejectedReason.value)
 
-  if (!validateForm(action, item)) return
+  if (!validateForm(action || '', item)) return
 
   try {
     loading.value = true
 
     let endpoint = ''
-    let method = 'post'
-    let params = {}
+    let method: 'post' | 'put' = 'post'
+    let params: { fundType?: FundType } = {}
 
     if (item.itemType === 'invoice') {
       endpoint =
@@ -380,7 +534,7 @@ const handleConfirmAction = async () => {
       method = 'put'
 
       if (action === 'confirm') {
-        params = { fundType: selectedFundType.value }
+        params = { fundType: selectedFundType.value as FundType }
       }
     } else if (item.itemType === 'contribution') {
       endpoint =
@@ -396,9 +550,12 @@ const handleConfirmAction = async () => {
 
     if (method === 'put') {
       if (Object.keys(params).length > 0) {
-        await axiosInstance.put(`${endpoint}?fundType=${encodeURIComponent(params.fundType)}`, {
-          reason: rejectedReason.value,
-        })
+        await axiosInstance.put(
+          `${endpoint}?fundType=${encodeURIComponent(params.fundType as string)}`,
+          {
+            reason: rejectedReason.value,
+          },
+        )
       } else {
         await axiosInstance.put(endpoint, { reason: rejectedReason.value })
       }
@@ -413,11 +570,12 @@ const handleConfirmAction = async () => {
     loading.value = false
     showConfirmDialog.value = false
     selectedFundType.value = null
+    rejectedReason.value = ''
   }
 }
 
 // Open confirmation dialog
-const openConfirmDialog = (item, action) => {
+const openConfirmDialog = (item: DisplayItem, action: 'confirm' | 'cancel'): void => {
   selectedItemToConfirm.value = item
   confirmAction.value = action
   confirmDialogMessage.value =
@@ -429,11 +587,12 @@ const openConfirmDialog = (item, action) => {
     selectedFundType.value = null
   }
 
+  rejectedReason.value = ''
   showConfirmDialog.value = true
 }
 
 // Helper to check if item can be approved/rejected
-const canPerformAction = (item) => {
+const canPerformAction = (item: DisplayItem): boolean => {
   if (item.itemType === 'invoice') {
     return item.status !== 'APPROVED' && item.status !== 'CANCELLED'
   } else {
@@ -466,5 +625,10 @@ const canPerformAction = (item) => {
 }
 .p-tag {
   width: 90%;
+}
+
+/* Add spacing between the search and dropdown */
+.mr-3 {
+  margin-right: 0.75rem;
 }
 </style>

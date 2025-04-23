@@ -59,7 +59,7 @@
       :rows="15"
       :first="first"
       @page="onPage"
-      :rowsPerPageOptions="[15, 20, 25]"
+      :rowsPerPageOptions="[10, 50, 100]"
       stripedRows
       responsiveLayout="scroll"
     >
@@ -133,9 +133,7 @@
 
     <!-- Form chọn lại -->
     <div class="col-12 mb-3 item-dialog">
-      <label class="font-bold mb-2">
-        Channel id <span class="text-danger" :hidden="dialogMode === 'settings'">*</span></label
-      >
+      <label class="font-bold mb-2"> Channel id</label>
       <InputText
         v-model="scheduleForm.channelId"
         placeholder="Vui lòng nhập channel id của chatops"
@@ -414,13 +412,13 @@ const formatTimeToApiString = (date: Date): string => {
 
 //validate form
 const errors = ref({ channelId: '' })
-const validateForm = () => {
-  errors.value = { channelId: '' }
+// const validateForm = () => {
+//   errors.value = { channelId: '' }
 
-  if (!scheduleForm.value.channelId)
-    errors.value.channelId = 'Vui lòng nhập channel id để lấy checkin!'
-  return Object.values(errors.value).every((err) => err === '')
-}
+//   if (!scheduleForm.value.channelId)
+//     errors.value.channelId = 'Vui lòng nhập channel id để lấy checkin!'
+//   return Object.values(errors.value).every((err) => err === '')
+// }
 
 // Hàm xử lý hành động dựa trên chế độ dialog
 
@@ -428,7 +426,6 @@ const handleAction = async () => {
   if (dialogMode.value === 'settings') {
     await saveSchedule()
   } else {
-    if (!validateForm()) return
     await checkNow()
   }
 }

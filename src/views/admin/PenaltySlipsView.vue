@@ -5,37 +5,37 @@
       <div class="mb-3 d-flex justify-content-between align-items-center">
         <div>
           <InputText
-          v-model="searchQuery"
-          placeholder="Tìm kiếm theo id, tên..."
-          class="w-full p-inputtext-sm"
-        />
-        <Button
-          label="Tạo phiếu phạt"
-          severity="success"
-          class="left-10"
-          raised
-          size="small"
-          @click="openCreateDialog"
-        />
+            v-model="searchQuery"
+            placeholder="Tìm kiếm theo id, tên..."
+            class="w-full p-inputtext-sm"
+          />
+          <Button
+            label="Tạo phiếu phạt"
+            severity="success"
+            class="left-10"
+            raised
+            size="small"
+            @click="openCreateDialog"
+          />
         </div>
         <div>
           <Button
-          label="Thông báo"
-          icon="pi pi-cog"
-          class="p-button-sm"
-          severity="success"
-          raised
-          @click="openScheduleDialog"
-        />
+            label="Thông báo"
+            icon="pi pi-cog"
+            class="p-button-sm"
+            severity="success"
+            raised
+            @click="openScheduleDialog"
+          />
         </div>
       </div>
       <DataTable
         :value="filteredPeriods"
         paginator
-        :rows="15"
+        :rows="10"
         :first="first"
         @page="onPage"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
@@ -78,12 +78,12 @@
           </template>
         </Column> -->
         <Column header="Trạng thái">
-            <template #body="{ data }">
+          <template #body="{ data }">
             <Tag
               :value="getPaymentStatusLabel(data.paymentStatus)"
               :severity="getPaymentStatusSeverity(data.paymentStatus)"
             />
-            </template>
+          </template>
         </Column>
       </DataTable>
     </div>
@@ -102,8 +102,13 @@
     </div>
   </Dialog> -->
 
-    <!-- Dialog Cài đặt thông báo đi muộn -->
-    <Dialog v-model:visible="showScheduleDialog" header="Thông báo đóng tiền phạt" modal class="container-dialog">
+  <!-- Dialog Cài đặt thông báo đi muộn -->
+  <Dialog
+    v-model:visible="showScheduleDialog"
+    header="Thông báo đóng tiền phạt"
+    modal
+    class="container-dialog"
+  >
     <!-- Thông tin hiện tại -->
     <!-- <div class="col-12 mb-3 item-dialog lh-2">
       <p class="text-sm text-gray-600">
@@ -130,14 +135,9 @@
 
     <div class="actions-dialog">
       <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
-      <Button
-        label="Gửi thông báo ngay"
-        severity="primary"
-        @click="sendLateNotification"
-      />
+      <Button label="Gửi thông báo ngay" severity="primary" @click="sendLateNotification" />
     </div>
   </Dialog>
-
 
   <Dialog
     v-model:visible="showPenaltyDialog"
@@ -147,7 +147,9 @@
     :style="{ width: '30rem' }"
   >
     <div class="mb-3">
-      <label for="penaltySlug" class="fw-bold"> Loại phiếu phạt <span class="text-danger">*</span> </label>
+      <label for="penaltySlug" class="fw-bold">
+        Loại phiếu phạt <span class="text-danger">*</span>
+      </label>
       <Select
         v-model="form.penaltySlug"
         :options="penaltyTypes"
@@ -207,7 +209,7 @@
       />
       <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
     </div> -->
-    
+
     <div class="d-flex justify-content-end gap-2">
       <Button
         type="button"
@@ -217,8 +219,6 @@
       ></Button>
       <Button type="button" label="Save" severity="primary" @click="savePenaltySlips"></Button>
     </div>
-
-
   </Dialog>
 </template>
 
@@ -257,7 +257,6 @@ const penaltyTypes = ref<Penalty[]>([])
 // DATA FOR USER
 const user = ref<User[]>([])
 
-
 // FORM FOR LATE DIALOG
 const showScheduleDialog = ref(false)
 // const scheduleForm = ref({
@@ -285,43 +284,51 @@ const sendLateNotification = async () => {
   //   console.error('Lỗi khi cập nhật schedule:', error)
   // }
   try {
-    const response = await axiosInstance.post(`/pen-bills/notification`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log('Notification sent successfully:', response.data);
+    const response = await axiosInstance.post(
+      `/pen-bills/notification`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    )
+    console.log('Notification sent successfully:', response.data)
     toast.add({
       severity: 'success',
       summary: 'Thành công',
       detail: 'Gửi thông báo thành công!',
       life: 3000,
-    });
-    showScheduleDialog.value = false;
+    })
+    showScheduleDialog.value = false
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending notification:', error)
     toast.add({
       severity: 'error',
       summary: 'Lỗi',
       detail: 'Gửi thông báo thất bại!',
       life: 3000,
-    });
+    })
   }
 }
-
 
 // Hàm mở dialog cài đặt
 const openScheduleDialog = () => {
   showScheduleDialog.value = true
 }
 
-
 // SHOW PENALTY DIALOG
-const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: new Date() })
-const errors = ref({ penaltySlug: '', amount: '', userIds: '', dueDate: "" })
+const form = ref({
+  id: 0,
+  penaltySlug: '',
+  description: '',
+  amount: 0,
+  userIds: '',
+  dueDate: new Date(),
+})
+const errors = ref({ penaltySlug: '', amount: '', userIds: '', dueDate: '' })
 const isUpdate = ref(false)
 const showPenaltyDialog = ref(false)
 
 const router = useRouter()
-
 
 //pagenation
 const first = ref<number>(0)
@@ -343,7 +350,7 @@ const fetchPenaltyTypes = async () => {
   try {
     const response = await axiosInstance.get(`/penalties`, {
       headers: { Authorization: `Bearer ${token}` },
-    })    
+    })
     penaltyTypes.value = response.data.map((penalty: { name: string; slug: string }) => ({
       description: penalty.name,
       slug: penalty.slug,
@@ -362,17 +369,17 @@ const fetchUsers = async () => {
       id: user.id,
       fullName: `${user.id} - ${user.fullName}`,
     }))
-
   } catch (error) {
     console.error('Error fetching users:', error)
   }
 }
 
-
 const filteredPeriods = computed(() => {
   if (!searchQuery.value) return penaltySlips.value
   return penaltySlips.value.filter(
-    (pen) => pen.user.fullName.includes(searchQuery.value) || pen.user.id.toString().includes(searchQuery.value),
+    (pen) =>
+      pen.user.fullName.includes(searchQuery.value) ||
+      pen.user.id.toString().includes(searchQuery.value),
   )
 })
 
@@ -422,7 +429,6 @@ onMounted(() => {
   }
 })
 
-
 // const form = ref({ id: 0, penaltySlug: '', description: '', amount: 0, userIds: '' })
 // const errors = ref({ penaltySlug: '', amount: 0, userIds: '' })
 const validateForm = () => {
@@ -442,7 +448,14 @@ const resetErrors = () => {
 }
 
 const openCreateDialog = () => {
-  form.value = { id: 0, penaltySlug: '', description: '', amount: 0, userIds: '', dueDate: new Date() }
+  form.value = {
+    id: 0,
+    penaltySlug: '',
+    description: '',
+    amount: 0,
+    userIds: '',
+    dueDate: new Date(),
+  }
   isUpdate.value = false
   showPenaltyDialog.value = true
 }
@@ -516,7 +529,6 @@ const savePenaltySlips = async () => {
 //     penaltyDelete.value = null
 //   }
 // }
-
 </script>
 
 <style scoped>

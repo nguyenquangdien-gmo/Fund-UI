@@ -24,8 +24,8 @@
         paginator
         :first="first"
         @page="onPage"
-        :rows="15"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rows="10"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable style="width: 5%">
@@ -408,7 +408,7 @@ const validateForm = () => {
         user.email.toLowerCase() === form.value.email.toLowerCase() &&
         user.id !== Number(userId.value), // nếu đang edit thì bỏ qua chính mình
     )
-    if (!isUpdate && emailExists) {
+    if (!isUpdate.value && emailExists) {
       errors.value.email = 'Email đã tồn tại!'
     }
   }

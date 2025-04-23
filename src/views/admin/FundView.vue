@@ -13,8 +13,8 @@
       <DataTable
         :value="filteredFunds"
         paginator
-        :rows="15"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rows="10"
+        :rowsPerPageOptions="[10, 50, 100]"
         :first="first"
         @page="onPage"
         class="p-datatable-sm"

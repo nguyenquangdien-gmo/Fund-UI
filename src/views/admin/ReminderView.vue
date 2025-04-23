@@ -32,7 +32,7 @@
         :first="first"
         @page="onPage"
         :rows="10"
-        :rowsPerPageOptions="[10, 15, 20]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>

@@ -45,7 +45,7 @@
         :rows="10"
         :first="first"
         @page="onPage"
-        :rowsPerPageOptions="[10, 15, 20]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>

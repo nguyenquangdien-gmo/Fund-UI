@@ -14,10 +14,10 @@
       <DataTable
         :value="filteredTrans"
         paginator
-        :rows="15"
+        :rows="10"
         :first="first"
         @page="onPage"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <!-- <Column field="id" header="ID" sortable></Column> -->

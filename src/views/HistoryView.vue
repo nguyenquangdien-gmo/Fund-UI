@@ -1,3 +1,148 @@
+<template>
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">LỊCH SỬ ĐÓNG QUỸ</h2>
+
+    <div class="mb-4 flex items-center gap-4">
+      <Dropdown
+        v-model="selectedListType"
+        :options="listOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Chọn danh sách"
+        class="w-64"
+      />
+
+      <InputText
+        v-model="searchQuery"
+        placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
+        style="margin-left: 10px; width: 28%"
+        class="p-inputtext w-64"
+      />
+    </div>
+
+    <!-- <p v-if="error" class="text-red-500">{{ error }}</p> -->
+    <p v-if="loading">Đang tải dữ liệu...</p>
+
+    <!-- Hiển thị danh sách Contributions -->
+    <DataTable
+      v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
+      :value="filteredContributions"
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[15, 20, 25]"
+      responsiveLayout=" scroll"
+    >
+      <Column header="STT" sortable>
+        <template #body="{ index }">
+          {{ index + 1 }}
+        </template>
+      </Column>
+      <Column field="periodName" header="Kỳ đóng" />
+      <Column field="totalAmount" header="Số tiền">
+        <template #body="slotProps">
+          {{ formatCurrency(slotProps.data.totalAmount) }}
+        </template>
+      </Column>
+      <Column field="paymentStatus" header="Trạng thái">
+        <template #body="slotProps">
+          <Button
+            class="status"
+            v-if="slotProps.data.paymentStatus === 'PAID'"
+            label="Đã thu"
+            icon="pi pi-check-square"
+            severity="success"
+            disabled
+          />
+          <Button
+            class="status"
+            v-if="slotProps.data.paymentStatus === 'PENDING'"
+            label="Chờ xác nhận"
+            icon="pi pi-hourglass"
+            severity="info"
+            disabled
+          />
+          <Button
+            class="status"
+            v-if="slotProps.data.paymentStatus === 'CANCELED'"
+            label="Bị hủy"
+            icon="pi pi-times-circle"
+            severity="warn"
+            disabled
+          />
+        </template>
+      </Column>
+      <Column field="note" header="Ghi chú" />
+      <Column field="deadline" header="Thời hạn">
+        <template #body="slotProps">
+          <span :class="{ 'text-red-500': slotProps.data.isLate }">
+            {{ formatDate(slotProps.data.deadline) }}
+          </span>
+        </template>
+      </Column>
+    </DataTable>
+
+    <!-- Hiển thị danh sách Pen Bills -->
+    <DataTable
+      v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0"
+      :value="filteredPenBills"
+      paginator
+      :rows="10"
+      :first="first"
+      @page="onPage"
+      :rowsPerPageOptions="[10, 50, 100]"
+      responsiveLayout=" scroll"
+    >
+      <Column header="STT" sortable>
+        <template #body="{ index }">
+          {{ first + index + 1 }}
+        </template>
+      </Column>
+      <Column field="description" header="Mô Tả" sortable style="width: 50%"></Column>
+      <Column field="amount" header="Tổng cộng" sortable>
+        <template #body="{ data }">
+          {{ formatCurrency(data.amount) }}
+        </template>
+      </Column>
+
+      <Column field="created" header="Ngày tạo" sortable>
+        <template #body="{ data }">
+          {{ formatDate(data.dueDate) }}
+        </template>
+      </Column>
+      <Column header="Trạng thái">
+        <template #body="{ data }">
+          <Button
+            class="status"
+            v-if="data.paymentStatus === 'PAID'"
+            label="Đã đóng phạt"
+            icon="pi pi-check-square"
+            severity="success"
+            disabled
+          />
+          <Button
+            class="status"
+            v-if="data.paymentStatus === 'PENDING'"
+            label="Chờ xác nhận"
+            icon="pi pi-hourglass"
+            severity="info"
+            disabled
+          />
+          <Button
+            class="status"
+            v-if="data.paymentStatus === 'CANCELED'"
+            label="Bị hủy "
+            icon="pi pi-times-circle"
+            severity="warn"
+            disabled
+          />
+        </template>
+      </Column>
+    </DataTable>
+
+    <p v-else>Bạn chưa có dữ liệu</p>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import DataTable from 'primevue/datatable'
@@ -109,151 +254,6 @@ const formatCurrency = (value) => value.toLocaleString() + ' VND'
 //     return { PAID: "success", PENDING: "info" }[status] || "secondary";
 // };
 </script>
-
-<template>
-  <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">LỊCH SỬ ĐÓNG QUỸ</h2>
-
-    <div class="mb-4 flex items-center gap-4">
-      <Dropdown
-        v-model="selectedListType"
-        :options="listOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Chọn danh sách"
-        class="w-64"
-      />
-
-      <InputText
-        v-model="searchQuery"
-        placeholder="Tìm kiếm theo Id, Kỳ đóng, Trạng thái..."
-        style="margin-left: 10px; width: 28%"
-        class="p-inputtext w-64"
-      />
-    </div>
-
-    <!-- <p v-if="error" class="text-red-500">{{ error }}</p> -->
-    <p v-if="loading">Đang tải dữ liệu...</p>
-
-    <!-- Hiển thị danh sách Contributions -->
-    <DataTable
-      v-if="selectedListType === 'contributions' && filteredContributions.length > 0"
-      :value="filteredContributions"
-      paginator
-      :rows="15"
-      :rowsPerPageOptions="[15, 20, 25]"
-      responsiveLayout=" scroll"
-    >
-      <Column header="STT" sortable>
-        <template #body="{ index }">
-          {{ index + 1 }}
-        </template>
-      </Column>
-      <Column field="periodName" header="Kỳ đóng" />
-      <Column field="totalAmount" header="Số tiền">
-        <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.totalAmount) }}
-        </template>
-      </Column>
-      <Column field="paymentStatus" header="Trạng thái">
-        <template #body="slotProps">
-          <Button
-            class="status"
-            v-if="slotProps.data.paymentStatus === 'PAID'"
-            label="Đã thu"
-            icon="pi pi-check-square"
-            severity="success"
-            disabled
-          />
-          <Button
-            class="status"
-            v-if="slotProps.data.paymentStatus === 'PENDING'"
-            label="Chờ xác nhận"
-            icon="pi pi-hourglass"
-            severity="info"
-            disabled
-          />
-          <Button
-            class="status"
-            v-if="slotProps.data.paymentStatus === 'CANCELED'"
-            label="Bị hủy"
-            icon="pi pi-times-circle"
-            severity="warn"
-            disabled
-          />
-        </template>
-      </Column>
-      <Column field="note" header="Ghi chú" />
-      <Column field="deadline" header="Thời hạn">
-        <template #body="slotProps">
-          <span :class="{ 'text-red-500': slotProps.data.isLate }">
-            {{ formatDate(slotProps.data.deadline) }}
-          </span>
-        </template>
-      </Column>
-    </DataTable>
-
-    <!-- Hiển thị danh sách Pen Bills -->
-    <DataTable
-      v-else-if="selectedListType === 'penBills' && filteredPenBills.length > 0"
-      :value="filteredPenBills"
-      paginator
-      :rows="15"
-      :first="first"
-      @page="onPage"
-      :rowsPerPageOptions="[15, 20, 25]"
-      responsiveLayout=" scroll"
-    >
-      <Column header="STT" sortable>
-        <template #body="{ index }">
-          {{ first + index + 1 }}
-        </template>
-      </Column>
-      <Column field="description" header="Mô Tả" sortable style="width: 50%"></Column>
-      <Column field="amount" header="Tổng cộng" sortable>
-        <template #body="{ data }">
-          {{ formatCurrency(data.amount) }}
-        </template>
-      </Column>
-
-      <Column field="created" header="Ngày tạo" sortable>
-        <template #body="{ data }">
-          {{ formatDate(data.dueDate) }}
-        </template>
-      </Column>
-      <Column header="Trạng thái">
-        <template #body="{ data }">
-          <Button
-            class="status"
-            v-if="data.paymentStatus === 'PAID'"
-            label="Đã đóng phạt"
-            icon="pi pi-check-square"
-            severity="success"
-            disabled
-          />
-          <Button
-            class="status"
-            v-if="data.paymentStatus === 'PENDING'"
-            label="Chờ xác nhận"
-            icon="pi pi-hourglass"
-            severity="info"
-            disabled
-          />
-          <Button
-            class="status"
-            v-if="data.paymentStatus === 'CANCELED'"
-            label="Bị hủy "
-            icon="pi pi-times-circle"
-            severity="warn"
-            disabled
-          />
-        </template>
-      </Column>
-    </DataTable>
-
-    <p v-else>Bạn chưa có dữ liệu</p>
-  </div>
-</template>
 
 <style scoped>
 .p-datatable th {

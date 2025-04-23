@@ -28,10 +28,10 @@
           v-if="bills.length > 0"
           :value="filteredBills"
           paginator
-          :rows="15"
+          :rows="10"
           :first="first"
           @page="onPage"
-          :rowsPerPageOptions="[15, 20, 25]"
+          :rowsPerPageOptions="[10, 50, 100]"
           class="p-datatable-sm"
         >
           <Column header="STT" sortable>

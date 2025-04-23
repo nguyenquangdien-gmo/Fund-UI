@@ -28,8 +28,8 @@
       paginator
       :first="first"
       @page="onPage"
-      :rows="15"
-      :rowsPerPageOptions="[15, 20, 25]"
+      :rows="10"
+      :rowsPerPageOptions="[10, 50, 100]"
       responsiveLayout="scroll"
       :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
     >

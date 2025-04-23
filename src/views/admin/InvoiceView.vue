@@ -20,7 +20,7 @@
         :rows="15"
         :first="first"
         @page="onPage"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
@@ -28,7 +28,7 @@
             {{ first + index + 1 }}
           </template>
         </Column>
-        <Column field="name" header="Tên" sortable></Column>
+        <Column field="user.fullName" header="Tên" sortable></Column>
         <Column field="invoiceType" header="Loại" sortable>
           <template #body="{ data }">
             <Tag
@@ -111,7 +111,7 @@ import Column from 'primevue/column'
 import axiosInstance from '@/router/Interceptor'
 import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
-import { useUserStore } from '@/pinia/userStore'
+// import { useUserStore } from '@/pinia/userStore'
 import type Invoice from '@/types/Invoice'
 import InvoiceType from '@/types/InvoiceType'
 import Tag from 'primevue/tag'
@@ -127,7 +127,7 @@ const searchQuery = ref('')
 // const form = ref({ id: 0, name: '', invoiceType: '', description: '', userId: 0, amount: 0 })
 // const errors = ref({ name: '', description: '', type: '', amount: '' })
 const router = useRouter()
-const userStore = useUserStore()
+// const userStore = useUserStore()
 // const user = computed(() => userStore.user)
 // const amount = ref('')
 

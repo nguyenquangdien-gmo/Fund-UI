@@ -24,7 +24,7 @@
         :first="first"
         @page="onPage"
         :rows="10"
-        :rowsPerPageOptions="[10, 20, 30]"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT">
@@ -146,6 +146,12 @@ const showTeamDialog = ref(false)
 const isUpdate = ref(false)
 const form = ref({ id: '', name: '', slug: '', channelId: '', token: '', qrCodeFile: null })
 const qrPreview = ref(null)
+
+// Pagination
+const first = ref(0)
+const onPage = (event) => {
+  first.value = event.first
+}
 
 const fetchTeams = async () => {
   try {

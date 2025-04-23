@@ -57,8 +57,8 @@
         paginator
         :first="first"
         @page="onPage"
-        :rows="15"
-        :rowsPerPageOptions="[15, 20, 25]"
+        :rows="10"
+        :rowsPerPageOptions="[10, 50, 100]"
         class="p-datatable-sm"
       >
         <Column header="STT" sortable>
@@ -245,23 +245,9 @@ interface FundOption {
   value: string
 }
 
-interface Period {
-  id: number
-  month: number
-  year: number
-  deadline: string
-  description: string
-  totalAmount: number
-  createdAt: string
-  updatedAt: string
-}
-
 // State
 const router = useRouter()
 const token = localStorage.getItem('accessToken')
-const userStore = useUserStore()
-const user = computed(() => userStore.user)
-const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
 // User data
 const users = ref<UserData[]>([])

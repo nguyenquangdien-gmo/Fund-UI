@@ -1,3 +1,76 @@
+<template>
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4">ĐI MUỘN</h2>
+
+    <div class="flex gap-4 mb-4">
+      Từ
+      <Calendar
+        v-model="fromDate"
+        dateFormat="dd-mm-yy"
+        placeholder="Từ ngày"
+        @date-select="fetchLateRecords"
+      />
+      đến
+      <Calendar
+        v-model="toDate"
+        dateFormat="dd-mm-yy"
+        placeholder="Đến ngày"
+        @date-select="fetchLateRecords"
+      />
+      Tìm kiếm
+      <InputText
+        v-model="searchTerm"
+        placeholder="🔍 Tìm theo tên hoặc ID"
+        class="p-inputtext-sm"
+      />
+    </div>
+
+    <DataTable
+      v-if="filteredRecords.length > 0"
+      :value="filteredRecords"
+      :paginator="true"
+      :rows="10"
+      :first="first"
+      @page="onPage"
+      :rowsPerPageOptions="[10, 50, 100]"
+      stripedRows
+      responsiveLayout="scroll"
+    >
+      <Column header="STT" sortable>
+        <template #body="{ index }">
+          {{ first + index + 1 }}
+        </template>
+      </Column>
+      <Column field="user.id" header="Mã nhân viên">
+        <template #body="{ data }">
+          {{ data.user?.id || '-' }}
+        </template>
+      </Column>
+      <Column field="user.fullName" header="Tên nhân viên">
+        <template #body="{ data }">
+          {{ data.user?.fullName || '-' }}
+        </template>
+      </Column>
+      <Column field="checkinAt" header="Check-in">
+        <template #body="{ data }">
+          {{ data.checkinAt ?? '-' }}
+        </template>
+      </Column>
+      <Column field="note" header="Ghi chú">
+        <template #body="{ data }">
+          {{ data.note?.trim() ? data.note : '-' }}
+        </template>
+      </Column>
+      <Column field="date" header="Ngày">
+        <template #body="{ data }">
+          {{ formatDate(data.date) }}
+        </template>
+      </Column>
+    </DataTable>
+
+    <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
+  </div>
+</template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import Calendar from 'primevue/calendar'
@@ -81,77 +154,3 @@ const filteredRecords = computed(() => {
   })
 })
 </script>
-
-<template>
-  <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">ĐI MUỘN</h2>
-
-    <div class="flex gap-4 mb-4">
-      Từ
-      <Calendar
-        v-model="fromDate"
-        dateFormat="dd-mm-yy"
-        placeholder="Từ ngày"
-        @date-select="fetchLateRecords"
-      />
-      đến
-      <Calendar
-        v-model="toDate"
-        dateFormat="dd-mm-yy"
-        placeholder="Đến ngày"
-        @date-select="fetchLateRecords"
-      />
-      Tìm kiếm
-      <InputText
-        v-model="searchTerm"
-        placeholder="🔍 Tìm theo tên hoặc ID"
-        class="p-inputtext-sm"
-      />
-    </div>
-
-    <DataTable
-      v-if="filteredRecords.length > 0"
-      :value="filteredRecords"
-      :paginator="true"
-      :rows="15"
-      :first="first"
-      @page="onPage"
-      :rowsPerPageOptions="[15, 20, 25]"
-      stripedRows
-      responsiveLayout="scroll"
-    >
-      <Column header="STT" sortable>
-        <template #body="{ index }">
-          {{ first + index + 1 }}
-        </template>
-      </Column>
-      <Column field="user.id" header="Mã nhân viên">
-        <template #body="{ data }">
-          {{ data.user?.id || '-' }}
-        </template>
-      </Column>
-      <Column field="user.fullName" header="Tên nhân viên">
-        <template #body="{ data }">
-          {{ data.user?.fullName || '-' }}
-        </template>
-      </Column>
-      <Column field="checkinAt" header="Check-in">
-        <template #body="{ data }">
-          {{ data.checkinAt ?? '-' }}
-        </template>
-      </Column>
-      <Column field="note" header="Ghi chú">
-        <template #body="{ data }">
-          {{ data.note?.trim() ? data.note : '-' }}
-        </template>
-      </Column>
-      <Column field="date" header="Ngày">
-        <template #body="{ data }">
-          {{ formatDate(data.date) }}
-        </template>
-      </Column>
-    </DataTable>
-
-    <div v-else class="text-center text-gray-500">Không có dữ liệu để hiển thị.</div>
-  </div>
-</template>

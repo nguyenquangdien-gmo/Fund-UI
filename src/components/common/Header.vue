@@ -1,5 +1,9 @@
 <template>
-  <div v-if="isLoggedIn" class="card">
+  <div
+    v-if="isLoggedIn"
+    ref="header"
+    :class="['card', { 'fixed top-0 left-0 right-0 z-50 shadow-md': isSticky }]"
+  >
     <Menubar :model="filteredItems">
       <template #end>
         <div class="flex items-center gap-2 info-box">
@@ -68,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/userStore'
 import Menubar from 'primevue/menubar'
@@ -94,6 +98,13 @@ interface UserReminder {
   status: 'READ' | 'SENT'
   completed: boolean
   finishedAt: string | null
+}
+
+//fixed header
+const isSticky = ref(false)
+
+const handleScroll = (): void => {
+  isSticky.value = window.scrollY > 200
 }
 
 const userReminders = ref<UserReminder[]>([])
@@ -201,6 +212,10 @@ const handleClick = async () => {
   router.push('/user/reminders')
 }
 
+onBeforeUnmount(() => {
+  eventBus.off('notifications:updated', fetchReminders)
+})
+
 onMounted(async () => {
   eventBus.on('notifications:updated', fetchReminders)
   if (isLoggedIn.value) {
@@ -209,10 +224,11 @@ onMounted(async () => {
   } else {
     router.push('/login')
   }
+  window.addEventListener('scroll', handleScroll)
 })
 
-onBeforeUnmount(() => {
-  eventBus.off('notifications:updated', fetchReminders)
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 watch(user, (newUser) => {
@@ -236,9 +252,10 @@ const baseItems = [
       { label: 'Đi muộn', icon: 'pi pi-calendar-times', command: () => router.push('/user/late') },
       { label: 'Nợ phạt', icon: 'pi pi-times-circle', command: () => router.push('/bills') },
       { label: 'Hóa đơn', icon: 'pi pi-receipt', command: () => router.push('/user/invoices') },
+      { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
     ],
   },
-  { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
+  { label: 'Đơn nghỉ', icon: 'pi pi-history', command: () => router.push('/work-calendar') },
   { label: 'Sự kiện', icon: 'pi pi-sparkles', command: () => router.push('/events') },
 ]
 
@@ -349,5 +366,16 @@ const handleLogout = async () => {
   text-align: center;
   padding: 10px;
   color: #888;
+}
+.card {
+  transition: all 0.3s ease; /* Thêm hiệu ứng chuyển động */
+}
+
+.card.fixed {
+  position: fixed;
+  width: 63%;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 </style>

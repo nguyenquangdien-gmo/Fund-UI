@@ -235,8 +235,8 @@ const checkAdmin = async () => {
       params: { token },
     })
     return response.data // Trả về true nếu là admin
-  } catch (error) {
-    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+  } catch {
+    // console.error('Lỗi khi kiểm tra quyền admin')
     return false
   }
 }
@@ -429,9 +429,10 @@ const saveUser = async () => {
     form.value.id = parseInt(userId.value)
     form.value.role = selectedRole.value ?? ''
 
-    form.value.dob = seletedDob.value ? seletedDob.value.toISOString().split('T')[0] : ''
+    // Fix date handling by using a helper function that adjusts for timezone
+    form.value.dob = seletedDob.value ? formatDateWithoutTimezoneOffset(seletedDob.value) : ''
     form.value.joinDate = seletedJoinDate.value
-      ? seletedJoinDate.value.toISOString().split('T')[0]
+      ? formatDateWithoutTimezoneOffset(seletedJoinDate.value)
       : ''
     form.value.slugTeam = selectedTeam.value
 
@@ -452,6 +453,14 @@ const saveUser = async () => {
   } catch (error) {
     console.error('Error saving user:', error)
   }
+}
+
+// Helper function to format dates without timezone issues
+function formatDateWithoutTimezoneOffset(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 const resetPassword = async (email: string) => {

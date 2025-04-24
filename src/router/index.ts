@@ -60,6 +60,7 @@ const router = createRouter({
       path: '/work-calendar',
       name: 'work-calendar',
       component: WorkCalendarView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/histories',

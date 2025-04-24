@@ -17,7 +17,7 @@
         v-if="invoices.length > 0"
         :value="filteredInvoice"
         paginator
-        :rows="15"
+        :rows="10"
         :first="first"
         @page="onPage"
         :rowsPerPageOptions="[10, 50, 100]"
@@ -113,7 +113,7 @@ import { useRouter } from 'vue-router'
 import formatCurrency from '@/utils/FormatCurrency'
 // import { useUserStore } from '@/pinia/userStore'
 import type Invoice from '@/types/Invoice'
-import InvoiceType from '@/types/InvoiceType'
+// import InvoiceType from '@/types/InvoiceType'
 import Tag from 'primevue/tag'
 
 // const baseURL = "http://localhost:8080/api/v1";
@@ -153,7 +153,7 @@ const checkAdmin = async () => {
   }
 }
 
-const selectedType = ref<InvoiceType | null>(null)
+// const selectedType = ref<InvoiceType | null>(null)
 // const types = ref([
 //     { label: "Quỹ thu", value: InvoiceType.INCOME },
 //     { label: "Quỹ chi", value: InvoiceType.EXPENSE }

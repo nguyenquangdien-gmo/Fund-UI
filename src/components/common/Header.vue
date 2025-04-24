@@ -255,7 +255,7 @@ const baseItems = [
       { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
     ],
   },
-  { label: 'Đơn nghỉ', icon: 'pi pi-history', command: () => router.push('/work-calendar') },
+  { label: 'Đơn nghỉ', icon: 'pi pi-calendar-clock', command: () => router.push('/work-calendar') },
   { label: 'Sự kiện', icon: 'pi pi-sparkles', command: () => router.push('/events') },
 ]
 

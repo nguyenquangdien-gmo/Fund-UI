@@ -68,17 +68,17 @@
           {{ first + index + 1 }}
         </template>
       </Column>
-      <Column field="user.id" header="Mã nhân viên">
+      <Column field="user.id" header="Mã nhân viên" sortable>
         <template #body="{ data }">
           {{ data.user?.id || '-' }}
         </template>
       </Column>
-      <Column field="user.fullName" header="Tên nhân viên">
+      <Column field="user.fullName" header="Tên nhân viên" sortable>
         <template #body="{ data }">
           {{ data.user?.fullName || '-' }}
         </template>
       </Column>
-      <Column field="checkinAt" header="Check-in">
+      <Column field="checkinAt" header="Check-in" sortable>
         <template #body="{ data }">
           {{ data.checkinAt ?? '-' }}
         </template>
@@ -88,12 +88,12 @@
           {{ data.note?.trim() ? data.note : 'Không có' }}
         </template>
       </Column>
-      <Column field="date" header="Ngày">
+      <Column field="date" header="Ngày" sortable>
         <template #body="{ data }">
           {{ formatDate(data.date) }}
         </template>
       </Column>
-      <Column field="penBill" header="Trạng thái">
+      <Column field="penBill" header="Trạng thái" sortable>
         <template #body="{ data }">
           <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
             {{

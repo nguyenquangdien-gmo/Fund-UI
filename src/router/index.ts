@@ -27,6 +27,7 @@ import type JwtPayload from '@/types/JwtPayload'
 import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
 import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
+import RestaurantView from '@/views/RestaurantView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -90,6 +91,12 @@ const router = createRouter({
       path: '/bills',
       name: 'bills',
       component: PayPenView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/restaurants',
+      name: 'restaurants',
+      component: RestaurantView,
       meta: { requiresAuth: true },
     },
     {

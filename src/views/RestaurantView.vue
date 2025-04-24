@@ -27,10 +27,10 @@
       </template>
     </Column>
       <Column field="name" header="Tên quán" sortable />
-      <Column header="Link quán" sortable>
+      <Column field="link" header="Link quán" sortable>
         <template #body="{ data }">
           <a :href="data.link" target="_blank" class="text-blue-500 underline">
-        {{ data.link }}
+            {{ data.link.length > 30 ? data.link.substring(0, 30) + '...' : data.link }}
           </a>
         </template>
       </Column>
@@ -54,7 +54,7 @@
       <Column header="Thao tác">
         <template #body="{ data }">
             <div class="flex space-x-2">
-                <Button
+                <!-- <Button
                   icon="pi pi-thumbs-up"
                   class="p-button-rounded p-button-success"
                   size="small"
@@ -66,7 +66,7 @@
                   class="p-button-rounded p-button-danger"
                   size="small"
                   @click="dislikeRestaurant(data)"
-                />
+                /> -->
             </div>
         </template>
       </Column>
@@ -75,15 +75,15 @@
 
     <Dialog v-model:visible="isDialogVisible" header="Thêm Quán Nước" :style="{ width: '400px' }">
       <form @submit.prevent="addRestaurant" class="flex flex-col space-y-4">
-        <div class="d-flex justify-content-between p-2">
-          <label for="name" class="mb-2">Tên Quán</label>
+        <div class="d-flex align-items-center justify-content-between p-2">
+            <label for="name" class="mb-2">Tên Quán<span class="text-red-500">*</span></label>
           <InputText v-model="restaurant.name" id="name" required />
         </div>
-        <div class="d-flex justify-content-between p-2">
-          <label for="link" class="mb-2">Link Quán</label>
+        <div class="d-flex align-items-center justify-content-between p-2">
+          <label for="link" class="mb-2">Link Quán<span class="text-red-500">*</span></label>
           <InputText v-model="restaurant.link" id="link" placeholder="Nhập link quán..." required />
         </div>
-        <div class="d-flex justify-content-end space-x-2 p-2">
+        <div class="d-flex align-items-center justify-content-end space-x-2 p-2">
           <Button label="Hủy" icon="pi pi-times" @click="closeDialog" class="p-button-text" />
           <Button label="Lưu" icon="pi pi-check" type="submit" />
         </div>
@@ -166,3 +166,9 @@ const addRestaurant = async () => {
 
 
 </script>
+
+<style scoped>
+.text-red-500 {
+  color: #ef4444; /* Tailwind's red-500 color */
+}
+</style>

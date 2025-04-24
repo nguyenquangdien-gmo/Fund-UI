@@ -452,6 +452,22 @@
                 </div>
 
                 <div class="mb-3">
+                  <label for="startTime" class="form-label"
+                    >Giờ bắt đầu <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="time"
+                    id="startTime"
+                    v-model="newEntry.startTime"
+                    class="form-control time-24h"
+                    :class="{ 'is-invalid': formErrors.startTime }"
+                  />
+                  <div v-if="formErrors.startTime" class="invalid-feedback">
+                    {{ formErrors.startTime }}
+                  </div>
+                </div>
+
+                <div class="mb-3">
                   <label for="toDate" class="form-label"
                     >Đến ngày <span class="text-danger">*</span></label
                   >
@@ -465,22 +481,6 @@
                   <div v-if="formErrors.toDate" class="invalid-feedback">
                     {{ formErrors.toDate }}
                   </div>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="startTime" class="form-label"
-                  >Giờ bắt đầu <span class="text-danger">*</span></label
-                >
-                <input
-                  type="time"
-                  id="startTime"
-                  v-model="newEntry.startTime"
-                  class="form-control time-24h"
-                  :class="{ 'is-invalid': formErrors.startTime }"
-                />
-                <div v-if="formErrors.startTime" class="invalid-feedback">
-                  {{ formErrors.startTime }}
                 </div>
               </div>
 
@@ -499,6 +499,50 @@
                   {{ formErrors.endTime }}
                 </div>
               </div>
+
+              <!-- Form section with reporter and leave type selection -->
+              <div class="mb-3" v-if="newEntry.type === 'LEAVE'">
+                <label class="form-label">Loại nghỉ phép <span class="text-danger">*</span></label>
+                <select
+                  v-model="newEntry.attendanceTypeObjId"
+                  class="form-select"
+                  :class="{ 'is-invalid': formErrors.attendanceType }"
+                >
+                  <option value="" disabled>Chọn loại nghỉ phép</option>
+                  <option
+                    v-for="type in leaveRequestStore.leaveTypes"
+                    :key="type._id"
+                    :value="type._id"
+                  >
+                    {{ type.attendanceTypeName }}
+                  </option>
+                </select>
+                <div v-if="formErrors.attendanceType" class="invalid-feedback">
+                  {{ formErrors.attendanceType }}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Người duyệt <span class="text-danger">*</span></label>
+                <select
+                  v-model="newEntry.reportObjId"
+                  class="form-select"
+                  :class="{ 'is-invalid': formErrors.reporter }"
+                >
+                  <option value="" disabled>Chọn người duyệt</option>
+                  <option
+                    v-for="reporter in leaveRequestStore.reporters"
+                    :key="reporter._id"
+                    :value="reporter._id"
+                  >
+                    {{ reporter.name }}
+                  </option>
+                </select>
+                <div v-if="formErrors.reporter" class="invalid-feedback">
+                  {{ formErrors.reporter }}
+                </div>
+              </div>
+
               <div class="mb-3">
                 <label for="entryNotes" class="form-label"
                   >Ghi chú <span class="text-danger">*</span></label
@@ -545,6 +589,8 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dropdown from 'primevue/dropdown'
 import { useUserStore } from '@/pinia/userStore'
+import { useLeaveRequestStore } from '@/pinia/useAPICreate'
+import Cookies from 'js-cookie'
 
 // Type definitions
 interface WorkEntry {
@@ -563,6 +609,8 @@ interface WorkEntry {
   approvedByName?: string | null
   createdAt: string
   isCurrentUser?: boolean
+  attendanceTypeObjId?: string // Add this for leave type
+  reportObjId?: string // Add this for reporter
 }
 
 interface TeamMemberDaily {
@@ -628,6 +676,8 @@ const formErrors = ref<{
   endTime?: string
   reason?: string
   general?: string
+  attendanceType?: string
+  reporter?: string
 }>({})
 
 // User information
@@ -663,6 +713,8 @@ const newEntry = ref<Omit<WorkEntry, 'id' | 'createdAt' | 'isCurrentUser'>>({
   type: 'WFH',
   timePeriod: 'FULL',
   reason: '',
+  attendanceTypeObjId: '',
+  reportObjId: '',
 })
 
 // Days of the week
@@ -754,6 +806,10 @@ watch([selectedMonth, selectedYear], () => {
 // Load data on component mount
 onMounted(() => {
   loadMonthData()
+
+  // Load leave types and reporters for the form
+  leaveRequestStore.fetchLeaveTypes()
+  leaveRequestStore.fetchReporters()
 })
 
 // API methods with type safety
@@ -964,6 +1020,16 @@ function validateForm(): boolean {
     formErrors.value.reason = 'Vui lòng nhập lý do'
   }
 
+  // Validate reporter selection
+  if (!newEntry.value.reportObjId) {
+    formErrors.value.reporter = 'Vui lòng chọn người duyệt'
+  }
+
+  // Validate leave type selection for LEAVE requests
+  if (newEntry.value.type === 'LEAVE' && !newEntry.value.attendanceTypeObjId) {
+    formErrors.value.attendanceType = 'Vui lòng chọn loại nghỉ phép'
+  }
+
   // Additional validation for create mode (not edit mode)
   if (!editMode.value) {
     if (!newEntry.value.fromDate) {
@@ -1005,6 +1071,27 @@ function formatDateWithoutTimezone(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+// Add this helper function to parse user data from cookies
+function getUserFromCookies(): {
+  userObjId?: string
+  name?: string
+  staffCode?: number
+  positionName?: string
+  departmentName?: string
+} {
+  const userDataStr = Cookies.get('user')
+  if (!userDataStr) {
+    return {}
+  }
+  try {
+    return JSON.parse(userDataStr)
+  } catch (error) {
+    console.error('Error parsing user data from cookies:', error)
+    return {}
+  }
+}
+
+// Update the registerEntry function
 async function registerEntry() {
   // Validate form before submission
   if (!validateForm()) {
@@ -1014,7 +1101,6 @@ async function registerEntry() {
   try {
     loading.value = true
 
-    // Different API payload depending on whether it's an edit or a new entry
     if (editMode.value && selectedDayStatus.value?.id) {
       // For update - use the date field
       const updateData = {
@@ -1030,31 +1116,85 @@ async function registerEntry() {
 
       await axiosInstance.put(`/works/${selectedDayStatus.value.id}`, updateData)
     } else {
-      // For create - use fromDate and toDate
-      const createData = {
-        userId: user.value.id,
-        fromDate: newEntry.value.fromDate,
-        toDate: newEntry.value.toDate,
-        startTime: newEntry.value.startTime,
-        endTime: newEntry.value.endTime,
-        type: newEntry.value.type,
-        timePeriod: newEntry.value.timePeriod,
-        reason: newEntry.value.reason,
-      }
-      console.log('Create data:', createData)
+      if (newEntry.value.type === 'LEAVE') {
+        // Make sure attendanceTypeObjId is selected for leave requests
+        if (!newEntry.value.attendanceTypeObjId) {
+          formErrors.value.attendanceType = 'Vui lòng chọn loại nghỉ phép'
+          loading.value = false
+          return
+        }
 
-      await axiosInstance.post('/works', createData)
+        const result = await leaveRequestStore.createLeaveRequestNew({
+          attendanceTypeObjId: newEntry.value.attendanceTypeObjId,
+          reportObjId: newEntry.value.reportObjId || '',
+          fromDate: newEntry.value.fromDate || '',
+          fromTime: newEntry.value.startTime,
+          endDate: newEntry.value.toDate || '',
+          endTime: newEntry.value.endTime,
+          reason: newEntry.value.reason,
+        })
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+      } else {
+        // Get user data from cookies
+        const cookieUser = getUserFromCookies()
+
+        // Validate required fields from cookies
+        if (
+          !cookieUser.name ||
+          !cookieUser.staffCode ||
+          !cookieUser.positionName ||
+          !cookieUser.departmentName ||
+          !cookieUser.userObjId ||
+          !newEntry.value.reportObjId ||
+          !newEntry.value.fromDate
+        ) {
+          throw new Error('Thiếu thông tin bắt buộc cho đơn WFH')
+        }
+
+        // For WFH requests - using data from cookies
+        const wfhPayload = {
+          applicant_person: cookieUser.name,
+          staff_code: Number(cookieUser.staffCode),
+          positon: cookieUser.positionName,
+          department: cookieUser.departmentName,
+          reportObjId: newEntry.value.reportObjId,
+          createAt: formatDateForDisplay(new Date()),
+          fromDate: newEntry.value.fromDate,
+          endDate: newEntry.value.fromDate, // Same as fromDate for WFH
+          reason: newEntry.value.reason || '',
+          userObjId: cookieUser.userObjId,
+        }
+
+        const result = await leaveRequestStore.createWfhRequestNew(wfhPayload)
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+      }
     }
 
     await loadMonthData()
     resetForm()
     showRegisterModal.value = false
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error saving work status:', error)
-    errorMessage.value = 'Không thể lưu dữ liệu. Vui lòng thử lại sau.'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Không thể lưu dữ liệu. Vui lòng thử lại sau.'
+    formErrors.value.general = errorMessage
   } finally {
     loading.value = false
   }
+}
+
+// Add this helper function to format date as DD/MM/YYYY
+function formatDateForDisplay(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
 }
 
 function editSelectedDay() {
@@ -1113,6 +1253,8 @@ function resetForm() {
     type: 'WFH',
     timePeriod: 'FULL',
     reason: '',
+    attendanceTypeObjId: '',
+    reportObjId: '',
   }
   editMode.value = false
   formErrors.value = {}
@@ -1217,6 +1359,8 @@ const yearOptions = ref<number[]>([currentYear.value - 1, currentYear.value, cur
 const selectedMonthStandardWorkDays = computed(() => {
   return getWorkingDaysInMonth(selectedYear.value, selectedMonth.value - 1)
 })
+
+const leaveRequestStore = useLeaveRequestStore()
 </script>
 
 <style scoped>

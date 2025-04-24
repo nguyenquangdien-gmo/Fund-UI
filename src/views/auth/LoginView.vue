@@ -30,7 +30,13 @@
             <span class="p-input-icon-left w-100">
               <i class="pi pi-lock"></i>
               <div class="input-password">
-                <Password v-model="password" placeholder="Password" toggleMask class="w-100" />
+                <Password
+                  v-model="password"
+                  placeholder="Password"
+                  toggleMask
+                  class="w-100"
+                  :feedback="false"
+                />
               </div>
             </span>
             <small class="text-danger">{{ errors.password }}</small>

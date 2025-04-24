@@ -83,8 +83,8 @@
           <label for="link" class="mb-2">Link Quán</label>
           <InputText v-model="restaurant.link" id="link" placeholder="Nhập link quán..." required />
         </div>
-        <div style="text-align: center; padding: 1rem;">
-          <Button label="Hủy" icon="pi pi-times" @click="closeDialog" class="p-button-text p-mr-2" />
+        <div class="d-flex justify-content-end space-x-2 p-2">
+          <Button label="Hủy" icon="pi pi-times" @click="closeDialog" class="p-button-text" />
           <Button label="Lưu" icon="pi pi-check" type="submit" />
         </div>
       </form>

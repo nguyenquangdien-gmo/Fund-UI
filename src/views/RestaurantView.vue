@@ -5,7 +5,7 @@
       <div class="p-input-icon-left my-2 d-flex justify-content-between ">
         <!-- <i class="pi pi-search" /> -->
         <InputText v-model="searchTerm" placeholder="Tìm theo tên quán..." />
-        <div>
+        <div class="d-flex gap-2">
             <Button label="Thêm quán nước" icon="pi pi-plus" @click="openDialog" />
             <!-- <Button label="Tạo order" icon="pi pi-calendar" class="p-ml-2" @click="placeOrder" /> -->
         </div>
@@ -27,6 +27,11 @@
       </template>
     </Column>
       <Column field="name" header="Tên quán" sortable />
+      <Column field="type" header="Loại quán" sortable>
+        <template #body="{ data }">
+          {{ data.type === 'DRINK' ? 'Quán nước' : data.type === 'FOOD' ? 'Quán ăn' : 'Cả hai' }}
+        </template>
+      </Column>
       <Column field="link" header="Link quán" sortable>
         <template #body="{ data }">
           <a :href="data.link" target="_blank" class="text-blue-500 underline">
@@ -34,7 +39,6 @@
           </a>
         </template>
       </Column>
-      <Column field="orderCount" header="Số lần order" sortable />
       <Column field="totalStars" header="Đánh giá" sortable>
         <template #body="{ data }">
           <div class="d-flex align-items-center">
@@ -49,9 +53,9 @@
             ></i>
           </div>
         </template>
-
       </Column>
-      <Column header="Thao tác">
+      <Column field="orderCount" header="Số lần order" sortable />
+      <!-- <Column header="Thao tác">
         <template #body="{ data }">
             <div class="flex space-x-2">
                 <Button
@@ -69,24 +73,42 @@
                 />
             </div>
         </template>
-      </Column>
+      </Column> -->
     </DataTable>
 
 
+    <!-- Add restaurant -->
     <Dialog v-model:visible="isDialogVisible" header="Thêm Quán Nước" :style="{ width: '400px' }">
       <form @submit.prevent="addRestaurant" class="flex flex-col space-y-4">
-        <div class="d-flex align-items-center justify-content-between p-2">
-            <label for="name" class="mb-2">Tên Quán<span class="text-red-500">*</span></label>
-          <InputText v-model="restaurant.name" id="name" required />
-        </div>
-        <div class="d-flex align-items-center justify-content-between p-2">
-          <label for="link" class="mb-2">Link Quán<span class="text-red-500">*</span></label>
-          <InputText v-model="restaurant.link" id="link" placeholder="Nhập link quán..." required />
-        </div>
-        <div class="d-flex align-items-center justify-content-end space-x-2 p-2">
-          <Button label="Hủy" icon="pi pi-times" @click="closeDialog" class="p-button-text" />
-          <Button label="Lưu" icon="pi pi-check" type="submit" />
-        </div>
+      <div class="d-flex align-items-center justify-content-between p-2">
+        <label for="name" class="mb-2">Tên Quán<span class="text-red-500">*</span></label>
+        <InputText v-model="restaurant.name" id="name" required />
+      </div>
+      <div class="d-flex align-items-center justify-content-between p-2">
+        <label for="link" class="mb-2">Link Quán<span class="text-red-500">*</span></label>
+        <InputText v-model="restaurant.link" id="link" placeholder="Nhập link quán..." required />
+      </div>
+      <div class="d-flex align-items-center justify-content-between p-2">
+        <label for="type" class="mb-2">Loại Quán<span class="text-red-500">*</span></label>
+        <Dropdown 
+        v-model="restaurant.type" 
+        optionLabel="label"
+        optionValue="value"
+        :options="[
+          { label: 'Quán nước', value: RestaurantType.DRINK },
+          { label: 'Quán ăn', value: RestaurantType.FOOD },
+          { label: 'Cả hai', value: RestaurantType.BOTH }
+        ]" 
+        id="type" 
+        placeholder="Chọn loại quán" 
+        required 
+        style="width: 60%;"
+        />
+      </div>
+      <div class="d-flex align-items-center justify-content-end space-x-2 p-2">
+        <Button label="Hủy" icon="pi pi-times" @click="closeDialog" class="p-button-text" />
+        <Button label="Lưu" icon="pi pi-check" type="submit" />
+      </div>
       </form>
     </Dialog>
 
@@ -95,16 +117,19 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import axiosInstance from '@/router/Interceptor'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import Dropdown from 'primevue/dropdown'
 import { useToast } from 'primevue/usetoast'
 
 import { RestaurantResponseDTO } from '@/types/RestaurantResponseDTO'
 import type { RestaurantRequestDTO } from '@/types/RestaurantRequestDTO'
-import { RestaurantFeedbackRequestDto } from '@/types/RestaurantFeedbackRequestDto'
+// import { RestaurantFeedbackRequestDto } from '@/types/RestaurantFeedbackRequestDto'
+import { RestaurantType } from '@/types/RestaurantRequestDTO'
 
 const restaurants = ref<RestaurantResponseDTO[]>([])
 const isDialogVisible = ref(false);
@@ -116,7 +141,9 @@ const toast = useToast()
 const restaurant = ref<RestaurantRequestDTO>({
   name: '',
   link: '',
+  type: RestaurantType.BOTH, // Updated to use RestaurantType enum
 });
+
 
 const fetchRestaurants = async () => {
   try {
@@ -158,6 +185,8 @@ const closeDialog = () => {
 const addRestaurant = async () => {
   try {
     const response = await axiosInstance.post('restaurants', restaurant.value);
+    console.log('response', response);
+
     if (response && response.status === 200) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được thêm!', life: 3000 });
       closeDialog();
@@ -165,40 +194,46 @@ const addRestaurant = async () => {
     } else {
       toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể thêm quán nước!', life: 3000 });
     }
-  } catch {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thêm quán nước!', life: 3000 });
+
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response?.status === 409) {
+      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Quán đã tồn tại!', life: 3000 });
+    } else {
+      toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thêm quán nước!', life: 3000 });
+    }
   }
 };
 
-const likeRestaurant = async (restaurant: RestaurantResponseDTO) => {
-  try {
-    const feedbackData = new RestaurantFeedbackRequestDto(restaurant.id, 1); // 1 = like
-    const response = await axiosInstance.post('/feedback', feedbackData);
-    if (response && response.status === 200) {
-      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã thích quán nước này!', life: 3000 });
-      fetchRestaurants(); // Refresh the list
-    } else {
-      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể thích quán nước này!', life: 3000 });
-    }
-  } catch {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thích quán nước này!', life: 3000 });
-  }
-};
 
-const dislikeRestaurant = async (restaurant: RestaurantResponseDTO) => {
-  try {
-    const feedbackData = new RestaurantFeedbackRequestDto(restaurant.id, -1); // -1 = dislike
-    const response = await axiosInstance.post('/feedback', feedbackData);
-    if (response && response.status === 200) {
-      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã không thích quán nước này!', life: 3000 });
-      fetchRestaurants(); // Refresh the list
-    } else {
-      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể không thích quán nước này!', life: 3000 });
-    }
-  } catch {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể không thích quán nước này!', life: 3000 });
-  }
-};
+// const likeRestaurant = async (restaurant: RestaurantResponseDTO) => {
+//   try {
+//     const feedbackData = new RestaurantFeedbackRequestDto(restaurant.id, 1); // 1 = like
+//     const response = await axiosInstance.post('/feedback', feedbackData);
+//     if (response && response.status === 200) {
+//       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã thích quán nước này!', life: 3000 });
+//       fetchRestaurants(); // Refresh the list
+//     } else {
+//       toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể thích quán nước này!', life: 3000 });
+//     }
+//   } catch {
+//     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thích quán nước này!', life: 3000 });
+//   }
+// };
+
+// const dislikeRestaurant = async (restaurant: RestaurantResponseDTO) => {
+//   try {
+//     const feedbackData = new RestaurantFeedbackRequestDto(restaurant.id, -1); // -1 = dislike
+//     const response = await axiosInstance.post('/feedback', feedbackData);
+//     if (response && response.status === 200) {
+//       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã không thích quán nước này!', life: 3000 });
+//       fetchRestaurants(); // Refresh the list
+//     } else {
+//       toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể không thích quán nước này!', life: 3000 });
+//     }
+//   } catch {
+//     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể không thích quán nước này!', life: 3000 });
+//   }
+// };
 
 </script>
 

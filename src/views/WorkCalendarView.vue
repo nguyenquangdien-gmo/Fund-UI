@@ -624,14 +624,47 @@ import Textarea from 'primevue/textarea'
 import Message from 'primevue/message'
 import InputText from 'primevue/inputtext'
 
-// Type definitions
+// Add missing type definitions
+interface WorkResponseDTO {
+  id: number
+  userId: number
+  fullName: string
+  fromDate: string
+  endDate: string
+  startTime: string
+  endTime: string
+  type: 'WFH' | 'LEAVE'
+  timePeriod: 'FULL' | 'AM' | 'PM'
+  reason: string
+  approvedById?: number | null
+  approvedByName?: string | null
+  createdAt: string
+  idCreate?: string
+}
+
+interface UserWorkResponse {
+  fullName: string
+  type: 'WFH' | 'LEAVE'
+  timePeriod: 'FULL' | 'AM' | 'PM'
+  startTime?: string
+  endTime?: string
+  reason?: string
+}
+
+interface WorkSummaryResponse {
+  memberName: string
+  wfhDays: number
+  leaveDays: number
+}
+
+// Update WorkEntry interface to include all required properties
 interface WorkEntry {
   id: number
   userId: number
   fullName: string
   fromDate: string
   endDate: string
-  date?: string // For backward compatibility with calendar logic
+  date?: string
   startTime: string
   endTime: string
   type: 'WFH' | 'LEAVE'
@@ -641,7 +674,9 @@ interface WorkEntry {
   approvedByName?: string | null
   createdAt: string
   isCurrentUser?: boolean
-  idCreate?: string  // ID of the original Leave or WFH request
+  idCreate?: string
+  attendanceTypeObjId?: string
+  reportObjId?: string
 }
 
 interface TeamMemberDaily {
@@ -883,14 +918,13 @@ onMounted(async () => {
   // Only load data if the user is logged in after the cookie check
   if (!isLoggedIn.value) return
   
-  // Since checkAuthentication already handles loading state and data loading when logged in,
-  // we only need to load team data based on active tab
-  
-  // Load team data based on active tab without showing loader again
-  if (activeTab.value === 'team-daily') {
-    await loadTeamDailyData(false)
-  } else if (activeTab.value === 'team-monthly') {
-    await loadTeamMonthlyData(false)
+  // Load team data based on active tab
+  if (activeTab.value === 'team') {
+    if (activeTeamTab.value === 'day') {
+      await loadTeamDailyData()
+    } else {
+      await loadTeamMonthlyData()
+    }
   }
 })
 
@@ -1398,7 +1432,7 @@ async function registerEntry() {
       positon: cookieUser.userPositionCode,
       department: cookieUser.departmentCode,
       reportObjId: newEntry.value.reportObjId,
-      createAt: formatDateForDisplay(new Date()),
+      createAt: formatDateDisplay(new Date().toISOString()),
       fromDate: newEntry.value.fromDate,
       endDate: newEntry.value.endDate || newEntry.value.fromDate, // Use endDate if available, otherwise same as fromDate
       reason: newEntry.value.reason || '',
@@ -1436,7 +1470,7 @@ async function registerEntry() {
     try {
       console.log('Request data:', requestData)
       const workResult = await workStore.createWorkFromRequest(requestData);
-      if (!workResult.status===400) {
+      if (workResult.status !== 400) {
         console.error('Failed to create work entry:', workResult.error);
         // Optionally show a warning toast that work entry creation failed
         toast.add({ 
@@ -1855,7 +1889,7 @@ const showDeleteConfirmModal = ref<boolean>(false);
 const deleteLoading = ref<boolean>(false);
 
 // Add this variable to the script section
-const isDevelopment = ref<boolean>(import.meta.env.DEV || false);
+const isDevelopment = ref<boolean>(process.env.NODE_ENV === 'development');
 
 // Function to load all user data
 // async function loadUserData(): Promise<void> {

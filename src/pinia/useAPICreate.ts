@@ -188,8 +188,8 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
               userObjId: this.user.userObjId,
               name: this.user.name,
               staffCode: this.user.staffCode,
-              positionName: this.user.positionName,
-              departmentName: this.user.departmentName,
+              userPositionCode: this.user.userPositionCode,
+              departmentCode: this.user.departmentCode,
             }),
           )
 

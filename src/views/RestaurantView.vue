@@ -22,6 +22,7 @@
 
         <div class="d-flex gap-2">
             <Button label="Thêm quán nước" icon="pi pi-plus" @click="openDialog" />
+            <Button label="Danh sách order" icon="pi pi-list" class="p-ml-2" @click="$router.push('/orders')" />
             <Button label="Tạo order" icon="pi pi-calendar" class="p-ml-2" @click="placeOrder" />
         </div>
       </div>
@@ -320,6 +321,14 @@ const placeOrder = () => {
 
 const closeOrderDialog = () => {
   isOrderDialogVisible.value = false;
+  // Reset dữ liệu sau khi đóng dialog
+  order.value = {
+    title: '',
+    description: '',
+    deadline: new Date(),
+    restaurantId: null,
+    relatedUserIds: [],
+  };
 };
 
 
@@ -327,7 +336,7 @@ const createOrder = async () => {
   try {
     console.log("order", order.value);
     const response = await axiosInstance.post('/orders', order.value);
-    if (response && response.status === 200) {
+    if (response && response.status === 201) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Order đã được tạo!', life: 3000 });
       closeOrderDialog();
     } else {

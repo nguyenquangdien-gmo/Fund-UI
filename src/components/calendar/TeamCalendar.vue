@@ -107,10 +107,10 @@
                 <td v-for="(date, dIndex) in calendarDates" :key="`cell-${pIndex}-${dIndex}`" class="cell data-cell"
                   :class="{
                     'weekend': isWeekend(date),
-                    'wfh': getAttendanceStatus(person.id, date) === 'WFH',
-                    'off': getAttendanceStatus(person.id, date) === 'OFF'
+                    'wfh': getAttendanceStatus(person.id, date).startsWith('WFH'),
+                    'off': getAttendanceStatus(person.id, date).startsWith('OFF')
                   }" :style="{ width: cellWidth + 'px' }">
-                  {{ getAttendanceStatus(person.id, date) }}
+                  <div v-html="getAttendanceStatus(person.id, date)"></div>
                 </td>
               </tr>
             </tbody>
@@ -133,7 +133,8 @@ interface Person {
 interface AttendanceRecord {
   personId: number;
   date: string; // YYYY-MM-DD format
-  status: string; // P (Present), V (Absent), Đ (Late), N (Leave)
+  status: string;
+  timePeriod: string; // P (Present), V (Absent), Đ (Late), N (Leave)
 }
 
 // Standard cell width
@@ -179,7 +180,18 @@ function abbreviateName(fullName: string): string {
 
 // Thực sự gọi API
 interface User { id: number; fullName: string }
-interface WorkSummary { userId: number; memberName: string; work: { fromDate: string; endDate: string; startTime: string; endTime: string; type: string }[] }
+interface WorkSummary {
+  userId: number;
+  memberName: string;
+  work: {
+    fromDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
+    type: string;
+    timePeriod: string;
+  }[]
+}
 
 async function fetchAttendanceData() {
   try {
@@ -198,7 +210,7 @@ async function fetchAttendanceData() {
       const curr = new Date(start);
       while (curr <= end) {
         const status = entry.type === 'LEAVE' ? 'OFF' : entry.type;
-        records.push({ personId: u.userId, date: formatDate(curr), status });
+        records.push({ personId: u.userId, date: formatDate(curr), status, timePeriod: entry.timePeriod });
         curr.setDate(curr.getDate() + 1);
       }
     }));
@@ -222,7 +234,9 @@ function getAttendanceStatus(personId: number, date: Date): string {
   const record = attendanceData.value.find(
     r => r.personId === personId && r.date === dateStr
   );
-  return record ? record.status : '';
+  if (!record) return '';
+
+  return `${record.status}<br><small class="time-period">(${record.timePeriod})</small>`;
 }
 
 // Function to generate calendar dates for the selected month/year
@@ -548,13 +562,21 @@ onMounted(() => {
 
 /* Ensure all rows have the same height */
 .person-row {
-  height: 40px;
+  height: 65px;
 }
 
 /* Header styles */
 .header-cell {
   font-weight: 600;
   background-color: #f8f9fa;
+}
+
+/* Thêm style cho time-period */
+.time-period {
+  font-size: 0.8em;
+  display: block;
+  text-align: center;
+  color: #666;
 }
 
 /* Responsive adjustments */

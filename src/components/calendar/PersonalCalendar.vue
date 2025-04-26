@@ -119,16 +119,22 @@
                       'text-danger': getDayStatus(day)?.type === 'LEAVE',
                     }" class="fw-medium">
                       {{ getDayStatus(day)?.type === 'WFH' ? 'WFH' : 'Nghỉ phép' }}
+                      <span v-if="getDayStatus(day)?.type === 'WFH'" class="time-period">
+                        ({{ getDayStatus(day)?.timePeriod }})
+                      </span>
+                      <span v-if="getDayStatus(day)?.type === 'LEAVE'" class="time-period">
+                        ({{ getDayStatus(day)?.timePeriod }})
+                      </span>
                     </span>
                   </div>
-                  <div class="text-secondary mt-2">
+                  <!-- <div class="text-secondary mt-2">
                     {{
                       getDayStatus(day)?.timePeriod === 'FULL'
                         ? 'Cả ngày'
                         : `${getDayStatus(day)?.startTime?.substring(0, 5)} - ${getDayStatus(day)?.endTime?.substring(0,
                           5)}`
                     }}
-                  </div>
+                  </div> -->
 
                 </div>
 
@@ -180,9 +186,8 @@
 
                   <!-- Add date range information -->
                   <div v-if="isMultiDayEntry(selectedDayStatus)" class="small text-secondary mb-2">
-                    <span class="fw-medium">Từ ngày - Đến ngày:</span>
-                    {{ formatDateDisplay(selectedDayStatus.fromDate) }} - {{
-                      formatDateDisplay(selectedDayStatus.endDate) }}
+                    <span class="fw-medium">Từ ngày: {{ formatDateDisplay(selectedDayStatus.fromDate) }} - Đến ngày: {{
+                      formatDateDisplay(selectedDayStatus.endDate) }}</span>
                   </div>
 
                   <div class="small text-secondary mb-2">
@@ -198,14 +203,6 @@
                     <!-- Edit button removed as per your previous edits -->
                   </div>
 
-                  <!-- Add debug info section (for development only - can be removed in production) -->
-                  <div v-if="isDevelopment" class="mt-3 pt-3 border-top text-secondary">
-                    <small>
-                      <strong>Debug Info:</strong><br>
-                      ID: {{ selectedDayStatus.id }}<br>
-                      idCreate: {{ selectedDayStatus.idCreate || 'Not available' }}
-                    </small>
-                  </div>
                 </div>
                 <div v-else class="mb-3">
                   <p class="text-secondary">Làm việc tại văn phòng (8h-17h)</p>
@@ -300,39 +297,47 @@
                 :class="{ 'p-invalid': formErrors.endTime }" showIcon placeholder="Chọn giờ kết thúc" />
               <small v-if="formErrors.endTime" class="text-danger">{{ formErrors.endTime }}</small>
             </div>
-          </div>
 
-          <div class="field mb-4" v-if="newEntry.type === 'LEAVE'">
-            <label class="font-medium mb-2">Loại nghỉ phép <span class="text-danger">*</span></label>
-            <div>
-              <Dropdown v-model="newEntry.attendanceTypeObjId" :options="leaveRequestStore.leaveTypes"
-                optionLabel="attendanceTypeName" optionValue="_id" placeholder="Chọn loại nghỉ phép"
-                class="box-container" :class="{ 'p-invalid': formErrors.attendanceType }" />
+
+            <!-- Thêm trường chọn buổi sáng/chiều cho WFH -->
+            <div class="field p-col-12 mb-4" v-if="newEntry.type === 'WFH'">
+              <label class="font-medium mb-2">Buổi làm việc <span class="text-danger">*</span></label>
+              <Dropdown v-model="newEntry.timePeriod" :options="timePeriodOptions" optionLabel="name" optionValue="code"
+                placeholder="Chọn buổi làm việc" class="box-container fixed-width-dropdown" />
             </div>
-            <small v-if="formErrors.attendanceType" class="text-danger">{{ formErrors.attendanceType }}</small>
-          </div>
 
-          <div class="field mb-4">
-            <label class="font-medium mb-2">Người duyệt <span class="text-danger">*</span></label>
-            <div>
-              <Dropdown v-model="newEntry.reportObjId" :options="leaveRequestStore.reporters" optionLabel="name"
-                optionValue="_id" placeholder="Chọn người duyệt" class="box-container"
-                :class="{ 'p-invalid': formErrors.reporter }" />
+            <div class="field mb-4" v-if="newEntry.type === 'LEAVE'">
+              <label class="font-medium mb-2">Loại nghỉ phép <span class="text-danger">*</span></label>
+              <div>
+                <Dropdown v-model="newEntry.attendanceTypeObjId" :options="leaveRequestStore.leaveTypes"
+                  optionLabel="attendanceTypeName" optionValue="_id" placeholder="Chọn loại nghỉ phép"
+                  class="fixed-width-dropdown" :class="{ 'p-invalid': formErrors.attendanceType }" />
+              </div>
+              <small v-if="formErrors.attendanceType" class="text-danger">{{ formErrors.attendanceType }}</small>
             </div>
-            <small v-if="formErrors.reporter" class="text-danger">{{ formErrors.reporter }}</small>
-          </div>
 
-          <div class="field mb-4">
-            <label for="entryNotes" class="font-medium mb-2">Ghi chú <span class="text-danger">*</span></label>
-            <div class="box-container"><Textarea id="entryNotes" v-model="newEntry.reason" rows="3"
-                placeholder="Nhập lý do xin nghỉ/WFH" :class="{ 'p-invalid': formErrors.reason }" class="box-container"
-                autoResize /></div>
-            <small v-if="formErrors.reason" class="text-danger">{{ formErrors.reason }}</small>
-          </div>
+            <div class="field mb-4">
+              <label class="font-medium mb-2">Người duyệt <span class="text-danger">*</span></label>
+              <div>
+                <Dropdown v-model="newEntry.reportObjId" :options="leaveRequestStore.reporters" optionLabel="name"
+                  optionValue="_id" placeholder="Chọn người duyệt" class="box-container fixed-width-dropdown"
+                  :class="{ 'p-invalid': formErrors.reporter }" />
+              </div>
+              <small v-if="formErrors.reporter" class="text-danger">{{ formErrors.reporter }}</small>
+            </div>
 
-          <Message v-if="formErrors.general" severity="error" :closable="false" class="mb-3">
-            {{ formErrors.general }}
-          </Message>
+            <div class="field mb-4">
+              <label for="entryNotes" class="font-medium mb-2">Ghi chú <span class="text-danger">*</span></label>
+              <div class="box-container"><Textarea id="entryNotes" v-model="newEntry.reason" rows="3"
+                  placeholder="Nhập lý do xin nghỉ/WFH" :class="{ 'p-invalid': formErrors.reason }"
+                  class="box-container" autoResize /></div>
+              <small v-if="formErrors.reason" class="text-danger">{{ formErrors.reason }}</small>
+            </div>
+
+            <Message v-if="formErrors.general" severity="error" :closable="false" class="mb-3">
+              {{ formErrors.general }}
+            </Message>
+          </div>
         </div>
         <template #footer>
           <div class="flex justify-content-end gap-2">
@@ -567,20 +572,57 @@ watch([selectedMonth, selectedYear], () => {
 // Watch for type changes to set default times for WFH
 watch(() => newEntry.value.type, (newType) => {
   if (newType === 'WFH') {
-    // Set default times for WFH
-    newEntry.value.startTime = '08:00'
-    newEntry.value.endTime = '17:00'
+    // Mặc định cho WFH là cả ngày
+    newEntry.value.timePeriod = 'FULL';
+    newEntry.value.startTime = '08:00';
+    newEntry.value.endTime = '17:00';
 
     // Update time picker values
-    const date = new Date()
+    const date = new Date();
 
     // Set 8:00 for start time
-    date.setHours(8, 0, 0)
-    startTimeValue.value = new Date(date)
+    date.setHours(8, 0, 0);
+    startTimeValue.value = new Date(date);
 
     // Set 17:00 for end time
-    date.setHours(17, 0, 0)
-    endTimeValue.value = new Date(date)
+    date.setHours(17, 0, 0);
+    endTimeValue.value = new Date(date);
+  }
+})
+
+// Thêm watch cho timePeriod để cập nhật startTime và endTime
+watch(() => newEntry.value.timePeriod, (newPeriod) => {
+  if (newEntry.value.type !== 'WFH') return;
+
+  const date = new Date();
+
+  if (newPeriod === 'AM') {
+    newEntry.value.startTime = '08:00';
+    newEntry.value.endTime = '12:00';
+
+    date.setHours(8, 0, 0);
+    startTimeValue.value = new Date(date);
+
+    date.setHours(12, 0, 0);
+    endTimeValue.value = new Date(date);
+  } else if (newPeriod === 'PM') {
+    newEntry.value.startTime = '13:00';
+    newEntry.value.endTime = '17:00';
+
+    date.setHours(13, 0, 0);
+    startTimeValue.value = new Date(date);
+
+    date.setHours(17, 0, 0);
+    endTimeValue.value = new Date(date);
+  } else if (newPeriod === 'FULL') {
+    newEntry.value.startTime = '08:00';
+    newEntry.value.endTime = '17:00';
+
+    date.setHours(8, 0, 0);
+    startTimeValue.value = new Date(date);
+
+    date.setHours(17, 0, 0);
+    endTimeValue.value = new Date(date);
   }
 })
 
@@ -966,13 +1008,25 @@ async function registerEntry() {
       const result = await leaveRequestStore.createWfhRequestNew(wfhPayload);
 
       if (result && result.success) {
+        // Thiết lập startTime và endTime dựa trên timePeriod cho WFH
+        let workStartTime = '08:00';
+        let workEndTime = '17:00';
+
+        if (newEntry.value.timePeriod === 'AM') {
+          workStartTime = '08:00';
+          workEndTime = '12:00';
+        } else if (newEntry.value.timePeriod === 'PM') {
+          workStartTime = '13:00';
+          workEndTime = '17:00';
+        }
+
         requestData = {
           userId: user.value.id,
           type: 'WFH',
           fromDate: newEntry.value.fromDate,
           endDate: newEntry.value.endDate || newEntry.value.fromDate,
-          startTime: '08:00',
-          endTime: '17:00',
+          startTime: workStartTime,
+          endTime: workEndTime,
           reason: newEntry.value.reason || '',
           idCreate: result.data?._id
         };
@@ -1043,7 +1097,7 @@ function cancelDelete() {
 const showDeleteConfirmModal = ref<boolean>(false);
 const deleteLoading = ref<boolean>(false);
 
-// Khai báo các biến và hàm cần thiết để phù hợp với template
+// Khởi tạo các biến và hàm cần thiết để phù hợp với template
 // Biến lưu trữ cho Calendar component
 const fromDateValue = ref<Date | null>(new Date(newEntry.value.fromDate));
 const endDateValue = ref<Date | null>(new Date(newEntry.value.endDate));
@@ -1051,8 +1105,12 @@ const startTimeValue = ref<Date | null>(null);
 const endTimeValue = ref<Date | null>(null);
 const editDateValue = ref<Date | null>(null);
 
-// Khởi tạo biến isDevelopment
-const isDevelopment = ref<boolean>(import.meta.env.MODE === 'development');
+// Options cho dropdown thời gian làm việc
+const timePeriodOptions = [
+  { name: 'Buổi sáng (8h-12h)', code: 'AM' },
+  { name: 'Buổi chiều (13h-17h)', code: 'PM' },
+  { name: 'Cả ngày (8h-17h)', code: 'FULL' }
+];
 
 // Khai báo hàm handleLogin
 async function handleLogin() {
@@ -1640,7 +1698,7 @@ onMounted(() => {
 }
 
 .box-container {
-  width: 100%;
+  width: 144%;
 }
 
 /* Styling for late check-in information */
@@ -1660,5 +1718,18 @@ onMounted(() => {
   padding: 3px 6px;
   border-radius: 4px;
   width: fit-content;
+}
+
+.fixed-width-dropdown {
+  width: 100%;
+  max-width: 218px;
+  min-width: 218px;
+}
+
+.time-period {
+  font-size: 0.8em;
+  display: block;
+  text-align: center;
+  color: #666;
 }
 </style>

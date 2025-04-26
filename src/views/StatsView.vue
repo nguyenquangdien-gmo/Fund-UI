@@ -1,11 +1,8 @@
 <template>
   <div class="container mx-auto p-6">
     <!-- Thống kê tổng quan -->
-    <select
-      v-model="selectedYear"
-      @change="onYearChange"
-      class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year"
-    >
+    <select v-model="selectedYear" @change="onYearChange"
+      class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-year">
       <option v-for="year in availableYears" :key="year" :value="year">
         {{ year }}
       </option>
@@ -72,12 +69,7 @@
         <div class="flex items-center justify-between mb-4">
           <p class="text-xl font-semibold text-gray-700">Thống kê quỹ hàng tháng</p>
         </div>
-        <Chart
-          type="line"
-          :data="combinedMonthlyData"
-          :options="chartMonthOptions"
-          class="h-[20rem]"
-        />
+        <Chart type="line" :data="combinedMonthlyData" :options="chartMonthOptions" class="h-[20rem]" />
       </div>
 
       <div class="bg-white shadow-lg rounded-lg p-5 column">
@@ -95,8 +87,6 @@ import { ref, onMounted, computed } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import Chart from 'primevue/chart'
 import formatCurrency from '@/utils/FormatCurrency'
-
-const token = localStorage.getItem('accessToken')
 
 const currentYear = new Date().getFullYear()
 const selectedYear = ref(currentYear)

@@ -26,6 +26,7 @@
     </div>
 
     <DataTable
+      v-if="filteredOrders.length > 0"
       :value="filteredOrders"
       paginator
       :rows="10"

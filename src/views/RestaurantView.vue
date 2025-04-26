@@ -33,6 +33,7 @@
     </div>
 
     <DataTable
+      v-if="filteredRestaurants.length > 0"
       :value="filteredRestaurants"
       paginator
       :rows="10"
@@ -244,7 +245,7 @@ const toast = useToast()
 const order = ref<OrderRequestDTO>({
   title: '',
   description: '',
-  deadline: new Date(),
+  deadline: new Date(new Date().setHours(15, 0, 0, 0)),
   restaurantId: null,
   relatedUserIds: [],
 });

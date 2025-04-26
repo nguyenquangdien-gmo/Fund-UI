@@ -124,6 +124,7 @@ interface LeaveRequest {
 
 interface ApiResponse<T> {
   success: boolean
+  token: string
   statusCode: number
   message: string
   data: T
@@ -176,7 +177,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
         if (response.data.success) {
           this.user = response.data.data
-          const token = response.data.data.token || ''
+          const token = response.data.token
 
           // Save token to cookie
           saveAuthToken(token)
@@ -190,7 +191,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
               staffCode: this.user.staffCode,
               userPositionCode: this.user.userPositionCode,
               departmentCode: this.user.departmentCode,
-            }),
+            }), { path: '/' }
           )
 
           return { success: true, data: response.data.data }

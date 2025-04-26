@@ -63,18 +63,36 @@
       </div>
     </div>
 
-    <!-- Biểu đồ -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 charts" style="margin-bottom: 15px">
-      <div class="bg-white shadow-lg rounded-lg p-5 line">
+    <!-- Biểu đồ trên cùng một hàng: Thống kê quỹ hàng tháng và Thống kê đi trễ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 charts-pie-line">
+      <div class="bg-white shadow-lg rounded-lg p-5 line-chart">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-xl font-semibold text-gray-700">Thống kê quỹ hàng tháng</p>
+          <p class="text-xl font-semibold text-gray-700">QŨY HÀNG THÁNG</p>
         </div>
         <Chart type="line" :data="combinedMonthlyData" :options="chartMonthOptions" class="h-[20rem]" />
       </div>
 
-      <div class="bg-white shadow-lg rounded-lg p-5 column">
+      <div class="bg-white shadow-lg rounded-lg p-5 pie-chart">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-xl font-semibold text-gray-700">ĐI TRỄ</p>
+          <div class="flex items-center gap-2">
+            <select v-model="selectedMonth" @change="fetchLateUsersData"
+              class="p-2 border rounded-md text-gray-700 focus:ring focus:ring-blue-300 select-month">
+              <option v-for="month in months" :key="month" :value="months.indexOf(month) + 1">
+                {{ month }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <Chart type="pie" :data="lateCountData" :options="lateChartOptions" class="h-[16rem]" />
+      </div>
+    </div>
+
+    <!-- Biểu đồ theo quý -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 column-chart">
+      <div class="bg-white shadow-lg rounded-lg p-5">
         <p class="text-xl font-semibold text-gray-700 mb-4">
-          Thống kê quỹ theo quý năm {{ selectedYear }}
+          THỐNG KÊ THEO QUÝ NĂM {{ selectedYear }}
         </p>
         <Chart type="bar" :data="quarterlyData" :options="chartQuarterOptions" class="h-[20rem]" />
       </div>
@@ -82,19 +100,103 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import Chart from 'primevue/chart'
 import formatCurrency from '@/utils/FormatCurrency'
 
+// Define interfaces
+interface LateUser {
+  userId: number;
+  fullName: string;
+  lateCount: number;
+}
+
 const currentYear = new Date().getFullYear()
+const currentMonth = new Date().getMonth() + 1 // Current month (1-12)
 const selectedYear = ref(currentYear)
+const selectedMonth = ref(currentMonth)
 const availableYears = ref([])
+const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
 
 for (let year = 2020; year <= currentYear; year++) {
   availableYears.value.push(year)
 }
+
+// Late count data
+const lateUsers = ref<LateUser[]>([])
+const lateCountData = computed(() => {
+  // If no data, provide empty dataset that still renders
+  if (!lateUsers.value.length) {
+    return {
+      labels: ['Không có dữ liệu'],
+      datasets: [
+        {
+          data: [1],
+          backgroundColor: ['#e5e7eb'],
+          hoverBackgroundColor: ['#d1d5db']
+        }
+      ]
+    }
+  }
+
+  // Extract names and counts
+  const labels = lateUsers.value.map(user => user.fullName.split(' ').pop()) // Get last name
+  const counts = lateUsers.value.map(user => user.lateCount)
+
+  // Generate random colors
+  const backgroundColors = lateUsers.value.map(() => {
+    const r = Math.floor(Math.random() * 200) + 55
+    const g = Math.floor(Math.random() * 200) + 55
+    const b = Math.floor(Math.random() * 200) + 55
+    return `rgba(${r}, ${g}, ${b}, 0.7)`
+  })
+
+  return {
+    labels: labels,
+    datasets: [
+      {
+        data: counts,
+        backgroundColor: backgroundColors,
+        hoverBackgroundColor: backgroundColors.map(color => color.replace('0.7', '0.9'))
+      }
+    ]
+  }
+})
+
+// Late chart options
+const lateChartOptions = ref({
+  plugins: {
+    legend: {
+      position: 'right',
+      labels: {
+        color: '#4B5563',
+        font: { size: 12 }, // Reduced font size
+        boxWidth: 12 // Reduced box width
+      }
+    },
+    tooltip: {
+      callbacks: {
+        label: function (context: any) {
+          const label = context.label || '';
+          const value = context.raw || 0;
+
+          // Special case for no data
+          if (label === 'Không có dữ liệu') {
+            return 'Không có dữ liệu';
+          }
+
+          const total = context.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+          const percentage = Math.round((value * 100) / total);
+          return `${label}: ${value} lần (${percentage}%)`;
+        }
+      }
+    }
+  },
+  responsive: true,
+  maintainAspectRatio: false
+})
 
 // Fund data references
 const contributionMonthlyData = ref([])
@@ -501,6 +603,9 @@ const fetchAllData = () => {
   fetchPenaltyTotal()
   fetchIncomeTotal()
   fetchExpenseTotal()
+
+  // Fetch late users data
+  fetchLateUsersData()
 }
 
 onMounted(() => {
@@ -523,6 +628,24 @@ const onYearChange = () => {
   fetchPenaltyYearlyData()
   fetchIncomeYearlyData()
   fetchExpenseYearlyData()
+  fetchLateUsersData()
+}
+
+// API call for late users data
+const fetchLateUsersData = async () => {
+  try {
+    const response = await axiosInstance.get('/late/users/late-count', {
+      params: {
+        month: selectedMonth.value,
+        year: selectedYear.value
+      }
+    })
+    lateUsers.value = response.data
+  } catch (error) {
+    console.error('Error fetching late users data:', error.response?.data || error.message)
+    // Reset to empty array to show empty state
+    lateUsers.value = []
+  }
 }
 </script>
 
@@ -573,25 +696,33 @@ const onYearChange = () => {
   color: #10b981;
 }
 
-.line {
-  width: 99%;
-  border-radius: 10px;
-  margin: 0 5px 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.column {
-  width: 99%;
-  border-radius: 10px;
-  margin: 0 5px;
-  padding: 0;
-}
-
 .text-xl {
   color: #6474a9;
   font-weight: bold;
   font-size: 20px;
+}
+
+.charts-pie-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.line-chart {
+  width: 49%;
+  margin-left: 5px;
+  border-radius: 10px;
+}
+
+.pie-chart {
+  width: 49%;
+  margin-right: 5px;
+  border-radius: 10px;
+}
+
+.column-chart {
+  margin: 5px;
+  border-radius: 10px;
 }
 </style>

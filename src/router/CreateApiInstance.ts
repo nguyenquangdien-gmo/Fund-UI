@@ -14,7 +14,6 @@ const createApi: AxiosInstance = axios.create({
 createApi.interceptors.request.use(
   (config) => {
     const token = Cookies.get('AUTHTOKEN')
-    console.log('token:', token);
     if (token) {
       config.headers['X-Access-Token'] = token
     }
@@ -27,7 +26,7 @@ createApi.interceptors.request.use(
 
 // Hàm trợ giúp để lưu token vào cookie sau khi đăng nhập
 export function saveAuthToken(token: string): void {
-  Cookies.set('AUTHTOKEN', token,{ path: '/' })
+  Cookies.set('AUTHTOKEN', token)
 }
 
 // Hàm trợ giúp để xóa token khỏi cookie khi đăng xuất

@@ -84,8 +84,6 @@ import axiosInstance from '@/router/Interceptor'
 import type Reminder from '@/types/Reminder'
 import ReminderType from '@/types/ReminderType'
 import { eventBus } from '@/event/EventBus'
-import { removeAuthToken } from '@/router/CreateApiInstance'
-import Cookies from 'js-cookie'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -315,19 +313,9 @@ const filteredItems = computed(() => {
 const handleLogout = async () => {
   try {
     await axiosInstance.post('/auth/logout', {})
-    
-    // Clear both token and user data from cookies
-    removeAuthToken()
-    Cookies.remove('user')
-    
-    // Clear store data
     userStore.logout()
-    
-    // Reset local component state
-    userReminders.value = []
-    
-    // Navigate to login page
     router.push('/login')
+    userReminders.value = []
   } catch (error) {
     console.error('Logout error:', error)
   }

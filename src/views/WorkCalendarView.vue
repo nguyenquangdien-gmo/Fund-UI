@@ -1,31 +1,606 @@
 <template>
-  <div class="container-fluid calendar-wrapper">
-    <div class="p-3">
-      <h2 class="text-center mb-4 text-xl">LỊCH LÀM VIỆC</h2>
+  <!-- Wrap everything in a main div -->
+  <div>
+    <!-- PrimeVue Toast Component -->
+    <Toast position="top-right" />
 
-      <!-- Tab Selection -->
-      <div class="d-flex justify-content-center mb-4">
-        <div class="btn-group" role="group" aria-label="Calendar Tabs">
-          <button class="btn" :class="activeTab === 'personal' ? 'btn-primary' : 'btn-outline-primary'"
-            @click="activeTab = 'personal'">
-            Lịch Cá Nhân
-          </button>
-          <button class="btn" :class="activeTab === 'team' ? 'btn-primary' : 'btn-outline-primary'"
-            @click="activeTab = 'team'">
-            Lịch Nhóm
-          </button>
+    <!-- Login Form with improved styling -->
+    <div v-if="!isLoggedIn" class="login-container d-flex justify-content-center align-items-center mt-5">
+      <Card class="login-card">
+        <template #header>
+          <div class="text-center p-3">
+            <i class="pi pi-user" style="font-size: 3rem; color: var(--primary-color)"></i>
+          </div>
+        </template>
+ 
+        <template #content>
+          <form @submit.prevent="handleLogin" class="p-fluid">
+            <div class="field mb-4">
+              <label for="username" class="font-medium mb-2">Tên đăng nhập</label>
+              <div class="p-input-icon-left w-full">
+                <InputText id="username" v-model="loginUsername" required placeholder="Nhập tên đăng nhập" style="width: 100%;" />
+              </div>
+            </div>
+            <div class="field mb-4">
+              <label for="password" class="font-medium mb-2">Mật khẩu</label>
+              <span class="p-input-icon-left w-full">
+                <Password id="password" v-model="loginPassword" :feedback="false" toggleMask 
+                  placeholder="Nhập mật khẩu" inputClass="w-full" required />
+              </span>
+            </div>
+            <Message v-if="loginError" severity="error" :closable="false" class="mb-3 w-full">
+              {{ loginError }}
+            </Message>
+            <Button type="submit" label="Đăng nhập" icon="pi pi-sign-in" iconPos="right" 
+              :loading="loginLoading" class="w-full mt-3" style="display: flex;justify-self: center;"/>
+          </form>
+        </template>
+      </Card>
+    </div>
+
+    <!-- Calendar Content (shown if logged in) -->
+    <div v-else class="calendar-container bg-white rounded shadow p-4 mx-auto" style="max-width: 100%">
+      <!-- Tab Navigation -->
+      <div class="tabs-container mb-4">
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === 'personal' }"
+              @click.prevent="activeTab = 'personal'"
+              href="#"
+            >
+              Lịch cá nhân
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === 'team' }"
+              @click.prevent="activeTab = 'team'"
+              href="#"
+            >
+              Thành viên
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Tab 1: Personal Calendar (Original Calendar) -->
+        <div v-show="activeTab === 'personal'" class="tab-pane active" style="display: block">
+          <!-- Current Calendar Header -->
+          <div
+            class="calendar-header d-flex flex-column flex-md-row justify-content-between align-items-center mb-4"
+          >
+            <div class="d-flex align-items-center mb-3 mb-md-0">
+              <button @click="previousMonth" class="btn btn-light rounded-circle p-1">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <h2 class="mx-3 mb-0">{{ currentMonthName }} {{ currentYear }}</h2>
+              <button @click="nextMonth" class="btn btn-light rounded-circle p-1">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+
+            <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+              <div class="user-info small text-secondary">
+                <span class="fw-medium">{{ user.fullName }}</span> |
+                <span class="text-primary"> WFH trong tháng: {{ wfhCount }}</span> |
+                <span class="text-danger"> Số ngày nghỉ: {{ leaveCount }}</span> |
+                <span class="text-secondary"> Số ngày công: {{ workDays }}</span>
+              </div>
+
+              <button @click="showRegisterModal = true" class="btn btn-success">
+                Đăng ký WFH/Nghỉ phép
+              </button>
+            </div>
+          </div>
+
+          <!-- Calendar Grid (Original) -->
+          <div class="calendar-grid" style="gap: 5px">
+            <!-- Days of Week Headers -->
+            <div class="row mb-2">
+              <div
+                v-for="day in daysOfWeek"
+                :key="day"
+                class="col text-center py-2 fw-medium text-secondary small"
+              >
+                {{ day }}
+              </div>
+            </div>
+
+            <!-- Calendar Days -->
+            <div class="row gap-2">
+              <!-- Empty cells for days before start of month -->
+              <div
+                v-for="_ in firstDayOfMonth"
+                :key="'empty-' + _"
+                class="col calendar-day empty"
+              ></div>
+
+              <!-- Actual days of the month -->
+              <div
+                v-for="day in daysInMonth"
+                :key="day"
+                @click="openDayDetails(day)"
+                class="col position-relative rounded p-3 calendar-day border"
+                :class="{
+                  'bg-light': !isDayToday(day),
+                  'bg-primary bg-opacity-10': isDayToday(day),
+                  'today-indicator': isDayToday(day),
+                }"
+              >
+                <!-- Day number - positioned at top with larger size -->
+                <div class="day-number fw-bold position-absolute">
+                  {{ day }}
+                </div>
+
+                <!-- Late Check-in Badge - Keep at top right -->
+                <div
+                  v-if="getLateCheckIn(day)"
+                  class="position-absolute"
+                  style="top: 10px; right: 10px"
+                >
+                  <span class="badge rounded-pill bg-warning" title="Đi muộn">
+                    <i class="bi bi-clock"></i>
+                  </span>
+                </div>
+
+                <!-- Main content area - better vertical spacing -->
+                <div
+                  class="flex-grow-1 d-flex flex-column justify-content-center"
+                  style="margin-top: 30px"
+                >
+                  <!-- Status information with improved styling -->
+                  <div v-if="getDayStatus(day)" class="day-status-container">
+                    <div class="d-flex align-items-center">
+                      <div
+                        :class="{
+                          'bg-primary': getDayStatus(day)?.type === 'WFH',
+                          'bg-danger': getDayStatus(day)?.type === 'LEAVE',
+                        }"
+                        class="rounded-circle me-2"
+                        style="width: 10px; height: 10px"
+                      ></div>
+                      <span
+                        :class="{
+                          'text-primary': getDayStatus(day)?.type === 'WFH',
+                          'text-danger': getDayStatus(day)?.type === 'LEAVE',
+                        }"
+                        class="fw-medium"
+                      >
+                        {{ getDayStatus(day)?.type === 'WFH' ? 'WFH' : 'Nghỉ phép' }}
+                      </span>
+                    </div>
+                    <div class="text-secondary mt-2">
+                      {{
+                        getDayStatus(day)?.timePeriod === 'FULL'
+                          ? 'Cả ngày'
+                          : `${getDayStatus(day)?.startTime?.substring(0, 5)} - ${getDayStatus(day)?.endTime?.substring(0, 5)}`
+                      }}
+                    </div>
+                   
+                  </div>
+
+                  <!-- Normal office work with potential late check-in -->
+                  <div v-else>
+                    <!-- Only show "X" for today and past days, not for future days -->
+                    <div v-if="!isDayFuture(day)" class="d-flex align-items-center">
+                      <div
+                        class="rounded-circle bg-secondary me-2"
+                        style="width: 10px; height: 10px"
+                      ></div>
+                      <span class="fw-medium text-secondary">Full</span>
+                    </div>
+
+                    <!-- Show normal office hours only for today and past days -->
+                    <!-- <div v-if="!isDayFuture(day)" class="text-secondary mt-2">8h-17h</div> -->
+
+                    <!-- Late check-in information -->
+                    <div v-if="getLateCheckIn(day)" class="late-checkin text-warning mt-2">
+                      <i class="bi bi-clock-fill"></i>
+                      {{ getLateCheckIn(day)?.checkinAt }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Team Members -->
+        <div v-show="activeTab === 'team'" class="tab-pane" style="display: block">
+          <div class="team-tabs mb-3">
+            <ul class="nav nav-pills">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: activeTeamTab === 'day' }"
+                  @click.prevent="activeTeamTab = 'day'"
+                  href="#"
+                >
+                  Theo ngày
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: activeTeamTab === 'month' }"
+                  @click.prevent="activeTeamTab = 'month'"
+                  href="#"
+                >
+                  Theo tháng
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Team Daily View -->
+          <div v-show="activeTeamTab === 'day'" class="team-daily-view">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div></div>
+              <div class="date-picker-container">
+                <!-- PrimeVue Calendar cho chọn ngày -->
+                <Calendar
+                  v-model="selectedDate"
+                  :showIcon="true"
+                  dateFormat="dd-mm-yy"
+                  :placeholder="formatSelectedDate"
+                />
+              </div>
+            </div>
+
+            <!-- Show message when no real data -->
+            <div v-if="!hasTeamDailyData" class="alert alert-info text-center py-4">
+              Không có thành viên nghỉ phép hoặc WFH trong ngày này
+            </div>
+
+            <!-- Only show table when there is data -->
+            <div v-else class="team-members-list">
+              <DataTable
+                :value="teamDailyData"
+                :paginator="true"
+                :rows="10"
+                :rowsPerPageOptions="[5, 10, 20, 50]"
+                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+                :loading="loadingTeamData"
+                stripedRows
+                class="p-datatable-sm"
+              >
+                <Column field="fullName" header="Tên thành viên"></Column>
+                <Column field="type" header="Loại">
+                  <template #body="{ data }">
+                    <span
+                      :class="{
+                        'text-primary': data.type === 'WFH',
+                        'text-danger': data.type === 'LEAVE',
+                      }"
+                    >
+                      {{ data.type === 'WFH' ? 'Làm việc tại nhà' : 'Nghỉ phép' }}
+                    </span>
+                  </template>
+                </Column>
+                <Column field="timePeriod" header="Thời gian">
+                  <template #body="{ data }">
+                    <span v-if="data.startTime && data.endTime">
+                      {{ data.startTime.substring(0, 5) }} - {{ data.endTime.substring(0, 5) }}
+                    </span>
+                    <span v-else>
+                      {{
+                        data.timePeriod === 'FULL'
+                          ? 'Cả ngày (8h-17h)'
+                          : data.timePeriod === 'AM'
+                            ? 'Buổi sáng (8h-12h)'
+                            : 'Buổi chiều (13h-17h)'
+                      }}
+                    </span>
+                  </template>
+                </Column>
+                <Column field="reason" header="Lý do"></Column>
+              </DataTable>
+            </div>
+          </div>
+
+          <!-- Team Monthly View -->
+          <div v-show="activeTeamTab === 'month'" class="team-monthly-view">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div></div>
+              <div class="month-picker-container d-flex align-items-center">
+                <span class="me-2">Tháng:</span>
+                <Dropdown
+                  v-model="selectedMonth"
+                  :options="monthOptions"
+                  optionLabel="name"
+                  optionValue="value"
+                  placeholder="Chọn tháng"
+                  class="me-2"
+                />
+                <span class="me-2">Năm:</span>
+                <Dropdown v-model="selectedYear" :options="yearOptions" placeholder="Chọn năm" />
+              </div>
+            </div>
+
+            <!-- Show message when no real data -->
+            <div v-if="!hasTeamMonthlyData" class="alert alert-info text-center py-4">
+              Không có dữ liệu tổng hợp cho tháng này
+            </div>
+
+            <!-- Only show table when there is data -->
+            <div v-else class="team-members-summary">
+              <DataTable
+                :value="teamMonthlyData"
+                :paginator="true"
+                :rows="10"
+                :rowsPerPageOptions="[5, 10, 20, 50]"
+                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+                :loading="loadingTeamData"
+                stripedRows
+                class="p-datatable-sm"
+              >
+                <Column field="memberName" header="Tên thành viên"></Column>
+                <Column field="wfhDays" header="Số ngày WFH"></Column>
+                <Column field="leaveDays" header="Số ngày nghỉ"></Column>
+                <Column field="standardWorkDays" header="Ngày công Chuẩn">
+                  <template #body="{}">
+                    {{ selectedMonthStandardWorkDays }}
+                  </template>
+                </Column>
+                <Column field="totalDays" header="Tổng ngày công">
+                  <template #body="{ data }">
+                    {{ selectedMonthStandardWorkDays - data.leaveDays }}
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Calendar Components -->
-      <div class="calendar-container">
-        <PersonalCalendar v-if="activeTab === 'personal'" />
-        <TeamCalendar v-if="activeTab === 'team'" />
+      <!-- Day Details Modal -->
+      <div v-if="showDayModal" class="modal-wrapper">
+        <div class="modal show d-block" tabindex="-1" @click.self="showDayModal = false">
+          <div class="modal-dialog modal-dialog-centered" @click.stop>
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  {{ currentMonthName }} {{ selectedDay }}, {{ currentYear }}
+                </h5>
+                <button type="button" class="btn-close" @click="showDayModal = false"></button>
+              </div>
+              <div class="modal-body">
+                <div v-if="selectedDayStatus" class="mb-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <div
+                      :class="{
+                        'bg-primary': selectedDayStatus.type === 'WFH',
+                        'bg-danger': selectedDayStatus.type === 'LEAVE',
+                      }"
+                      class="rounded-circle me-2"
+                      style="width: 10px; height: 10px"
+                    ></div>
+                    <span class="fw-medium">
+                      {{ selectedDayStatus.type === 'WFH' ? 'Làm việc tại nhà' : 'Nghỉ phép' }}
+                    </span>
+                  </div>
+
+                  <!-- Add date range information -->
+                  <div v-if="isMultiDayEntry(selectedDayStatus)" class="small text-secondary mb-2">
+                    <span class="fw-medium">Từ ngày - Đến ngày:</span>
+                    {{ formatDateDisplay(selectedDayStatus.fromDate) }} - {{ formatDateDisplay(selectedDayStatus.endDate) }}
+                  </div>
+
+                  <div class="small text-secondary mb-2">
+                    <span class="fw-medium">Thời gian:</span>
+                    {{ formatTimePeriod(selectedDayStatus) }}
+                  </div>
+
+                  <div v-if="selectedDayStatus.reason" class="small text-secondary mb-3">
+                    <span class="fw-medium">Ghi chú:</span> {{ selectedDayStatus.reason }}
+                  </div>
+
+                  <div class="d-flex gap-2 mt-3">
+                    <!-- Edit button removed as per your previous edits -->
+                  </div>
+
+                  <!-- Add debug info section (for development only - can be removed in production) -->
+                  <div v-if="isDevelopment" class="mt-3 pt-3 border-top text-secondary">
+                    <small>
+                      <strong>Debug Info:</strong><br>
+                      ID: {{ selectedDayStatus.id }}<br>
+                      idCreate: {{ selectedDayStatus.idCreate || 'Not available' }}
+                    </small>
+                  </div>
+                </div>
+                <div v-else class="mb-3">
+                  <p class="text-secondary">Làm việc tại văn phòng (8h-17h)</p>
+
+                  <!-- Add this section for late check-in information -->
+                  <div
+                    v-if="selectedDay && getLateCheckIn(selectedDay)"
+                    class="mt-3 p-2 bg-light rounded"
+                  >
+                    <div class="d-flex align-items-center text-warning mb-2">
+                      <i class="bi bi-clock me-2"></i>
+                      <span class="fw-medium">Đi muộn</span>
+                    </div>
+                    <div class="small text-secondary">
+                      <span class="fw-medium">Giờ check-in:</span>
+                      {{ getLateCheckIn(selectedDay)?.checkinAt }}
+                    </div>
+                    <div v-if="getLateCheckIn(selectedDay)?.note" class="small text-secondary mt-1">
+                      <span class="fw-medium">Ghi chú:</span> {{ getLateCheckIn(selectedDay)?.note }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button v-if="selectedDayStatus" class="btn btn-danger" @click="deleteSelectedDay" >
+                      Xóa
+                    </button>
+                <button type="button" class="btn btn-secondary" @click="showDayModal = false">
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Register Modal with improved styling -->
+      <Dialog v-model:visible="showRegisterModal" 
+        :modal="true" 
+        :closable="true"
+        :style="{width: '500px'}" 
+        :header="editMode ? 'Chỉnh sửa' : 'Đăng ký WFH/Nghỉ phép'">
+        <div class="p-fluid custom-dialog-content">
+          <!-- Type selection with better spacing and visuals -->
+          <div class="field mb-4">
+            <label class="font-medium mb-2">Loại <span class="text-danger">*</span></label>
+            <div class="type-selection p-3 border-1 surface-border border-round">
+              <div class="field-radiobutton type-option radio-left" :class="{'selected': newEntry.type === 'WFH'}">
+                <RadioButton class="ml-3" v-model="newEntry.type" inputId="wfhType" value="WFH" />
+                <label for="wfhType" class="left-10">
+                 Làm việc tại nhà
+                </label>
+              </div>
+              <div class="field-radiobutton type-option" :class="{'selected': newEntry.type === 'LEAVE'}">
+                <RadioButton v-model="newEntry.type" inputId="leaveType" value="LEAVE" />
+                <label for="leaveType" class="left-10">
+                  Nghỉ phép
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field mb-4" v-if="editMode">
+            <label for="date" class="font-medium mb-2">Ngày <span class="text-danger">*</span></label>
+            <Calendar id="date" v-model="editDateValue" dateFormat="dd-mm-yy" 
+              @update:modelValue="newEntry.date = formatCalendarDate($event)" 
+              showIcon placeholder="Chọn ngày" />
+          </div>
+
+          <div v-else class="p-grid form-grid">
+            <div class="field p-col-12 p-md-6 mb-4">
+              <label for="fromDate" class="font-medium mb-2">Từ ngày <span class="text-danger">*</span></label>
+              <Calendar id="fromDate" v-model="fromDateValue" dateFormat="dd-mm-yy" 
+                @update:modelValue="newEntry.fromDate = formatCalendarDate($event)" 
+                :class="{ 'p-invalid': formErrors.fromDate }"
+                showIcon placeholder="Chọn ngày bắt đầu" />
+              <small v-if="formErrors.fromDate" class="text-danger">{{ formErrors.fromDate }}</small>
+            </div>
+
+            <div class="field p-col-12 p-md-6 mb-4">
+              <label for="endDate" class="font-medium mb-2">Đến ngày <span class="text-danger">*</span></label>
+              <Calendar id="endDate" v-model="endDateValue" dateFormat="dd-mm-yy" 
+                @update:modelValue="newEntry.endDate = formatCalendarDate($event)" 
+                :class="{ 'p-invalid': formErrors.endDate }"
+                showIcon placeholder="Chọn ngày kết thúc" />
+              <small v-if="formErrors.endDate" class="text-danger">{{ formErrors.endDate }}</small>
+            </div>
+
+            <div class="field p-col-12 p-md-6 mb-4" v-if="newEntry.type !== 'WFH'">
+              <label for="startTime" class="font-medium mb-2">Giờ bắt đầu <span class="text-danger">*</span></label>
+              <Calendar id="startTime" v-model="startTimeValue" timeOnly hourFormat="24" 
+                @update:modelValue="newEntry.startTime = formatTimeValue($event)" 
+                :class="{ 'p-invalid': formErrors.startTime }"
+                showIcon placeholder="Chọn giờ bắt đầu" />
+              <small v-if="formErrors.startTime" class="text-danger">{{ formErrors.startTime }}</small>
+            </div>
+
+            <div class="field p-col-12 p-md-6 mb-4" v-if="newEntry.type !== 'WFH'">
+              <label for="endTime" class="font-medium mb-2">Giờ kết thúc <span class="text-danger">*</span></label>
+              <Calendar id="endTime" v-model="endTimeValue" timeOnly hourFormat="24" 
+                @update:modelValue="newEntry.endTime = formatTimeValue($event)" 
+                :class="{ 'p-invalid': formErrors.endTime }"
+                showIcon placeholder="Chọn giờ kết thúc" />
+              <small v-if="formErrors.endTime" class="text-danger">{{ formErrors.endTime }}</small>
+            </div>
+          </div>
+
+          <div class="field mb-4" v-if="newEntry.type === 'LEAVE'">
+            <label class="font-medium mb-2">Loại nghỉ phép <span class="text-danger">*</span></label>
+            <div><Dropdown
+              v-model="newEntry.attendanceTypeObjId"
+              :options="leaveRequestStore.leaveTypes"
+              optionLabel="attendanceTypeName"
+              optionValue="_id"
+              placeholder="Chọn loại nghỉ phép"
+              class="box-container"
+              :class="{ 'p-invalid': formErrors.attendanceType }"
+            /></div>
+            <small v-if="formErrors.attendanceType" class="text-danger">{{ formErrors.attendanceType }}</small>
+          </div>
+
+          <div class="field mb-4">
+            <label class="font-medium mb-2">Người duyệt <span class="text-danger">*</span></label>
+            <div>
+              <Dropdown
+              v-model="newEntry.reportObjId"
+              :options="leaveRequestStore.reporters"
+              optionLabel="name"
+              optionValue="_id"
+              placeholder="Chọn người duyệt"
+              class="box-container"
+              :class="{ 'p-invalid': formErrors.reporter }"
+            />
+            </div>
+            <small v-if="formErrors.reporter" class="text-danger">{{ formErrors.reporter }}</small>
+          </div>
+
+          <div class="field mb-4">
+            <label for="entryNotes" class="font-medium mb-2">Ghi chú <span class="text-danger">*</span></label>
+            <div class="box-container"><Textarea
+              id="entryNotes"
+              v-model="newEntry.reason"
+              rows="3"
+              placeholder="Nhập lý do xin nghỉ/WFH"
+              :class="{ 'p-invalid': formErrors.reason }"
+              class="box-container"
+              autoResize
+            /></div>
+            <small v-if="formErrors.reason" class="text-danger">{{ formErrors.reason }}</small>
+          </div>
+
+          <Message v-if="formErrors.general" severity="error" :closable="false" class="mb-3">
+            {{ formErrors.general }}
+          </Message>
+        </div>
+        <template #footer>
+          <div class="flex justify-content-end gap-2">
+            <Button label="Gửi" icon="pi pi-check" @click="registerEntry" :loading="loading" style="margin-right: 5px;"/>
+            <Button label="Hủy" icon="pi pi-times" @click="showRegisterModal = false" class="p-button-outlined" severity="secondary" />
+          </div>
+        </template>
+      </Dialog>
+
+      <!-- Global Modal Backdrop (shared between modals) -->
+      <div v-if="showDayModal || showRegisterModal || showDeleteConfirmModal" class="modal-backdrop show"></div>
+
+      <!-- First, add a new modal confirmation dialog in the template section, after the other modals -->
+      <!-- Delete Confirmation Modal -->
+      <Dialog 
+        v-model:visible="showDeleteConfirmModal" 
+        :modal="true" 
+        :closable="false"
+        :style="{width: '400px'}" 
+        header="Xác nhận xóa">
+        <div class="p-fluid custom-dialog-content">
+          <Message severity="warn" :closable="false" class="mb-3">
+            Bạn có chắc chắn muốn xóa đăng ký này không?
+          </Message>
+        </div>
+        <template #footer>
+          <div class="flex justify-content-end gap-2">
+            <Button label="Xóa" icon="pi pi-trash" class="p-button-danger" @click="confirmDelete" :loading="deleteLoading" />
+            <Button label="Hủy" icon="pi pi-times" @click="cancelDelete" class="p-button-outlined" />
+          </div>
+        </template>
+      </Dialog>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import axiosInstance from '@/router/Interceptor'
@@ -1294,4 +1869,305 @@ const isDevelopment = ref<boolean>(import.meta.env.DEV || false);
 // }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Styles for Login Container */
+.login-container {
+  background-color: #f8f9fa; /* Light background */
+}
+
+/* Additional style updates */
+.calendar-day {
+  min-height: 150px !important;
+  height: 150px; /* Increased height from 120px */
+  overflow: hidden; /* Changed from overflow-y: auto to prevent scrolling */
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  position: relative; /* Ensure positioning context for absolute elements */
+  padding-top: 30px; /* Increased padding for more space */
+  border-radius: 10px !important; /* Added more rounded corners */
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-day:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #bbbbbb !important;
+}
+
+.calendar-day.empty {
+  min-height: 0 !important;
+  height: auto !important; /* Override for empty cells before the 1st of the month */
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none;
+}
+
+.calendar-day.empty:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.calendar-container {
+  margin-top: 10px;
+}
+
+/* Fix for the Bootstrap grid in calendar */
+.calendar-grid .row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px; /* Increased gap between days */
+  margin-bottom: 12px; /* Increased margin */
+}
+
+.calendar-grid .col {
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+
+/* Day number styling - made larger */
+.day-number {
+  font-size: 1.2rem !important; /* Increased font size */
+  top: 10px !important;
+  left: 10px !important;
+  color: #495057;
+}
+
+/* Day status container styling */
+.day-status-container {
+  padding: 6px 0;
+}
+
+/* Style for the reason text with ellipsis for overflow */
+.reason-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limit to 2 lines */
+  -webkit-box-orient: vertical;
+  font-size: 0.85rem;
+  margin-top: 5px !important;
+  word-break: break-word;
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+  cursor: pointer;
+}
+
+.nav-pills .nav-link {
+  cursor: pointer;
+}
+
+/* Modal styling fixes */
+.modal-wrapper {
+  position: relative;
+  z-index: 1055;
+}
+
+.modal-backdrop {
+  z-index: 1050;
+}
+
+.modal {
+  z-index: 1055;
+}
+
+/* Team view styling */
+.team-daily-view,
+.team-monthly-view {
+  min-height: 400px;
+}
+
+/* PrimeVue adjustments */
+:deep(.p-dropdown) {
+  min-width: 150px;
+}
+
+:deep(.p-calendar) {
+  width: 100%;
+}
+
+:deep(.p-datatable) {
+  font-size: 0.9rem;
+}
+
+/* Update media query to adjust height on mobile */
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 100px !important;
+    height: 100px;
+  }
+  
+  .day-number {
+    font-size: 1rem !important;
+  }
+  
+  .reason-text {
+    -webkit-line-clamp: 1; /* Limit to 1 line on mobile */
+  }
+
+  .tabs-container {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .team-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .date-picker-container,
+  .month-picker-container {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+
+  .month-picker-container > * {
+    margin-bottom: 5px;
+  }
+}
+
+/* Add CSS for today's date indicator */
+.today-indicator {
+  position: relative;
+  border-color: var(--bs-primary) !important;
+  border-width: 2px !important;
+}
+
+.today-indicator::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--bs-primary);
+  z-index: 1;
+}
+
+/* PrimeVue specific styles */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.custom-dialog-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-dialog-content::-webkit-scrollbar-thumb {
+  background-color: #d0d0d0;
+  border-radius: 10px;
+}
+
+/* Type selection styling */
+.type-selection {
+  display: flex;
+  gap: 6%;
+  justify-content: flex-start;
+  background-color: var(--surface-50);
+  padding-left: 0 !important;
+}
+
+.type-option {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.radio-left{
+padding-left: 0px;
+}
+
+.left-10{
+padding-left: 5px;
+}
+
+.type-option.selected {
+  background-color: var(--primary-color-50);
+  font-weight: 600;
+}
+
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -0.5rem;
+}
+
+.form-grid > div {
+  padding: 0 0.5rem;
+  flex: 0 0 50%;
+}
+
+@media (max-width: 768px) {
+  .form-grid > div {
+    flex: 0 0 100%;
+  }
+  
+  .type-selection {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* Better input field styling */
+:deep(.p-inputtext) {
+  padding: 0.75rem 1rem;
+}
+
+:deep(.p-button) {
+  padding: 0.75rem 1.25rem;
+}
+
+:deep(.p-password-input) {
+  width: 100%;
+}
+
+:deep(.p-dropdown-label) {
+  padding: 0.75rem;
+}
+
+:deep(.p-calendar) .p-inputtext {
+  padding-right: 2.5rem;
+}
+
+/* Override to make password input full width */
+:deep(.p-password) {
+  width: 100%;
+  display: block;
+}
+.box-container{
+ width: 100%;
+}
+
+/* Styling for late check-in information */
+.text-warning{
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.late-checkin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 193, 7, 0.1);
+  padding: 3px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+</style>

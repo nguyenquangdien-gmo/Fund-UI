@@ -778,14 +778,32 @@ function validateForm(): boolean {
   if (!editMode.value) {
     if (!newEntry.value.fromDate) {
       formErrors.value.fromDate = 'Vui lòng chọn ngày bắt đầu';
-    } else if (newEntry.value.fromDate < todayStr) {
-      formErrors.value.fromDate = 'Ngày bắt đầu không thể là ngày trong quá khứ';
+    } else {
+      // Kiểm tra xem ngày bắt đầu có thuộc tháng hiện tại không
+      const fromDateObj = new Date(newEntry.value.fromDate);
+      const currentDateObj = new Date();
+      if (fromDateObj.getMonth() !== currentDateObj.getMonth() ||
+        fromDateObj.getFullYear() !== currentDateObj.getFullYear()) {
+        // Chỉ báo lỗi nếu không thuộc tháng hiện tại
+        if (fromDateObj < currentDateObj) {
+          formErrors.value.fromDate = 'Ngày bắt đầu phải trong tháng hiện tại hoặc tương lai';
+        }
+      }
     }
 
     if (!newEntry.value.endDate) {
       formErrors.value.endDate = 'Vui lòng chọn ngày kết thúc';
-    } else if (newEntry.value.endDate < todayStr) {
-      formErrors.value.endDate = 'Ngày kết thúc không thể là ngày trong quá khứ';
+    } else {
+      // Kiểm tra xem ngày kết thúc có thuộc tháng hiện tại không
+      const endDateObj = new Date(newEntry.value.endDate);
+      const currentDateObj = new Date();
+      if (endDateObj.getMonth() !== currentDateObj.getMonth() ||
+        endDateObj.getFullYear() !== currentDateObj.getFullYear()) {
+        // Chỉ báo lỗi nếu không thuộc tháng hiện tại
+        if (endDateObj < currentDateObj) {
+          formErrors.value.endDate = 'Ngày kết thúc phải trong tháng hiện tại hoặc tương lai';
+        }
+      }
     }
 
     if (newEntry.value.fromDate && newEntry.value.endDate &&

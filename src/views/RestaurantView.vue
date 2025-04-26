@@ -135,28 +135,42 @@
     <!-- Create Order -->
     <Dialog v-model:visible="isOrderDialogVisible" header="Tạo Order" :style="{ width: '480px' }">
       <form @submit.prevent="createOrder" class="flex flex-col space-y-4">
+
         <div class="d-flex align-items-center justify-content-between p-2">
-          <label for="restaurantId" class="mb-2">Quán<span class="text-red-500">*</span></label>
-          <Dropdown 
-            v-model="order.restaurantId" 
-            optionLabel="label"
-            optionValue="value"
-            :options="groupedRestaurants" 
-            id="restaurantId" 
-            placeholder="Chọn quán" 
-            required 
-            style="width: 53%;"
-            optionGroupLabel="label"
-            optionGroupChildren="items"
-          >
-            <template #optiongroup="slotProps">
-              <div class="flex align-items-center">
-                <i :class="slotProps.option.icon" style="margin-right: 0.5rem"></i>
-                <span>{{ slotProps.option.label }}</span>
-              </div>
-            </template>
-          </Dropdown>
+            <label for="restaurantId" class="mb-2">Quán<span class="text-red-500">*</span></label>
+            <div class="d-flex align-items-center justify-content-end gap-2" style="width: 60%;">
+              <Dropdown 
+                v-model="order.restaurantId" 
+                optionLabel="label"
+                optionValue="value"
+                :options="groupedRestaurants" 
+                id="restaurantId" 
+                placeholder="Chọn quán" 
+                required 
+                optionGroupLabel="label"
+                optionGroupChildren="items"
+                style="width: 70%;"
+              >
+                <template #optiongroup="slotProps">
+                  <div class="flex align-items-center">
+                    <i :class="slotProps.option.icon" style="margin-right: 0.5rem"></i>
+                    <span>{{ slotProps.option.label }}</span>
+                  </div>
+                </template>
+              </Dropdown>
+
+              <Button 
+                  icon="pi pi-random" 
+                  @click="randomRestaurant" 
+                  tooltip="Chọn quán ngẫu nhiên"
+                  class="p-button-outlined"
+                  
+                >
+                  <i class="pi pi-spin pi-spinner" style="padding: 0.2rem 0;"></i>
+              </Button>
+            </div>
         </div>
+
         <div class="d-flex align-items-center justify-content-between p-2">
           <label for="title" class="mb-2">Tiêu đề<span class="text-red-500">*</span></label>
           <InputText v-model="order.title" id="title" placeholder="Nhập tiêu đề..." required style="width: 53%;" />
@@ -372,6 +386,41 @@ const groupedRestaurants = computed(() => {
 
   return groups.filter(group => group.items.length > 0);
 });
+
+const usedRestaurantIds = ref<number[]>([]);
+
+const randomRestaurant = () => {
+  let availableRestaurants = restaurants.value.filter(
+    (restaurant) => !usedRestaurantIds.value.includes(restaurant.id)
+  );
+
+  if (availableRestaurants.length === 0) {
+    resetUsedRestaurants();
+    availableRestaurants = restaurants.value;
+  }
+
+  const randomIndex = Math.floor(Math.random() * availableRestaurants.length);
+  const selectedRestaurant = availableRestaurants[randomIndex];
+  order.value.restaurantId = selectedRestaurant.id;
+  usedRestaurantIds.value.push(selectedRestaurant.id);
+
+  toast.add({
+    severity: 'info',
+    summary: 'Ngẫu nhiên',
+    detail: `Đã chọn quán: ${selectedRestaurant.name}`,
+    life: 3000,
+  });
+};
+
+const resetUsedRestaurants = () => {
+  usedRestaurantIds.value = [];
+  toast.add({
+    severity: 'warn',
+    summary: 'Làm mới',
+    detail: 'Danh sách quán đã được làm mới!',
+    life: 3000,
+  });
+};
 
 
 // const likeRestaurant = async (restaurant: RestaurantResponseDTO) => {

@@ -7,6 +7,13 @@
          <div class="d-flex flex-row gap-2">
           <InputText v-model="searchTerm" placeholder="Tìm theo tên người đặt..." />
          </div>
+         <Button 
+          label="Đặt đồ" 
+          class="p-button-sm p-button-success" 
+          icon="pi pi-plus" 
+          iconPos="left" 
+          @click="openOrderDialog" 
+          />
       </div>
     </div>
 
@@ -51,14 +58,156 @@
       </Column>
       <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
-        label="Chi tiết" 
-        class="p-button-sm p-button-primary" 
-        @click="$router.push(`/orders/${data.orderId}`)" 
-          />
+            <Button 
+            v-if="data.user.id === users?.id" 
+            label="Sửa" 
+            class="p-button-sm p-button-warning" 
+            icon="pi pi-pencil" 
+            iconPos="left" 
+            @click="openEditDialog(data.id)" 
+            />
         </template>
       </Column>
     </DataTable>
+
+
+    <Dialog 
+      header="Tạo đơn hàng mới" 
+      v-model:visible="isDialogVisible" 
+      :modal="true" 
+      :closable="true" 
+      :style="{ width: '400px' }"
+    >
+      <div class="p-fluid">
+        <div class="field d-flex align-items-center justify-content-between p-2">
+            <label for="name">Tên món<span class="text-red-500">*</span></label>
+            <InputText id="name" v-model="newOrder.itemName" placeholder="Nhập tên món" required />
+          </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="size">Kích cỡ</label>
+            <Dropdown 
+            id="size" 
+            v-model="newOrder.size" 
+            :options="['S', 'M', 'L']" 
+            placeholder="Chọn kích cỡ"
+            style="width: 61%;"
+            />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="sugar">Đường</label>
+            <Dropdown 
+            id="sugar" 
+            v-model="newOrder.sugar" 
+            :options="['Không đường', '30%', '50%', '70%', '100%']" 
+            placeholder="Chọn lượng đường" 
+            style="width: 61%;"
+            />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="ice">Đá</label>
+            <Dropdown 
+            id="ice" 
+            v-model="newOrder.ice" 
+            :options="['Không đá', '30%', '50%', '70%', '100%', 'Đá riêng']" 
+            placeholder="Chọn lượng đá" 
+            style="width: 61%;"
+            />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="topping">Topping</label>
+          <InputText id="topping" v-model="newOrder.topping" placeholder="Nhập topping" />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="note">Ghi chú</label>
+          <InputText id="note" v-model="newOrder.note" placeholder="Nhập ghi chú" />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" class="p-button-text" @click="isDialogVisible = false" />
+        <Button label="Lưu" class="p-button-success" @click="saveOrder" />
+      </template>
+    </Dialog>
+
+
+    <Dialog 
+      header="Chỉnh sửa đơn hàng" 
+      v-model:visible="isEditDialogVisible" 
+      :modal="true" 
+      :closable="true" 
+      :style="{ width: '400px' }"
+    >
+      <div class="p-fluid">
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editName">Tên món<span class="text-red-500">*</span></label>
+          <InputText id="editName" v-model="editOrder.itemName" placeholder="Nhập tên món" required />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editSize">Kích cỡ</label>
+          <Dropdown 
+            id="editSize" 
+            v-model="editOrder.size" 
+            :options="['S', 'M', 'L']" 
+            placeholder="Chọn kích cỡ"
+            style="width: 61%;"
+          />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editSugar">Đường</label>
+          <Dropdown 
+            id="editSugar" 
+            v-model="editOrder.sugar" 
+            :options="['Không đường', '30%', '50%', '70%', '100%']" 
+            placeholder="Chọn lượng đường" 
+            style="width: 61%;"
+          />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editIce">Đá</label>
+          <Dropdown 
+            id="editIce" 
+            v-model="editOrder.ice" 
+            :options="['Không đá', '30%', '50%', '70%', '100%', 'Đá riêng']" 
+            placeholder="Chọn lượng đá" 
+            style="width: 61%;"
+          />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editTopping">Topping</label>
+          <InputText id="editTopping" v-model="editOrder.topping" placeholder="Nhập topping" />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editNote">Ghi chú</label>
+          <InputText id="editNote" v-model="editOrder.note" placeholder="Nhập ghi chú" />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" class="p-button-text" @click="isEditDialogVisible = false" />
+        <Button label="Cập nhật" class="p-button-success" @click="updateOrder" />
+      </template>
+    </Dialog>
+  </div>
+
+  <div class="p-4 space-y-4">
+    <h3 class="text-xl font-semibold">Tổng hợp món</h3>
+    <DataTable
+      :value="groupedOrderItems"
+      rowGroupMode="subheader"
+      groupRowsBy="itemName"
+      responsiveLayout="scroll"
+      class="p-datatable-sm"
+    >
+      <template #groupheader="slotProps">
+        <p class="font-bold text-lg"><strong>{{ slotProps.data.itemName }}</strong></p>
+      </template>
+
+      <Column field="itemName" header="Tên món" />
+      <Column field="size" header="Kích cỡ" />
+      <Column field="sugar" header="Đường" />
+      <Column field="ice" header="Đá" />
+      <Column field="topping" header="Topping" />
+      <Column field="quantity" header="Số lượng" />
+    </DataTable>
+
   </div>
 </template>
 
@@ -69,9 +218,12 @@ import axiosInstance from '@/router/Interceptor'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-
+import Dropdown from 'primevue/dropdown'
+import { useToast } from 'primevue'
 
 import type { OrderItemResponseDTO } from '@/types/OrderItemResponseDTO'
+import type { OrderItemRequestDTO } from '@/types/OrderItemRequestDTO'
+import { useUserStore } from '@/pinia/userStore'
 
 
 const orderItems = ref<OrderItemResponseDTO[]>([])
@@ -79,6 +231,32 @@ const searchTerm = ref('')
 const sortField = ref<string>()
 const sortOrder = ref<number>()
 const route = useRoute();
+const isDialogVisible = ref(false)
+const isEditDialogVisible = ref(false)
+const usersStore = useUserStore();
+const toast = useToast()
+
+const users = computed(() => usersStore.user);
+
+const newOrder = ref<OrderItemRequestDTO>({
+  orderId: Array.isArray(route.params.id) ? route.params.id[0] : route.params.id, // Ensure orderId is a string
+  itemName: '',
+  size: '',
+  sugar: '',
+  ice: '',
+  topping: '',
+  note: ''
+})
+
+const editOrder = ref<OrderItemRequestDTO>({
+  orderId: '',
+  itemName: '',
+  size: '',
+  sugar: '',
+  ice: '',
+  topping: '',
+  note: ''
+})
 
 const fetchOrders = async () => {
   try {
@@ -100,7 +278,81 @@ const filteredOrderItems = computed(() =>
     const matchesSearchTerm = r.user.fullName.toLowerCase().includes(searchTerm.value.toLowerCase());
     return matchesSearchTerm;
   })
-)
+);
+
+const groupedOrderItems = computed(() => {
+  const grouped: Record<string, (OrderItemResponseDTO & { quantity: number })> = {};
+
+  for (const item of orderItems.value) {
+    // Tạo key theo thứ tự ưu tiên gom nhóm
+    const key = [
+      item.itemName || 'null', 
+      item.size || 'null',
+      item.sugar || 'null',
+      item.ice || 'null',
+      item.topping || 'null'
+    ].join('|');
+
+    if (!grouped[key]) {
+      grouped[key] = { ...item, quantity: 0 };
+    }
+    grouped[key].quantity += 1;
+  }
+  console.log(grouped);
+
+  return Object.values(grouped);
+});
+
+
+const openOrderDialog = () => {
+  isDialogVisible.value = true;
+};
+
+const saveOrder = async () => {
+  try {
+    const orderId = route.params.id; // Get the order ID from the route parameters
+    await axiosInstance.post(`/orders/${orderId}`, newOrder.value);
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Đơn hàng đã được tạo!', life: 3000 });
+    isDialogVisible.value = false;
+    newOrder.value = {
+      orderId: Array.isArray(route.params.id) ? route.params.id[0] : route.params.id,
+      itemName: '',
+      size: '',
+      sugar: '',
+      ice: '',
+      topping: '',
+      note: ''
+    };
+    await fetchOrders();
+  } catch (error) {
+    console.error('Error saving order:', error);
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo đơn hàng!', life: 3000 });
+  }
+};
+
+const openEditDialog = async (id: string) => {
+  try {
+    const response = await axiosInstance.get(`/order-items/${id}`);
+    editOrder.value = response.data;
+    isEditDialogVisible.value = true;
+  } catch (error) {
+    console.error('Error fetching order item:', error);
+  }
+};
+
+
+const updateOrder = async () => {
+  try {
+    await axiosInstance.put(`/order-items/${editOrder.value.id}`, editOrder.value);
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Đơn hàng đã được cập nhật!', life: 3000 });
+    isEditDialogVisible.value = false;
+    fetchOrders();
+  } catch (error) {
+    console.error('Error updating order:', error);
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật đơn hàng!', life: 3000 });
+  }
+};
+
 </script>
 
 <style scoped>

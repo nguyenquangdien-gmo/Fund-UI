@@ -28,6 +28,7 @@ import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
 import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
 import RestaurantView from '@/views/RestaurantView.vue'
+import OrdersView from '@/views/OrdersView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -97,6 +98,12 @@ const router = createRouter({
       path: '/restaurants',
       name: 'restaurants',
       component: RestaurantView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/orders',
+      name: 'orders',
+      component: OrdersView,
       meta: { requiresAuth: true },
     },
     {

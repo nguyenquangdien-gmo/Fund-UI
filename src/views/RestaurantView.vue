@@ -28,6 +28,10 @@
       </div>
     </div>
 
+    <div v-if="filteredRestaurants.length === 0" class="text-center text-gray-500">
+      Chưa có quán nào để hiển thị. Hãy thêm quán nào.
+    </div>
+
     <DataTable
       :value="filteredRestaurants"
       paginator

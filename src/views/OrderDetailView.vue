@@ -1,6 +1,47 @@
 <template>
   <div class="p-4 space-y-4">
     <div class="flex justify-between items-center">
+      <div class="p-4 border rounded shadow-md bg-white">
+        <h3 class="h4 mb-4 font-weight-bold">Thông tin đơn</h3>
+        <div class="row">
+          <div class="col-md-6">
+        <div class="mb-3">
+          <span class="font-weight-bold">Mã đơn hàng: </span>
+          <span>{{ order.id || 'N/A' }}</span>
+        </div>
+          </div>
+          <div class="col-md-6">
+        <div class="mb-3">
+          <span class="font-weight-bold">Tên người đặt: </span>
+          <span>{{ order.createdBy?.fullName || 'N/A' }}</span>
+        </div>
+          </div>
+          <div class="col-md-6">
+        <div class="mb-3">
+          <span class="font-weight-bold">Ngày tạo: </span>
+          <span>{{ order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A' }}</span>
+        </div>
+          </div>
+          <div class="col-md-6">
+        <div class="mb-3">
+          <span class="font-weight-bold">Hạn chót: </span>
+          <span>{{ order.deadline ? new Date(order.deadline).toLocaleDateString() : 'N/A' }}</span>
+        </div>
+          </div>
+          <div class="col-md-6">
+        <div class="mb-3">
+          <span class="font-weight-bold">Trạng thái: </span>
+          <span>{{ order.status || 'N/A' }}</span>
+        </div>
+          </div>
+          <div class="col-md-12">
+        <div class="mb-3">
+          <span class="font-weight-bold">Mô tả: </span>
+          <span>{{ order.description || 'N/A' }}</span>
+        </div>
+          </div>
+        </div>
+      </div>
       <h2 class="text-2xl font-semibold" style="text-align: center; padding: 1rem;">Chi tiết đặt đồ</h2>
       <div class="p-input-icon-left my-2 d-flex justify-content-between ">
         <!-- <i class="pi pi-search" /> -->

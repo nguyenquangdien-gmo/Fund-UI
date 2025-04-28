@@ -131,10 +131,12 @@ onMounted(() => {
 })
 
 const filteredOrders = computed(() =>
-  orders.value.filter(r => {
-    const matchesSearchTerm = r.restaurantName.toLowerCase().includes(searchTerm.value.toLowerCase());
-    return matchesSearchTerm;
-  })
+  orders.value
+    .filter(r => {
+      const matchesSearchTerm = r.restaurantName.toLowerCase().includes(searchTerm.value.toLowerCase());
+      return matchesSearchTerm;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 )
 
 

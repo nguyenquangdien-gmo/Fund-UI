@@ -5,40 +5,50 @@
         <h3 class="h4 mb-4 font-weight-bold">Thông tin đơn</h3>
         <div class="row">
           <div class="col-md-6">
-        <div class="mb-3">
-          <span class="font-weight-bold">Mã đơn hàng: </span>
-          <span>{{ order.id || 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Người tạo: </span>
+              <span>{{ order.createdBy?.fullName || 'N/A' }}</span>
+            </div>
           </div>
           <div class="col-md-6">
-        <div class="mb-3">
-          <span class="font-weight-bold">Tên người đặt: </span>
-          <span>{{ order.createdBy?.fullName || 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Ngày tạo: </span>
+              <span>{{ order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A' }}</span>
+            </div>
           </div>
           <div class="col-md-6">
-        <div class="mb-3">
-          <span class="font-weight-bold">Ngày tạo: </span>
-          <span>{{ order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Link đặt: </span>
+              <a :href="order.restaurantLink" target="_blank" rel="noopener noreferrer">
+                {{ order.restaurantName || 'N/A' }}
+              </a>
+            </div>
           </div>
           <div class="col-md-6">
-        <div class="mb-3">
-          <span class="font-weight-bold">Hạn chót: </span>
-          <span>{{ order.deadline ? new Date(order.deadline).toLocaleDateString() : 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Hạn chót: </span>
+              <span>
+                {{ 
+                  order.deadline 
+                  ? new Date(order.deadline).toLocaleDateString() === new Date(order.createdAt).toLocaleDateString() 
+                  ? new Date(order.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                  : new Date(order.deadline).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) 
+                  : 'N/A' 
+                }}
+                </span>
+            </div>
           </div>
           <div class="col-md-6">
-        <div class="mb-3">
-          <span class="font-weight-bold">Trạng thái: </span>
-          <span>{{ order.status || 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Trạng thái: </span>
+              <span>{{ order.status || 'N/A' }}</span>
+            </div>
           </div>
           <div class="col-md-12">
-        <div class="mb-3">
-          <span class="font-weight-bold">Mô tả: </span>
-          <span>{{ order.description || 'N/A' }}</span>
-        </div>
+            <div class="mb-3">
+              <span class="font-weight-bold">Mô tả: </span>
+              <span>{{ order.description || 'N/A' }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -359,7 +369,7 @@ const editOrder = ref<OrderItemRequestDTO>({
 
 const ratingRequest = ref<OrderItemVoteRequestDTO>({
   orderItemId: '',
-  rating: 0,
+  rating: 5,
   note: ''
 })
 
@@ -471,7 +481,7 @@ const openEditDialog = async (id: string) => {
 
 const rateOrder = (id: string) => {
   ratingRequest.value.orderItemId = id;
-  ratingRequest.value.rating = 0;
+  ratingRequest.value.rating = 5;
   ratingRequest.value.note = '';
   isRatingDialogVisible.value = true;
 };

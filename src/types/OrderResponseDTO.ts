@@ -6,6 +6,7 @@ export class OrderResponseDTO {
     status: string;
     restaurantId: number;
     restaurantName: string;
+    restaurantLink: string;
     createdBy: UserResponseDTO;
     createdAt: Date;
 
@@ -17,6 +18,7 @@ export class OrderResponseDTO {
         status: string,
         restaurantId: number,
         restaurantName: string,
+        restaurantLink: string,
         createdBy: UserResponseDTO,
         createdAt: Date
     ) {
@@ -27,6 +29,7 @@ export class OrderResponseDTO {
         this.status = status;
         this.restaurantId = restaurantId;
         this.restaurantName = restaurantName;
+        this.restaurantLink = restaurantLink;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
     }

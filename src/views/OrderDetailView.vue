@@ -8,6 +8,7 @@
           <InputText v-model="searchTerm" placeholder="Tìm theo tên người đặt..." />
          </div>
          <Button 
+          v-if="!isDeadline"
           label="Đặt đồ" 
           class="p-button-sm p-button-success" 
           icon="pi pi-plus" 
@@ -69,14 +70,41 @@
       <!-- Cột Hành động (nếu user chính mình thì cho sửa) -->
       <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
-            v-if="data.user.id === users?.id" 
-            label="Sửa" 
-            class="p-button-sm p-button-warning" 
-            icon="pi pi-pencil" 
-            iconPos="left" 
-            @click="openEditDialog(data.id)" 
-          />
+            <template v-if="isDeadline && data.user.id === users?.id">
+              <div class="d-flex flex-row gap-2">
+                <Button 
+                label="Đánh giá" 
+                class="p-button-sm p-button-info" 
+                icon="pi pi-star" 
+                iconPos="left" 
+                @click="rateOrder(data.id)" 
+              />
+              <Button 
+                label="Like" 
+                class="p-button-sm p-button-success" 
+                icon="pi pi-thumbs-up" 
+                iconPos="left" 
+                @click="likeOrder(data.id)" 
+              />
+              <Button 
+                label="Dislike" 
+                class="p-button-sm p-button-danger" 
+                icon="pi pi-thumbs-down" 
+                iconPos="left" 
+                @click="dislikeOrder(data.id)" 
+              />
+              </div>
+            </template>
+            <template v-else>
+              <Button 
+                v-if="data.user.id === users?.id" 
+                label="Sửa" 
+                class="p-button-sm p-button-warning" 
+                icon="pi pi-pencil" 
+                iconPos="left" 
+                @click="openEditDialog(data.id)" 
+              />
+            </template>
         </template>
       </Column>
     </DataTable>
@@ -212,10 +240,13 @@ import { useToast } from 'primevue'
 
 import type { OrderItemResponseDTO } from '@/types/OrderItemResponseDTO'
 import type { OrderItemRequestDTO } from '@/types/OrderItemRequestDTO'
+import type { OrderResponseDTO } from '@/types/OrderResponseDTO'
+import { OrderItemFeedbackRequestDTO } from '@/types/OrderItemFeedbackRequestDTO'
 import { useUserStore } from '@/pinia/userStore'
 
 
 const orderItems = ref<OrderItemResponseDTO[]>([])
+const order = ref<OrderResponseDTO>({})
 const searchTerm = ref('')
 const sortField = ref<string>()
 const sortOrder = ref<number>()
@@ -224,6 +255,12 @@ const isDialogVisible = ref(false)
 const isEditDialogVisible = ref(false)
 const usersStore = useUserStore();
 const toast = useToast()
+
+const isDeadline = computed(() => {
+  const deadlineDate = new Date(order.value.deadline);
+  const currentDate = new Date();
+  return deadlineDate < currentDate;
+});
 
 const users = computed(() => usersStore.user);
 
@@ -251,16 +288,28 @@ const editOrder = ref<OrderItemRequestDTO>({
 const fetchOrders = async () => {
   try {
     const orderId = route.params.id; // Get the order ID from the route parameters
-    const response = await axiosInstance.get(`/orders/${orderId}`);
+    const response = await axiosInstance.get(`/orders/${orderId}/details`);
     orderItems.value = response.data
   } catch (error) {
     console.error('Error fetching order items:', error)
   }
 }
 
+const fetchOrder = async () => {
+  try {
+    const orderId = route.params.id;
+    const response = await axiosInstance.get(`/orders/${orderId}`);
+    order.value = response.data;
+  } catch (error) {
+    console.error('Error fetching order:', error);
+  }
+};
+
 
 onMounted(() => {
   fetchOrders();
+  fetchOrder();
+
 })
 
 const filteredOrderItems = computed(() =>
@@ -352,6 +401,30 @@ const updateOrder = async () => {
   } catch (error) {
     console.error('Error updating order:', error);
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật đơn hàng!', life: 3000 });
+  }
+};
+
+const likeOrder = async (id: string) => {
+  try {
+    const feedback = new OrderItemFeedbackRequestDTO(Number(id), 1); // 1 = like
+    await axiosInstance.post(`/order-item-feedback`, feedback);
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã thích đơn hàng này!', life: 3000 });
+    fetchOrders();
+  } catch (error) {
+    console.error('Error liking order:', error);
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thích đơn hàng!', life: 3000 });
+  }
+};
+
+const dislikeOrder = async (id: string) => {
+  try {
+    const feedback = new OrderItemFeedbackRequestDTO(Number(id), -1); // -1 = dislike
+    await axiosInstance.post(`/order-item-feedback`, feedback);
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Bạn đã không thích đơn hàng này!', life: 3000 });
+    fetchOrders();
+  } catch (error) {
+    console.error('Error disliking order:', error);
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể không thích đơn hàng!', life: 3000 });
   }
 };
 

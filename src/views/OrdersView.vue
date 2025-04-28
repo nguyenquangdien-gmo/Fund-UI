@@ -42,11 +42,11 @@
         </template>
       </Column>
       <Column field="title" header="Tiêu đề" sortable />
-      <Column field="description" header="Mô tả" sortable>
+      <!-- <Column field="description" header="Mô tả" sortable>
       <template #body="{ data }">
         {{ data.description.length > 30 ? data.description.substring(0, 30) + '...' : data.description }}
       </template>
-      </Column>
+      </Column> -->
       <Column field="restaurantName" header="Tên quán" sortable />
       <Column field="createdBy.fullName" header="Người tạo" sortable />
       <Column field="deadline" header="Hạn chót" sortable>
@@ -63,7 +63,14 @@
           {{ new Date(data.createdAt).toLocaleDateString() }}
         </template>
       </Column>
-      <!-- <Column field="status" header="Trạng thái" sortable /> -->
+      <Column field="status" header="Trạng thái" sortable>
+        <template #body="{ data }">
+          <Tag 
+            :value="data.status" 
+            :severity="data.status === 'COMPLETED' ? 'success' : 'warn'" 
+          />
+        </template>
+      </Column>
       <Column header="Hành động">
         <template #body="{ data }">
           <Button 
@@ -85,6 +92,7 @@ import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import DatePicker from 'primevue/datepicker'
+import Tag from 'primevue/tag'
 
 import { OrderResponseDTO } from '@/types/OrderResponseDTO'
 
@@ -136,7 +144,13 @@ const filteredOrders = computed(() =>
       const matchesSearchTerm = r.restaurantName.toLowerCase().includes(searchTerm.value.toLowerCase());
       return matchesSearchTerm;
     })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => {
+      const createdAtComparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (createdAtComparison !== 0) {
+      return createdAtComparison;
+      }
+      return new Date(b.deadline).getTime() - new Date(a.deadline).getTime();
+    })
 )
 
 

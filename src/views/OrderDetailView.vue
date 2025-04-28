@@ -94,19 +94,31 @@
 
       <!-- Các cột còn lại giữ nguyên như bạn cũ -->
       <Column field="itemName" header="Tên món" sortable />
-      <Column field="size" header="Kích cỡ" sortable />
-      <Column field="sugar" header="Đường" sortable />
-      <Column field="ice" header="Đá" sortable />
+      <Column field="size" header="Kích cỡ" sortable>
+        <template #body="{ data }">
+          {{ data.size || 'Không' }}
+        </template>
+      </Column>
+      <Column field="sugar" header="Đường" sortable>
+        <template #body="{ data }">
+          {{ data.sugar || 'Không' }}
+        </template>
+      </Column>
+      <Column field="ice" header="Đá" sortable>
+        <template #body="{ data }">
+          {{ data.ice || 'Không' }}
+        </template>
+      </Column>
       
       <Column field="topping" header="Topping" sortable>
         <template #body="{ data }">
-          {{ data.topping || 'Không có' }}
+          {{ data.topping || 'Không' }}
         </template>
       </Column>
 
       <Column field="note" header="Ghi chú" sortable>
         <template #body="{ data }">
-          {{ data.note.length > 30 ? data.note.substring(0, 30) + '...' : data.note }}
+          {{ data.note ? (data.note.length > 30 ? data.note.substring(0, 30) + '...' : data.note) : 'Không' }}
         </template>
       </Column>
 
@@ -170,54 +182,73 @@
       :style="{ width: '400px' }"
     >
       <div class="p-fluid">
+        <!-- Tên món -->
         <div class="field d-flex align-items-center justify-content-between p-2">
-            <label for="name">Tên món<span class="text-red-500">*</span></label>
-            <InputText id="name" v-model="newOrder.itemName" placeholder="Nhập tên món" required />
-          </div>
+          <label for="name">Tên món<span class="text-red-500">*</span></label>
+          <InputText 
+            id="name" 
+            v-model="newOrder.itemName" 
+            placeholder="Nhập tên món" 
+            required 
+          />
+          <!-- Thông báo lỗi cho tên món -->
+        </div>
+        <div v-if="formErrors.itemName" class="text-danger mt-1" style="text-align: right; margin-right: 67px;">{{ formErrors.itemName }}</div>
+        <!-- Kích cỡ -->
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="size">Kích cỡ</label>
-            <Dropdown 
+          <Dropdown 
             id="size" 
             v-model="newOrder.size" 
             :options="['S', 'M', 'L']" 
             placeholder="Chọn kích cỡ"
             style="width: 61%;"
-            />
+          />
         </div>
+
+        <!-- Đường -->
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="sugar">Đường</label>
-            <Dropdown 
+          <Dropdown 
             id="sugar" 
             v-model="newOrder.sugar" 
             :options="['Không đường', '30%', '50%', '70%', '100%']" 
             placeholder="Chọn lượng đường" 
             style="width: 61%;"
-            />
+          />
         </div>
+
+        <!-- Đá -->
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="ice">Đá</label>
-            <Dropdown 
+          <Dropdown 
             id="ice" 
             v-model="newOrder.ice" 
             :options="['Không đá', '30%', '50%', '70%', '100%', 'Đá riêng']" 
             placeholder="Chọn lượng đá" 
             style="width: 61%;"
-            />
+          />
         </div>
+
+        <!-- Topping -->
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="topping">Topping</label>
           <InputText id="topping" v-model="newOrder.topping" placeholder="Nhập topping" />
         </div>
+
+        <!-- Ghi chú -->
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="note">Ghi chú</label>
           <InputText id="note" v-model="newOrder.note" placeholder="Nhập ghi chú" />
         </div>
       </div>
+
       <template #footer>
         <Button label="Hủy" class="p-button-text" @click="isDialogVisible = false" />
         <Button label="Lưu" class="p-button-success" @click="saveOrder" />
       </template>
     </Dialog>
+
 
 
     <Dialog 
@@ -232,6 +263,7 @@
           <label for="editName">Tên món<span class="text-red-500">*</span></label>
           <InputText id="editName" v-model="editOrder.itemName" placeholder="Nhập tên món" required />
         </div>
+        <div v-if="formErrors.itemName" class="text-danger mt-1" style="text-align: right; margin-right: 67px;">{{ formErrors.itemName }}</div>
         <div class="field d-flex align-items-center justify-content-between p-2">
           <label for="editSize">Kích cỡ</label>
           <Dropdown 
@@ -331,6 +363,7 @@ const order = ref<OrderResponseDTO>({})
 const searchTerm = ref('')
 const sortField = ref<string>()
 const sortOrder = ref<number>()
+const formErrors = ref<Record<string, string>>({});
 const route = useRoute();
 const isDialogVisible = ref(false)
 const isEditDialogVisible = ref(false)
@@ -372,6 +405,29 @@ const ratingRequest = ref<OrderItemVoteRequestDTO>({
   rating: 5,
   note: ''
 })
+
+const validateOrder = () => {
+  formErrors.value = {};
+
+  if (!newOrder.value.itemName) {
+    formErrors.value.itemName = "Tên món là bắt buộc.";
+  }
+
+  // Add additional validations if needed
+  return Object.keys(formErrors.value).length === 0;
+};
+
+const validateEditOrder = () => {
+  formErrors.value = {};
+
+  if (!editOrder.value.itemName) {
+    formErrors.value.itemName = "Tên món là bắt buộc.";
+  }
+
+  // Add additional validations if needed
+  return Object.keys(formErrors.value).length === 0;
+};
+
 
 const fetchOrders = async () => {
   try {
@@ -448,6 +504,9 @@ const openOrderDialog = () => {
 };
 
 const saveOrder = async () => {
+  if (!validateOrder()) {
+    return;
+  }
   try {
     const orderId = route.params.id; // Get the order ID from the route parameters
     await axiosInstance.post(`/orders/${orderId}`, newOrder.value);
@@ -500,6 +559,9 @@ const submitRating = async () => {
 
 
 const updateOrder = async () => {
+  if (!validateEditOrder()) {
+    return;
+  }
   try {
     await axiosInstance.put(`/order-items/${editOrder.value.id}`, editOrder.value);
     toast.add({ severity: 'success', summary: 'Thành công', detail: 'Đơn hàng đã được cập nhật!', life: 3000 });

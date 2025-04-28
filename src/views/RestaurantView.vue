@@ -172,7 +172,6 @@
               </Button>
             </div>
         </div>
-
         <div class="d-flex align-items-center justify-content-between p-2">
           <label for="title" class="mb-2">Tiêu đề<span class="text-red-500">*</span></label>
           <InputText v-model="order.title" id="title" placeholder="Nhập tiêu đề..." required style="width: 53%;" />
@@ -182,7 +181,8 @@
           <InputText v-model="order.description" id="description" placeholder="Nhập mô tả..." required style="width: 53%;" />
         </div>
         <div class="d-flex align-items-center justify-content-between p-2">
-          <label for="relatedUserIds" class="mb-2">Người liên quan<span class="text-red-500">*</span></label>
+          <!-- <label for="relatedUserIds" class="mb-2">Người liên quan<span class="text-red-500">*</span></label> -->
+          <label for="relatedUserIds" class="mb-2">Người liên quan</label>
           <MultiSelect
             filter
             v-model="order.relatedUserIds"
@@ -203,6 +203,7 @@
               showIcon 
               required 
               style="width: 53%;" 
+              :minDate="new Date()" 
             />
         </div>
         <div class="d-flex align-items-center justify-content-end space-x-2 p-2">
@@ -312,6 +313,7 @@ const closeDialog = () => {
   restaurant.value.link = '';
 };
 
+
 // Thêm quán nước và gửi API
 const addRestaurant = async () => {
   try {
@@ -353,6 +355,28 @@ const closeOrderDialog = () => {
 
 
 const createOrder = async () => {
+  // Kiểm tra từng trường dữ liệu
+  if (!order.value.restaurantId) {
+    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Vui lòng chọn quán!', life: 3000 });
+    return;
+  }
+  if (!order.value.title) {
+    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Tiêu đề là bắt buộc.', life: 3000 });
+    return;
+  }
+  if (!order.value.description) {
+    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Mô tả là bắt buộc.', life: 3000 });
+    return;
+  }
+  // if (!order.value.relatedUserIds.length) {
+  //   toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Người liên quan là bắt buộc.', life: 3000 });
+  //   return;
+  // }
+  if (!order.value.deadline) {
+    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Hạn chót là bắt buộc.', life: 3000 });
+    return;
+  }
+
   try {
     console.log("order", order.value);
     const response = await axiosInstance.post('/orders', order.value);

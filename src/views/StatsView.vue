@@ -14,7 +14,7 @@
         <div>
           <h3 class="text-gray">Quỹ chung</h3>
           <p class="text-2xl font-semibold">
-            {{ balance.length > 1 ? `${formatCurrency(balance[0].totalAmount)}` : `0 VNĐ` }}
+            {{ balance.length > 1 ? `${formatCurrency(balance[0]?.totalAmount?.toString() || '0')}` : `0 VNĐ` }}
           </p>
           <p class="text-green-500 text-sm">Tiền chung</p>
         </div>
@@ -24,7 +24,7 @@
         <div>
           <h3 class="text-gray">Quỹ ăn vặt</h3>
           <p class="text-2xl font-semibold">
-            {{ balance.length > 1 ? `${formatCurrency(balance[1].totalAmount)}` : '0 VNĐ' }}
+            {{ balance.length > 1 ? `${formatCurrency(balance[1]?.totalAmount?.toString() || '0')}` : '0 VNĐ' }}
           </p>
           <p class="text-green-500 text-sm">Tiền ăn vặt</p>
         </div>
@@ -34,7 +34,7 @@
         <div>
           <h3 class="text-gray">Tổng thu</h3>
           <p class="text-2xl font-semibold">
-            {{ formatCurrency(amountCharge + amountBillCharge + incomeAmount) }}
+            {{ formatCurrency((amountCharge + amountBillCharge + incomeAmount).toString()) }}
           </p>
           <p class="text-green-500 text-sm">Tiền thu</p>
         </div>
@@ -43,7 +43,7 @@
         <div class="icon bg-purple-100 text-purple-600"><i class="pi pi-cart-plus"></i></div>
         <div>
           <h3 class="text-gray">Tổng chi</h3>
-          <p class="text-2xl font-semibold">{{ formatCurrency(expenseAmount) }}</p>
+          <p class="text-2xl font-semibold">{{ formatCurrency(expenseAmount.toString()) }}</p>
           <p class="text-green-500 text-sm">Tiền chi ra</p>
         </div>
       </div>
@@ -54,7 +54,7 @@
           <p class="text-2xl font-semibold">
             {{
               balance.length > 1
-                ? `${formatCurrency(balance[0].totalAmount + balance[1].totalAmount)}`
+                ? `${formatCurrency(((balance[0]?.totalAmount || 0) + (balance[1]?.totalAmount || 0)).toString())}`
                 : `0 VNĐ`
             }}
           </p>
@@ -113,11 +113,38 @@ interface LateUser {
   lateCount: number;
 }
 
+interface BalanceItem {
+  id?: number;
+  totalAmount: number;
+  [key: string]: unknown;
+}
+
+interface MonthlyData {
+  month: number;
+  totalAmount: number;
+}
+
+interface ChartContext {
+  label?: string;
+  raw?: number;
+  parsed: { y: number | null };
+  dataset: {
+    label?: string;
+  };
+  chart: {
+    data: {
+      datasets: Array<{
+        data: number[];
+      }>;
+    };
+  };
+}
+
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1 // Current month (1-12)
-const selectedYear = ref(currentYear)
-const selectedMonth = ref(currentMonth)
-const availableYears = ref([])
+const selectedYear = ref<number>(currentYear)
+const selectedMonth = ref<number>(currentMonth)
+const availableYears = ref<number[]>([])
 const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
 
 for (let year = 2020; year <= currentYear; year++) {
@@ -178,7 +205,7 @@ const lateChartOptions = ref({
     },
     tooltip: {
       callbacks: {
-        label: function (context: any) {
+        label: function (context: ChartContext) {
           const label = context.label || '';
           const value = context.raw || 0;
 
@@ -199,21 +226,21 @@ const lateChartOptions = ref({
 })
 
 // Fund data references
-const contributionMonthlyData = ref([])
-const penaltyMonthlyData = ref([])
-const incomeMonthlyData = ref([])
-const expenseMonthlyData = ref([])
+const contributionMonthlyData = ref<MonthlyData[]>([])
+const penaltyMonthlyData = ref<MonthlyData[]>([])
+const incomeMonthlyData = ref<MonthlyData[]>([])
+const expenseMonthlyData = ref<MonthlyData[]>([])
 
-const contributionYearlyData = ref([])
-const penaltyYearlyData = ref([])
-const incomeYearlyData = ref([])
-const expenseYearlyData = ref([])
+const contributionYearlyData = ref<MonthlyData[]>([])
+const penaltyYearlyData = ref<MonthlyData[]>([])
+const incomeYearlyData = ref<MonthlyData[]>([])
+const expenseYearlyData = ref<MonthlyData[]>([])
 
-const balance = ref([])
-const amountCharge = ref(0)
-const amountBillCharge = ref(0)
-const incomeAmount = ref(0)
-const expenseAmount = ref(0)
+const balance = ref<BalanceItem[]>([])
+const amountCharge = ref<number>(0)
+const amountBillCharge = ref<number>(0)
+const incomeAmount = ref<number>(0)
+const expenseAmount = ref<number>(0)
 
 // Computed combined chart data
 const combinedMonthlyData = computed(() => {
@@ -371,13 +398,13 @@ const chartMonthOptions = ref({
       mode: 'index',
       intersect: false,
       callbacks: {
-        label: function (context) {
+        label: function (context: ChartContext) {
           let label = context.dataset.label || ''
           if (label) {
             label += ': '
           }
           if (context.parsed.y !== null) {
-            label += formatCurrency(context.parsed.y)
+            label += formatCurrency(context.parsed.y.toString())
           }
           return label
         },
@@ -396,8 +423,8 @@ const chartMonthOptions = ref({
     y: {
       ticks: {
         color: '#4B5563',
-        callback: function (value) {
-          return formatCurrency(value)
+        callback: function (value: number) {
+          return formatCurrency(value.toString())
         },
       },
       grid: { color: 'rgba(75, 85, 99, 0.2)' },
@@ -417,13 +444,13 @@ const chartQuarterOptions = ref({
       mode: 'index',
       intersect: false,
       callbacks: {
-        label: function (context) {
+        label: function (context: ChartContext) {
           let label = context.dataset.label || ''
           if (label) {
             label += ': '
           }
           if (context.parsed.y !== null) {
-            label += formatCurrency(context.parsed.y)
+            label += formatCurrency(context.parsed.y.toString())
           }
           return label
         },
@@ -439,8 +466,8 @@ const chartQuarterOptions = ref({
       beginAtZero: true,
       ticks: {
         color: '#4B5563',
-        callback: function (value) {
-          return formatCurrency(value)
+        callback: function (value: number) {
+          return formatCurrency(value.toString())
         },
       },
       grid: { color: 'rgba(75, 85, 99, 0.2)' },
@@ -449,47 +476,51 @@ const chartQuarterOptions = ref({
 })
 
 // API Calls
-const fetchContributionMonthlyData = async (year) => {
+const fetchContributionMonthlyData = async (year: number) => {
   try {
     const response = await axiosInstance.get(`/contributions/monthly-stats`, {
       params: { year },
     })
     contributionMonthlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching monthly contributions:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching monthly contributions:', err.response?.data || err.message)
   }
 }
 
-const fetchPenaltyMonthlyData = async (year) => {
+const fetchPenaltyMonthlyData = async (year: number) => {
   try {
     const response = await axiosInstance.get(`/pen-bills/monthly-stats`, {
       params: { year },
     })
     penaltyMonthlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching monthly penalties:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching monthly penalties:', err.response?.data || err.message)
   }
 }
 
-const fetchIncomeMonthlyData = async (year) => {
+const fetchIncomeMonthlyData = async (year: number) => {
   try {
     const response = await axiosInstance.get(`/invoices/monthly-stats`, {
       params: { year, type: 'income' },
     })
     incomeMonthlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching monthly income:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching monthly income:', err.response?.data || err.message)
   }
 }
 
-const fetchExpenseMonthlyData = async (year) => {
+const fetchExpenseMonthlyData = async (year: number) => {
   try {
     const response = await axiosInstance.get(`/invoices/monthly-stats`, {
       params: { year, type: 'expense' },
     })
     expenseMonthlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching monthly expenses:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching monthly expenses:', err.response?.data || err.message)
   }
 }
 
@@ -497,8 +528,9 @@ const fetchContributionYearlyData = async () => {
   try {
     const response = await axiosInstance.get(`/contributions/${selectedYear.value}/stats`)
     contributionYearlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching yearly contributions:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching yearly contributions:', err.response?.data || err.message)
   }
 }
 
@@ -506,8 +538,9 @@ const fetchPenaltyYearlyData = async () => {
   try {
     const response = await axiosInstance.get(`/pen-bills/${selectedYear.value}/stats`)
     penaltyYearlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching yearly penalties:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching yearly penalties:', err.response?.data || err.message)
   }
 }
 
@@ -517,8 +550,9 @@ const fetchIncomeYearlyData = async () => {
       params: { type: 'income' },
     })
     incomeYearlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching yearly income:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching yearly income:', err.response?.data || err.message)
   }
 }
 
@@ -528,8 +562,9 @@ const fetchExpenseYearlyData = async () => {
       params: { type: 'expense' },
     })
     expenseYearlyData.value = response.data
-  } catch (error) {
-    console.error('Error fetching yearly expenses:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching yearly expenses:', err.response?.data || err.message)
   }
 }
 
@@ -537,8 +572,9 @@ const fetchBalance = async () => {
   try {
     const response = await axiosInstance.get(`/balances`)
     balance.value = response.data
-  } catch (error) {
-    console.error('Error fetching common funds:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching common funds:', err.response?.data || err.message)
   }
 }
 
@@ -548,8 +584,9 @@ const fetchContributionTotal = async () => {
       params: { year: selectedYear.value },
     })
     amountCharge.value = response.data
-  } catch (error) {
-    console.error('Error fetching contribution total:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching contribution total:', err.response?.data || err.message)
   }
 }
 
@@ -559,8 +596,9 @@ const fetchPenaltyTotal = async () => {
       params: { year: selectedYear.value },
     })
     amountBillCharge.value = response.data
-  } catch (error) {
-    console.error('Error fetching penalty total:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching penalty total:', err.response?.data || err.message)
   }
 }
 
@@ -570,8 +608,9 @@ const fetchIncomeTotal = async () => {
       params: { year: selectedYear.value, type: 'income' },
     })
     incomeAmount.value = response.data
-  } catch (error) {
-    console.error('Error fetching income total:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching income total:', err.response?.data || err.message)
   }
 }
 
@@ -581,8 +620,9 @@ const fetchExpenseTotal = async () => {
       params: { year: selectedYear.value, type: 'expense' },
     })
     expenseAmount.value = response.data
-  } catch (error) {
-    console.error('Error fetching expense total:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching expense total:', err.response?.data || err.message)
   }
 }
 
@@ -641,8 +681,9 @@ const fetchLateUsersData = async () => {
       }
     })
     lateUsers.value = response.data
-  } catch (error) {
-    console.error('Error fetching late users data:', error.response?.data || error.message)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string }
+    console.error('Error fetching late users data:', err.response?.data || err.message)
     // Reset to empty array to show empty state
     lateUsers.value = []
   }

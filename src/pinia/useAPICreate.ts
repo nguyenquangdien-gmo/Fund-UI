@@ -191,7 +191,8 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
               staffCode: this.user.staffCode,
               userPositionCode: this.user.userPositionCode,
               departmentCode: this.user.departmentCode,
-            }), { path: '/' }
+            }),
+            { path: '/' },
           )
 
           return { success: true, data: response.data.data }
@@ -541,6 +542,72 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo đơn WFH'
+        this.error = errorMessage
+        return { success: false, error: errorMessage }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // Fetch personal staff attendance
+    async fetchPersonalStaffAttendance(params: {
+      startDate: string
+      endDate: string
+      fromDate: number
+      toDate: number
+      page: number
+      userObjId: string
+    }): Promise<{ success: boolean; data?: LeaveRequest[]; error?: string }> {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await axiosInstance.get<ApiResponse<LeaveRequest[]>>(
+          '/auth/staff-attendance/personalStaffAttendance',
+          { params },
+        )
+
+        if (response.data.success) {
+          return { success: true, data: response.data.data }
+        } else {
+          throw new Error(response.data.message || 'Không thể lấy dữ liệu staff attendance')
+        }
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Có lỗi xảy ra khi lấy dữ liệu staff attendance'
+        this.error = errorMessage
+        return { success: false, error: errorMessage }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // Fetch personal staff WFH
+    async fetchPersonalStaffWfh(params: {
+      startDate: string
+      endDate: string
+      fromDate: string
+      toDate: number
+      page: number
+      userObjId: string
+    }): Promise<{ success: boolean; data?: LeaveRequest[]; error?: string }> {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await axiosInstance.get<ApiResponse<LeaveRequest[]>>(
+          '/auth/staff-wfh/personalStaffWfh',
+          { params },
+        )
+
+        if (response.data.success) {
+          return { success: true, data: response.data.data }
+        } else {
+          throw new Error(response.data.message || 'Không thể lấy dữ liệu staff WFH')
+        }
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Có lỗi xảy ra khi lấy dữ liệu staff WFH'
         this.error = errorMessage
         return { success: false, error: errorMessage }
       } finally {

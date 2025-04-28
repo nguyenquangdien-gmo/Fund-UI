@@ -58,16 +58,18 @@
             </button>
           </div>
 
-          <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+          <div class="d-flex flex-column flex-md-row align-items-center gap-2">
             <div class="user-info small text-secondary">
               <span class="fw-medium">{{ user.fullName }}</span> |
               <span class="text-primary"> WFH trong tháng: {{ wfhCount }}</span> |
-              <span class="text-danger"> Số ngày nghỉ: {{ leaveCount }}</span> |
-              <span class="text-secondary"> Số ngày công: {{ workDays }}</span>
+              <span class="text-danger"> Số ngày nghỉ: {{ leaveCount }}</span>
             </div>
 
             <button @click="showRegisterModal = true" class="btn btn-success">
               Đăng ký WFH/Nghỉ phép
+            </button>
+            <button @click="syncData" class="btn btn-primary ms-2">
+              Đồng bộ
             </button>
           </div>
         </div>
@@ -408,7 +410,7 @@ interface WorkResponseDTO {
   approvedById?: number | null
   approvedByName?: string | null
   createdAt: string
-  idCreate?: string
+  idCreate: string
 }
 
 // Update WorkEntry interface to include all required properties
@@ -1412,6 +1414,187 @@ onMounted(() => {
     endTimeValue.value = date;
   }
 });
+
+// Add sync function after resetForm function
+async function syncData() {
+  try {
+    loading.value = true;
+    const cookieUser = getUserFromCookies();
+    const startDateString = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-01`;
+    const endDateString = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-${daysInMonth.value}`;
+    const startTimestamp = new Date(startDateString).getTime();
+    const endTimestamp = new Date(endDateString).getTime();
+
+    // Get all existing works from your system
+    const allWorksResponse = await workStore.getAllWorks();
+    if (!allWorksResponse.success) {
+      throw new Error(allWorksResponse.error || 'Failed to get works data');
+    }
+    const allWorks = allWorksResponse.data || [];
+
+    // Create a map for faster lookup
+    const existingWorkMap = new Map();
+    allWorks.forEach(work => {
+      if (work.idCreate) {
+        existingWorkMap.set(work.idCreate, work);
+      }
+    });
+
+    // Get personal staff attendance
+    const attendanceResponse = await leaveRequestStore.fetchPersonalStaffAttendance({
+      startDate: startDateString,
+      endDate: endDateString,
+      fromDate: startTimestamp,
+      toDate: endTimestamp,
+      page: 1,
+      userObjId: cookieUser.userObjId
+    });
+    console.log('attendanceResponse', attendanceResponse);
+
+
+    // Get personal staff WFH
+    const wfhResponse = await leaveRequestStore.fetchPersonalStaffWfh({
+      startDate: startDateString,
+      endDate: endDateString,
+      fromDate: startDateString,
+      toDate: endTimestamp,
+      page: 1,
+      userObjId: cookieUser.userObjId
+    });
+    console.log('wfhResponse', wfhResponse);
+
+    let syncCount = 0;
+    let failedCount = 0;
+    const syncPromises = [];
+
+    // Helper function to parse date and extract time
+    function parseDateTime(dateTimeStr: string) {
+      // Handle different date formats
+      let dateObj;
+      if (typeof dateTimeStr === 'string') {
+        // Check if dateTimeStr contains time information
+        if (dateTimeStr.includes(':')) {
+          dateObj = new Date(dateTimeStr);
+        } else {
+          // If no time info, default to start of day
+          dateObj = new Date(`${dateTimeStr}T00:00:00`);
+        }
+      } else {
+        // Assume it's a timestamp
+        dateObj = new Date(dateTimeStr);
+      }
+
+      const date = dateObj.toISOString().split('T')[0];
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+      return {
+        date,
+        time: `${hours}:${minutes}`
+      };
+    }
+
+    // Process attendance data (LEAVE)
+    if (attendanceResponse.success && attendanceResponse.data && attendanceResponse.data.items) {
+      for (const item of attendanceResponse.data.items) {
+        if (!existingWorkMap.has(item._id)) {
+          const fromDateTime = parseDateTime(item.fromDate);
+          const endDateTime = parseDateTime(item.endDate);
+
+          const leaveType = item.staffAttendanceType?.type || 'LEAVE';
+
+          try {
+            const workResult = await workStore.createWorkDirect({
+              userId: user.value.id,
+              fromDate: fromDateTime.date,
+              endDate: endDateTime.date,
+              startTime: fromDateTime.time,
+              endTime: endDateTime.time,
+              type: leaveType,
+              reason: item.reason || '',
+              idCreate: item._id,
+            });
+
+            if (workResult.data) {
+              syncCount++;
+            } else {
+              failedCount++;
+              console.error('Failed to sync leave entry:', item._id, workResult?.error);
+            }
+          } catch (error) {
+            failedCount++;
+            console.error('Error creating work entry for leave:', error);
+          }
+        }
+      }
+    }
+
+    // Process WFH data
+    if (wfhResponse.success && wfhResponse.data && wfhResponse.data.items) {
+      for (const item of wfhResponse.data.items) {
+        if (!existingWorkMap.has(item._id)) {
+          const fromDateTime = parseDateTime(item.fromDate);
+          const endDateTime = parseDateTime(item.endDate);
+
+          try {
+            const workResult = await workStore.createWorkDirect({
+              userId: user.value.id,
+              fromDate: fromDateTime.date,
+              endDate: endDateTime.date,
+              startTime: "08:00",
+              endTime: "17:00",
+              type: 'WFH',
+              reason: item.reason || '',
+              idCreate: item._id
+            });
+
+            if (workResult.success) {
+              syncCount++;
+            } else {
+              failedCount++;
+              console.error('Failed to sync WFH entry:', item._id, workResult?.error);
+            }
+          } catch (error) {
+            failedCount++;
+            console.error('Error creating work entry for WFH:', error);
+          }
+        }
+      }
+    }
+
+    // Refresh calendar data
+    loadMonthData();
+
+    // Show detailed success/failure message
+    if (syncCount > 0 || failedCount > 0) {
+
+      toast.add({
+        severity: failedCount > 0 ? 'warn' : 'success',
+        summary: failedCount > 0 ? 'Đồng bộ một phần' : 'Đồng bộ thành công',
+        detail: ,
+        life: 4000
+      });
+    } else {
+      toast.add({
+        severity: 'info',
+        summary: 'Thông báo',
+        detail: 'Không có dữ liệu mới cần đồng bộ',
+        life: 3000
+      });
+    }
+
+  } catch (error) {
+    console.error('Error during sync:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi đồng bộ',
+      detail: error || 'Không thể đồng bộ dữ liệu. Vui lòng thử lại sau.',
+      life: 3000
+    });
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <style scoped>

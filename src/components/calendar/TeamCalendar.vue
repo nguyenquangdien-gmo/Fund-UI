@@ -73,6 +73,8 @@
                     :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
                     {{ date.getDate() }}
                   </th>
+                  <th class="cell header-cell stats" rowspan="2">WFH</th>
+                  <th class="cell header-cell stats" rowspan="2">OFF</th>
                 </tr>
                 <tr class="weekday-row">
                   <th v-for="(date, index) in calendarDates" :key="`weekday-${index}`" class="cell header-cell weekday"
@@ -80,7 +82,6 @@
                     {{ getWeekdayName(date) }}
                   </th>
                 </tr>
-
               </thead>
             </table>
           </div>
@@ -112,6 +113,8 @@
                   }" :style="{ width: cellWidth + 'px' }">
                   <div v-html="getAttendanceStatus(person.id, date)"></div>
                 </td>
+                <td class="cell stats">{{ getTotalDays(person.id, 'WFH') }}</td>
+                <td class="cell stats">{{ getTotalDays(person.id, 'OFF') }}</td>
               </tr>
             </tbody>
           </table>
@@ -237,6 +240,13 @@ function getAttendanceStatus(personId: number, date: Date): string {
   if (!record) return '';
 
   return `${record.status}<br><small class="time-period">(${record.timePeriod})</small>`;
+}
+
+// Get total days for a specific status
+function getTotalDays(personId: number, status: string): number {
+  return attendanceData.value.filter(
+    r => r.personId === personId && r.status === status
+  ).length;
 }
 
 // Function to generate calendar dates for the selected month/year
@@ -457,6 +467,12 @@ onMounted(() => {
   min-width: 200px !important;
   max-width: 200px !important;
   text-align: left;
+}
+
+.stats {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
 }
 
 /* Fixed elements */

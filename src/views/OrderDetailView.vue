@@ -225,6 +225,35 @@
         <Button label="Cập nhật" class="p-button-success" @click="updateOrder" />
       </template>
     </Dialog>
+
+    <Dialog 
+      header="Đánh giá đơn hàng" 
+      v-model:visible="isRatingDialogVisible" 
+      :modal="true" 
+      :closable="true" 
+      :style="{ width: '400px' }"
+    >
+      <div class="p-fluid">
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="rating">Đánh giá<span class="text-red-500">*</span></label>
+          <Dropdown 
+            id="rating" 
+            v-model="ratingRequest.rating" 
+            :options="[1, 2, 3, 4, 5]" 
+            placeholder="Chọn số sao" 
+            style="width: 61%;"
+          />
+        </div>
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="ratingNote">Ghi chú</label>
+          <InputText id="ratingNote" v-model="ratingRequest.note" placeholder="Nhập ghi chú (tùy chọn)" />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" class="p-button-text" @click="isRatingDialogVisible = false" />
+        <Button label="Gửi" class="p-button-success" @click="submitRating" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -242,6 +271,7 @@ import type { OrderItemResponseDTO } from '@/types/OrderItemResponseDTO'
 import type { OrderItemRequestDTO } from '@/types/OrderItemRequestDTO'
 import type { OrderResponseDTO } from '@/types/OrderResponseDTO'
 import { OrderItemFeedbackRequestDTO } from '@/types/OrderItemFeedbackRequestDTO'
+import { OrderItemVoteRequestDTO } from '@/types/OrderItemVoteRequestDTO'
 import { useUserStore } from '@/pinia/userStore'
 
 
@@ -253,6 +283,7 @@ const sortOrder = ref<number>()
 const route = useRoute();
 const isDialogVisible = ref(false)
 const isEditDialogVisible = ref(false)
+const isRatingDialogVisible = ref(false)
 const usersStore = useUserStore();
 const toast = useToast()
 
@@ -282,6 +313,12 @@ const editOrder = ref<OrderItemRequestDTO>({
   sugar: '',
   ice: '',
   topping: '',
+  note: ''
+})
+
+const ratingRequest = ref<OrderItemVoteRequestDTO>({
+  orderItemId: '',
+  rating: 0,
   note: ''
 })
 
@@ -388,6 +425,25 @@ const openEditDialog = async (id: string) => {
     isEditDialogVisible.value = true;
   } catch (error) {
     console.error('Error fetching order item:', error);
+  }
+};
+
+const rateOrder = (id: string) => {
+  ratingRequest.value.orderItemId = id;
+  ratingRequest.value.rating = 0;
+  ratingRequest.value.note = '';
+  isRatingDialogVisible.value = true;
+};
+
+const submitRating = async () => {
+  try {
+    await axiosInstance.post(`/order-item-vote`, ratingRequest.value);
+    toast.add({ severity: 'success', summary: 'Thành công', detail: 'Đánh giá của bạn đã được gửi!', life: 3000 });
+    isRatingDialogVisible.value = false;
+    fetchOrders();
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể gửi đánh giá!', life: 3000 });
   }
 };
 

@@ -444,6 +444,8 @@ const fetchOrder = async () => {
     const orderId = route.params.id;
     const response = await axiosInstance.get(`/orders/${orderId}`);
     order.value = response.data;
+    console.log('Đơn hàng:', order.value);
+    
   } catch (error) {
     console.error('Error fetching order:', error);
   }

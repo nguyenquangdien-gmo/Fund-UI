@@ -476,23 +476,21 @@ const updateRestaurant = async () => {
   }
 };
 
-
-const createOrder = async () => {
-  const validateFields = () => {
+const validateFields = () => {
     if (selectMode.value === 'select' && !order.value.restaurantId) return 'Vui lòng chọn quán!';
     if (!order.value.title) return 'Tiêu đề là bắt buộc.';
     if (!order.value.description) return 'Mô tả là bắt buộc.';
     if (!order.value.deadline) return 'Hạn chót là bắt buộc.';
     if (selectMode.value === 'input' && !otherRestaurantLink.value) return 'Vui lòng nhập link quán!';
     return null;
-  };
+};
 
+const createOrder = async () => {
   const error = validateFields();
   if (error) {
     toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: error, life: 3000 });
     return;
   }
-
   try {
     if (selectMode.value === 'input') {
       const slug = otherRestaurantLink.value.split('/').pop()?.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') || '';
@@ -501,6 +499,16 @@ const createOrder = async () => {
       order.value.restaurantId = restaurantResponse.data.id;
     }
 
+    if (order.value.deadline) {
+      const deadline = new Date(order.value.deadline);
+
+      // Cộng thêm 7 giờ (7 * 60 * 60 * 1000 ms)
+      deadline.setTime(deadline.getTime() + (7 * 60 * 60 * 1000));
+
+      // Gán lại vào order
+      order.value.deadline = deadline;
+    }
+  
     const response = await axiosInstance.post('/orders', order.value);
     if (response && response.status === 201) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Order đã được tạo!', life: 3000 });

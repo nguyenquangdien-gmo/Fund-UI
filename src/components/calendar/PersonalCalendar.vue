@@ -1571,7 +1571,6 @@ async function syncData() {
       toast.add({
         severity: failedCount > 0 ? 'warn' : 'success',
         summary: failedCount > 0 ? 'Đồng bộ một phần' : 'Đồng bộ thành công',
-        detail: ,
         life: 4000
       });
     } else {

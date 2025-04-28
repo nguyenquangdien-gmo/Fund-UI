@@ -48,6 +48,11 @@
       </template>
       </Column> -->
       <Column field="restaurantName" header="Tên quán" sortable />
+      <Column field="details.length" header="Số lượng đặt" sortable>
+        <template #body="{ data }">
+          {{ data.details.length }}
+        </template>
+      </Column>
       <Column field="createdBy.fullName" header="Người tạo" sortable />
       <Column field="deadline" header="Hạn chót" sortable>
         <template #body="{ data }">
@@ -109,13 +114,23 @@ const fetchOrders = async () => {
   try {
     const response = await axiosInstance.get('/orders', {
       params: {
-      startDate: startDate.value ? startDate.value.toISOString() : null,
-      endDate: endDate.value ? endDate.value.toISOString() : null,
+        startDate: startDate.value ? startDate.value.toISOString() : null,
+        endDate: endDate.value ? endDate.value.toISOString() : null,
       },
-    })
-    orders.value = response.data
+    });
+    const fetchedOrders = response.data;
+
+    // Fetch details for each order
+    const detailedOrders = await Promise.all(
+      fetchedOrders.map(async (order: OrderResponseDTO) => {
+        const detailsResponse = await axiosInstance.get(`/orders/${order.id}/details`);
+        return { ...order, details: detailsResponse.data };
+      })
+    );
+
+    orders.value = detailedOrders;
   } catch (error) {
-    console.error('Error fetching orders:', error)
+    console.error('Error fetching orders:', error);
   }
 }
 

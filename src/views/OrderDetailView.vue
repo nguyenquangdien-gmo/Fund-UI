@@ -22,53 +22,65 @@
     </div>
 
     <DataTable
-      v-if="filteredOrderItems.length > 0"
-      :value="filteredOrderItems"
+      v-if="numberedOrderItems.length > 0"     
+      :value="numberedOrderItems"
       paginator
       :rows="10"
+      :rowsPerPageOptions="[5, 10, 20, 50]"
       :sortField="sortField"
       :sortOrder="sortOrder"
       responsiveLayout="scroll"
+      :rowClass="rowClass"
       class="p-datatable-sm"
     >
+      <!-- Cột STT -->
       <Column header="STT">
         <template #body="{ index }">
           {{ index + 1 }}
         </template>
       </Column>
+
+      <!-- Các cột còn lại giữ nguyên như bạn cũ -->
       <Column field="itemName" header="Tên món" sortable />
       <Column field="size" header="Kích cỡ" sortable />
       <Column field="sugar" header="Đường" sortable />
       <Column field="ice" header="Đá" sortable />
+      
       <Column field="topping" header="Topping" sortable>
         <template #body="{ data }">
           {{ data.topping || 'Không có' }}
         </template>
       </Column>
+
       <Column field="note" header="Ghi chú" sortable>
         <template #body="{ data }">
           {{ data.note.length > 30 ? data.note.substring(0, 30) + '...' : data.note }}
         </template>
       </Column>
+
       <Column field="user.fullName" header="Người đặt" sortable />
+
       <Column field="createdAt" header="Ngày tạo" sortable>
         <template #body="{ data }">
           {{ new Date(data.createdAt).toLocaleDateString() }}
         </template>
       </Column>
+
+      <!-- Cột Hành động (nếu user chính mình thì cho sửa) -->
       <Column header="Hành động">
         <template #body="{ data }">
-            <Button 
+          <Button 
             v-if="data.user.id === users?.id" 
             label="Sửa" 
             class="p-button-sm p-button-warning" 
             icon="pi pi-pencil" 
             iconPos="left" 
             @click="openEditDialog(data.id)" 
-            />
+          />
         </template>
       </Column>
     </DataTable>
+
 
 
     <Dialog 
@@ -186,29 +198,6 @@
       </template>
     </Dialog>
   </div>
-
-  <div class="p-4 space-y-4">
-    <h3 class="text-xl font-semibold">Tổng hợp món</h3>
-    <DataTable
-      :value="groupedOrderItems"
-      rowGroupMode="subheader"
-      groupRowsBy="itemName"
-      responsiveLayout="scroll"
-      class="p-datatable-sm"
-    >
-      <template #groupheader="slotProps">
-        <p class="font-bold text-lg"><strong>{{ slotProps.data.itemName }}</strong></p>
-      </template>
-
-      <Column field="itemName" header="Tên món" />
-      <Column field="size" header="Kích cỡ" />
-      <Column field="sugar" header="Đường" />
-      <Column field="ice" header="Đá" />
-      <Column field="topping" header="Topping" />
-      <Column field="quantity" header="Số lượng" />
-    </DataTable>
-
-  </div>
 </template>
 
 <script lang="ts" setup>
@@ -237,6 +226,7 @@ const usersStore = useUserStore();
 const toast = useToast()
 
 const users = computed(() => usersStore.user);
+
 
 const newOrder = ref<OrderItemRequestDTO>({
   orderId: Array.isArray(route.params.id) ? route.params.id[0] : route.params.id, // Ensure orderId is a string
@@ -274,34 +264,46 @@ onMounted(() => {
 })
 
 const filteredOrderItems = computed(() =>
-  orderItems.value.filter(r => {
-    const matchesSearchTerm = r.user.fullName.toLowerCase().includes(searchTerm.value.toLowerCase());
-    return matchesSearchTerm;
-  })
+  [...orderItems.value]
+    .filter(r => {
+      const matchesSearchTerm = r.user.fullName.toLowerCase().includes(searchTerm.value.toLowerCase());
+      return matchesSearchTerm;
+    })
+    .sort((a, b) => a.itemName.localeCompare(b.itemName))
 );
 
-const groupedOrderItems = computed(() => {
-  const grouped: Record<string, (OrderItemResponseDTO & { quantity: number })> = {};
+const splitOrderItems = (items: OrderItemResponseDTO[]) => {
+  const groups: OrderItemResponseDTO[][] = [];
+  const temp = [...items];
 
-  for (const item of orderItems.value) {
-    // Tạo key theo thứ tự ưu tiên gom nhóm
-    const key = [
-      item.itemName || 'null', 
-      item.size || 'null',
-      item.sugar || 'null',
-      item.ice || 'null',
-      item.topping || 'null'
-    ].join('|');
-
-    if (!grouped[key]) {
-      grouped[key] = { ...item, quantity: 0 };
-    }
-    grouped[key].quantity += 1;
+  while (temp.length > 0) {
+    const groupSize = temp.length <= 7 ? temp.length : Math.min(7, Math.ceil(temp.length / Math.ceil(temp.length / 7)));
+    groups.push(temp.splice(0, groupSize));
   }
-  console.log(grouped);
 
-  return Object.values(grouped);
+  return groups;
+};
+
+// 3. Gán số thứ tự và nhóm đơn
+const numberedOrderItems = computed(() => {
+  const groups = splitOrderItems(filteredOrderItems.value);
+  const result: OrderItemResponseDTO[] = [];
+  groups.forEach((group, groupIndex) => {
+    group.forEach((item) => {
+      result.push({
+        ...item,
+        orderNumber: groupIndex + 1, // Đơn số mấy
+      });
+    });
+  });
+  return result;
 });
+
+const rowClass = (data: OrderItemResponseDTO) => {
+  const colors = ['bg-white', 'bg-gray-100', 'bg-yellow-50', 'bg-green-50', 'bg-blue-50', 'bg-pink-50'];
+  return colors[((data.orderNumber ?? 1) - 1) % colors.length] || 'bg-white';
+};
+
 
 
 const openOrderDialog = () => {
@@ -358,5 +360,28 @@ const updateOrder = async () => {
 <style scoped>
 .text-red-500 {
   color: #ef4444;
+}
+:deep(.bg-white) {
+  background-color: #ffffff !important;
+}
+
+:deep(.bg-gray-100) {
+  background-color: #f3f4f6 !important;
+}
+
+:deep(.bg-yellow-50) {
+  background-color: #fef3c7 !important;
+}
+
+:deep(.bg-green-50) {
+  background-color: #d1fae5 !important;
+}
+
+:deep(.bg-blue-50) {
+  background-color: #dbeafe !important;
+}
+
+:deep(.bg-pink-50) {
+  background-color: #fde2e2 !important;
 }
 </style>

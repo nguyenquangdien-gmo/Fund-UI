@@ -21,5 +21,6 @@ export interface UserResponseDTO {
     topping: string;
     note: string;
     createdAt: Date;
+    orderNumber?: number;
   }
   

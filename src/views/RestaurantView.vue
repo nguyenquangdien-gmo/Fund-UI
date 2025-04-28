@@ -22,8 +22,8 @@
 
         <div class="d-flex gap-2">
             <Button label="Thêm quán nước" icon="pi pi-plus" @click="openDialog" />
-            <Button label="Danh sách order" icon="pi pi-list" class="p-ml-2" @click="$router.push('/orders')" />
             <Button label="Tạo order" icon="pi pi-calendar" class="p-ml-2" @click="placeOrder" />
+            <Button label="Danh sách order" icon="pi pi-list" class="p-ml-2" @click="$router.push('/orders')" />
         </div>
       </div>
     </div>
@@ -137,11 +137,26 @@
     <!-- Create Order -->
     <Dialog v-model:visible="isOrderDialogVisible" header="Tạo Order" :style="{ width: '480px' }">
       <form @submit.prevent="createOrder" class="flex flex-col space-y-4">
+        <div class="p-2">
+          <label for="restaurantId" class="mb-2">Lựa chọn</label>
+          <div class="d-flex align-items-center justify-content-between p-2">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" id="selectExisting" value="select" v-model="selectMode" />
+                  <label class="form-check-label" for="selectExisting">Chọn quán có sẵn</label>
+                </div>
 
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" id="inputNew" value="input" v-model="selectMode" />
+                  <label class="form-check-label" for="inputNew">Nhập link quán ngoài</label>
+                </div>
+            </div>
+        </div>
+
+            
         <div class="d-flex align-items-center justify-content-between p-2">
             <label for="restaurantId" class="mb-2">Quán<span class="text-red-500">*</span></label>
-            <div class="d-flex align-items-center justify-content-end gap-2" style="width: 60%;">
-              <Dropdown 
+            <div v-if="selectMode === 'select'" class="d-flex align-items-center justify-content-end gap-2" style="width: 60%;">
+              <Dropdown
                 v-model="order.restaurantId" 
                 optionLabel="label"
                 optionValue="value"
@@ -160,7 +175,6 @@
                   </div>
                 </template>
               </Dropdown>
-
               <Button 
                   icon="pi pi-random" 
                   @click="randomRestaurant" 
@@ -171,7 +185,18 @@
                   <i class="pi pi-spin pi-spinner" style="padding: 0.2rem 0;"></i>
               </Button>
             </div>
+            <div v-else style="width: 53%;" >
+                <InputText 
+                  v-model="otherRestaurantLink" 
+                  placeholder="Nhập link quán ngoài..." 
+                  style="width: 100%;" 
+                />
+            </div>
         </div>
+
+
+
+        <!--  -->
         <div class="d-flex align-items-center justify-content-between p-2">
           <label for="title" class="mb-2">Tiêu đề<span class="text-red-500">*</span></label>
           <InputText v-model="order.title" id="title" placeholder="Nhập tiêu đề..." required style="width: 53%;" />
@@ -238,6 +263,8 @@ import type { User } from '@/types/User'
 const user = ref<User[]>([])
 
 const restaurants = ref<RestaurantResponseDTO[]>([])
+const selectMode = ref<'select' | 'input'>('select');
+const otherRestaurantLink = ref('');
 const isDialogVisible = ref(false);
 const searchTerm = ref('')
 const filterType = ref(null)
@@ -318,8 +345,6 @@ const closeDialog = () => {
 const addRestaurant = async () => {
   try {
     const response = await axiosInstance.post('restaurants', restaurant.value);
-    console.log('response', response);
-
     if (response && response.status === 200) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được thêm!', life: 3000 });
       closeDialog();
@@ -355,38 +380,38 @@ const closeOrderDialog = () => {
 
 
 const createOrder = async () => {
-  // Kiểm tra từng trường dữ liệu
-  if (!order.value.restaurantId) {
-    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Vui lòng chọn quán!', life: 3000 });
-    return;
-  }
-  if (!order.value.title) {
-    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Tiêu đề là bắt buộc.', life: 3000 });
-    return;
-  }
-  if (!order.value.description) {
-    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Mô tả là bắt buộc.', life: 3000 });
-    return;
-  }
-  // if (!order.value.relatedUserIds.length) {
-  //   toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Người liên quan là bắt buộc.', life: 3000 });
-  //   return;
-  // }
-  if (!order.value.deadline) {
-    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Hạn chót là bắt buộc.', life: 3000 });
+  const validateFields = () => {
+    if (selectMode.value === 'select' && !order.value.restaurantId) return 'Vui lòng chọn quán!';
+    if (!order.value.title) return 'Tiêu đề là bắt buộc.';
+    if (!order.value.description) return 'Mô tả là bắt buộc.';
+    if (!order.value.deadline) return 'Hạn chót là bắt buộc.';
+    if (selectMode.value === 'input' && !otherRestaurantLink.value) return 'Vui lòng nhập link quán!';
+    return null;
+  };
+
+  const error = validateFields();
+  if (error) {
+    toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: error, life: 3000 });
     return;
   }
 
   try {
-    console.log("order", order.value);
+    if (selectMode.value === 'input') {
+      const slug = otherRestaurantLink.value.split('/').pop()?.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') || '';
+      const newRestaurant = { name: slug, link: otherRestaurantLink.value, type: RestaurantType.BOTH };
+      const restaurantResponse = await axiosInstance.post('restaurants', newRestaurant);
+      order.value.restaurantId = restaurantResponse.data.id;
+    }
+
     const response = await axiosInstance.post('/orders', order.value);
     if (response && response.status === 201) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Order đã được tạo!', life: 3000 });
       closeOrderDialog();
+      fetchRestaurants();
     } else {
-      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể tạo order!', life: 3000 });
+      throw new Error('Không thể tạo order!');
     }
-  } catch (error: unknown) {
+  } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo order!', life: 3000 });
   }
 };

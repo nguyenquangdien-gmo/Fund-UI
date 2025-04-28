@@ -77,6 +77,19 @@
         </template>
       </Column>
       <Column field="orderCount" header="Số lần order" sortable />
+      <Column v-if="isAdminRole" header="Hành động">
+        <template #body="{ data }">
+          <div class="flex space-x-2">
+            <Button
+              icon="pi pi-pencil"
+              label="Sửa"
+              class="p-button-warning"
+              size="small"
+              @click="editRestaurant(data)"
+            />
+          </div>
+        </template>
+      </Column>
       <!-- <Column header="Thao tác">
         <template #body="{ data }">
             <div class="flex space-x-2">
@@ -238,6 +251,41 @@
       </form>
     </Dialog>
 
+
+    <Dialog v-model:visible="isEditDialogVisible" header="Sửa Quán Nước" :style="{ width: '400px' }">
+      <form @submit.prevent="updateRestaurant" class="flex flex-col space-y-4">
+        <div class="d-flex align-items-center justify-content-between p-2">
+          <label for="editName" class="mb-2">Tên Quán<span class="text-red-500">*</span></label>
+          <InputText v-model="selectedRestaurant.name" id="editName" required />
+        </div>
+        <div class="d-flex align-items-center justify-content-between p-2">
+          <label for="editLink" class="mb-2">Link Quán<span class="text-red-500">*</span></label>
+          <InputText v-model="selectedRestaurant.link" id="editLink" placeholder="Nhập link quán..." required />
+        </div>
+        <div class="d-flex align-items-center justify-content-between p-2">
+          <label for="editType" class="mb-2">Loại Quán<span class="text-red-500">*</span></label>
+          <Dropdown 
+            v-model="selectedRestaurant.type" 
+            optionLabel="label"
+            optionValue="value"
+            :options="[
+              { label: 'Quán nước', value: RestaurantType.DRINK },
+              { label: 'Quán ăn', value: RestaurantType.FOOD },
+              { label: 'Cả hai', value: RestaurantType.BOTH }
+            ]" 
+            id="editType" 
+            placeholder="Chọn loại quán" 
+            required 
+            style="width: 60%;"
+          />
+        </div>
+        <div class="d-flex align-items-center justify-content-end space-x-2 p-2">
+          <Button label="Hủy" icon="pi pi-times" @click="closeEditDialog" class="p-button-text" />
+          <Button label="Lưu" icon="pi pi-check" type="submit" />
+        </div>
+      </form>
+    </Dialog>
+
   </div>
 </template>
 
@@ -263,11 +311,18 @@ import type { User } from '@/types/User'
 const user = ref<User[]>([])
 
 const restaurants = ref<RestaurantResponseDTO[]>([])
+const selectedRestaurant = ref<RestaurantRequestDTO>({
+  name: '',
+  link: '',
+  type: RestaurantType.BOTH,
+});
+const isEditDialogVisible = ref(false)
 const selectMode = ref<'select' | 'input'>('select');
 const otherRestaurantLink = ref('');
 const isDialogVisible = ref(false);
 const searchTerm = ref('')
 const filterType = ref(null)
+const isAdminRole = ref(false)
 const sortField = ref<string>()
 const sortOrder = ref<number>()
 const toast = useToast()
@@ -308,9 +363,25 @@ const fetchUsers = async () => {
   }
 }
 
+const checkAdmin = async () => {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return false
+  try {
+    const response = await axiosInstance.get('/tokens/is-admin', {
+      params: { token },
+    })
+    isAdminRole.value = response.data // Trả về true nếu là admin
+  } catch (error) {
+    // console.error('Lỗi khi kiểm tra quyền admin:', error)
+    isAdminRole.value = false
+  }
+}
+
+
 onMounted(() => {
   fetchRestaurants();
   fetchUsers();
+  checkAdmin();
 })
 
 const filteredRestaurants = computed(() =>
@@ -338,6 +409,18 @@ const closeDialog = () => {
   // Reset dữ liệu sau khi đóng dialog
   restaurant.value.name = '';
   restaurant.value.link = '';
+};
+
+const editRestaurant = (restaurant: RestaurantResponseDTO) => {
+  selectedRestaurant.value = { ...restaurant };
+  isEditDialogVisible.value = true;
+};
+
+const closeEditDialog = () => {
+  isEditDialogVisible.value = false;
+  // Reset dữ liệu sau khi đóng dialog
+  selectedRestaurant.value.name = '';
+  selectedRestaurant.value.link = '';
 };
 
 
@@ -376,6 +459,21 @@ const closeOrderDialog = () => {
     restaurantId: null,
     relatedUserIds: [],
   };
+};
+
+const updateRestaurant = async () => {
+  try {
+    const response = await axiosInstance.put(`restaurants/${selectedRestaurant.value.id}`, selectedRestaurant.value);
+    if (response && response.status === 200) {
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được cập nhật!', life: 3000 });
+      closeEditDialog();
+      fetchRestaurants();
+    } else {
+      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể cập nhật quán nước!', life: 3000 });
+    }
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật quán nước!', life: 3000 });
+  }
 };
 
 
@@ -472,7 +570,6 @@ const resetUsedRestaurants = () => {
     life: 3000,
   });
 };
-
 
 // const likeRestaurant = async (restaurant: RestaurantResponseDTO) => {
 //   try {

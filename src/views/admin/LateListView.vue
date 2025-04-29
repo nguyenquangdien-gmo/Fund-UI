@@ -5,64 +5,24 @@
     <div class="navbar-actions">
       <div class="flex gap-4">
         Từ
-        <Calendar
-          v-model="fromDate"
-          dateFormat="dd-mm-yy"
-          placeholder="Từ ngày"
-          @date-select="fetchLateRecords"
-        />
+        <Calendar v-model="fromDate" dateFormat="dd-mm-yy" placeholder="Từ ngày" @date-select="fetchLateRecords" />
         đến
-        <Calendar
-          v-model="toDate"
-          dateFormat="dd-mm-yy"
-          placeholder="Đến ngày"
-          @date-select="fetchLateRecords"
-        />
+        <Calendar v-model="toDate" dateFormat="dd-mm-yy" placeholder="Đến ngày" @date-select="fetchLateRecords" />
         Tìm kiếm
-        <AutoComplete
-          :suggestions="suggestions"
-          @complete="searchItems"
-          @item-select="handleSelect"
-          optionLabel="label"
-          dropdown
-          placeholder="🔍 Tìm theo tên hoặc ID"
-          class="p-inputtext-sm w-64"
-        />
+        <AutoComplete :suggestions="suggestions" @complete="searchItems" @item-select="handleSelect" optionLabel="label"
+          dropdown placeholder="🔍 Tìm theo tên hoặc ID" class="p-inputtext-sm w-64" />
       </div>
       <div>
         <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
-        <Button
-          v-if="isAdmin"
-          label="Cài đặt"
-          icon="pi pi-cog"
-          class="p-button-sm"
-          severity="success"
-          raised
-          @click="openScheduleDialog('settings')"
-        />
-        <Button
-          v-if="isAdmin"
-          label="Check now"
-          icon="pi pi-check"
-          class="p-button-sm"
-          severity="success"
-          raised
-          @click="openScheduleDialog('check')"
-        />
+        <Button v-if="isAdmin" label="Cài đặt" icon="pi pi-cog" class="p-button-sm" severity="success" raised
+          @click="openScheduleDialog('settings')" />
+        <Button v-if="isAdmin" label="Check now" icon="pi pi-check" class="p-button-sm" severity="success" raised
+          @click="openScheduleDialog('check')" />
       </div>
     </div>
 
-    <DataTable
-      v-if="filteredRecords.length > 0"
-      :value="filteredRecords"
-      :paginator="true"
-      :rows="15"
-      :first="first"
-      @page="onPage"
-      :rowsPerPageOptions="[10, 50, 100]"
-      stripedRows
-      responsiveLayout="scroll"
-    >
+    <DataTable v-if="filteredRecords.length > 0" :value="filteredRecords" :paginator="true" :rows="15" :first="first"
+      @page="onPage" :rowsPerPageOptions="[10, 50, 100]" stripedRows responsiveLayout="scroll">
       <Column header="STT" sortable>
         <template #body="{ index }">
           {{ first + index + 1 }}
@@ -110,12 +70,7 @@
       </Column>
       <Column header="Hành động" v-if="isAdmin">
         <template #body="{ data }">
-          <Button
-            label="Xóa"
-            icon="pi pi-trash"
-            class="p-button-danger p-button-sm"
-            @click="deleteRecord(data)"
-          />
+          <Button label="Xóa" icon="pi pi-trash" class="p-button-danger p-button-sm" @click="deleteRecord(data)" />
         </template>
       </Column>
     </DataTable>
@@ -134,25 +89,18 @@
     <!-- Form chọn lại -->
     <div class="col-12 mb-3 item-dialog">
       <label class="font-bold mb-2"> Channel id</label>
-      <InputText
-        v-model="scheduleForm.channelId"
-        placeholder="Vui lòng nhập channel id của chatops"
-        class="w-full"
-      />
+      <InputText v-model="scheduleForm.channelId" placeholder="Vui lòng nhập channel id của chatops" class="w-full" />
       <small class="text-danger" v-if="errors.channelId && dialogMode !== 'settings'">{{
         errors.channelId
-      }}</small>
+        }}</small>
       <label class="font-bold mb-2"> Thời gian gửi <span class="text-danger">*</span> </label>
       <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
     </div>
 
     <div class="actions-dialog">
       <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
-      <Button
-        :label="dialogMode === 'settings' ? 'Cập nhật' : 'Kiểm tra ngay'"
-        severity="primary"
-        @click="handleAction"
-      />
+      <Button :label="dialogMode === 'settings' ? 'Cập nhật' : 'Kiểm tra ngay'" severity="primary"
+        @click="handleAction" />
     </div>
   </Dialog>
 </template>
@@ -270,6 +218,7 @@ const fetchLateRecords = async () => {
       },
     })
     lateRecords.value = response.data
+    console.log(response.data)
     // Trường hợp API trả về chuỗi JSON, cần parse
     const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 

@@ -6,9 +6,7 @@
       <div class="profile-container">
         <div class="avatar-info">
           <img :src="form.avatarImage || '/image.png'" alt="Avatar" class="avatar" />
-          <Button severity="info" @click="openUpdateDialog(form)" class="btn-update"
-            >Cập nhật thông tin</Button
-          >
+          <Button severity="info" @click="openUpdateDialog(form)" class="btn-update">Cập nhật thông tin</Button>
         </div>
         <div class="profile-info">
           <div>
@@ -68,24 +66,12 @@
         <Button label="Đổi mật khẩu" severity="primary" @click="changePassword" class="w-full" />
       </div>
     </div>
-    <Dialog
-      v-model:visible="showUserDialog"
-      modal
-      :header="isUpdate ? 'Cập nhật' : 'Thêm'"
-      @hide="resetErrors"
-      :style="{ width: '30rem' }"
-    >
+    <Dialog v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'" @hide="resetErrors"
+      :style="{ width: '30rem' }">
       <div class="mb-3">
         <label for="id" class="fw-bold"> Mã nhân viên <span class="text-danger">*</span> </label>
-        <InputNumber
-          id="id"
-          :useGrouping="false"
-          v-model="form.id"
-          class="w-100"
-          type="number"
-          disabled
-          autocomplete="off"
-        />
+        <InputNumber id="id" :useGrouping="false" v-model="form.id" class="w-100" type="number" disabled
+          autocomplete="off" />
         <small class="text-danger" v-if="errors.id">{{ errors.id }}</small>
       </div>
       <div class="mb-3">
@@ -105,13 +91,7 @@
       </div>
       <div class="mb-3">
         <label for="phone" class="fw-bold">SĐT</label>
-        <InputText
-          :useGrouping="false"
-          id="phone"
-          v-model="form.phoneNumber"
-          class="w-100"
-          autocomplete="off"
-        />
+        <InputText :useGrouping="false" id="phone" v-model="form.phoneNumber" class="w-100" autocomplete="off" />
         <small class="text-danger" v-if="errors.phone">{{ errors.phone }}</small>
       </div>
       <div class="mb-3">
@@ -126,28 +106,15 @@
     </div> -->
       <div class="mb-3">
         <label for="slugTeam" class="fw-bold"> Team <span class="text-danger">*</span> </label>
-        <Dropdown
-          id="slugTeam"
-          v-model="selectedTeam"
-          :options="teams"
-          optionLabel="name"
-          optionValue="slug"
-          placeholder="Chọn Team"
-          class="w-100"
-        />
+        <Dropdown id="slugTeam" v-model="selectedTeam" :options="teams" optionLabel="name" optionValue="slug"
+          placeholder="Chọn Team" class="w-100" />
         <small class="text-danger" v-if="errors.slugTeam">{{ errors.slugTeam }}</small>
       </div>
       <div class="mb-3">
         <label for="joinDate" class="fw-bold">
           Ngày tham gia <span class="text-danger">*</span>
         </label>
-        <Calendar
-          id="joinDate"
-          v-model="seletedJoinDate"
-          dateFormat="dd/mm/yy"
-          class="w-100"
-          showIcon
-        />
+        <Calendar id="joinDate" v-model="seletedJoinDate" dateFormat="dd/mm/yy" class="w-100" showIcon />
         <small class="text-danger" v-if="errors.joinDate">{{ errors.joinDate }}</small>
       </div>
       <div class="mb-3">
@@ -158,13 +125,16 @@
         </div>
         <small class="text-danger" v-if="errors.avatar">{{ errors.avatar }}</small>
       </div>
+      <div class="mb-3">
+        <label class="fw-bold">QR<span class="text-danger">*</span></label>
+        <FileUpload mode="basic" accept="image/*" customUpload @select="handleQrCodeUpload" />
+        <div class="avatar-image">
+          <img v-if="qrCode" :src="qrCode" class="avatar-preview" />
+        </div>
+        <small class="text-danger" v-if="errors.qrCode">{{ errors.qrCode }}</small>
+      </div>
       <div class="d-flex justify-content-end gap-2">
-        <Button
-          type="button"
-          label="Hủy"
-          severity="secondary"
-          @click="showUserDialog = false"
-        ></Button>
+        <Button type="button" label="Hủy" severity="secondary" @click="showUserDialog = false"></Button>
         <Button type="button" label="Lưu" severity="primary" @click="saveUser"></Button>
       </div>
     </Dialog>
@@ -199,6 +169,7 @@ type User = {
   joinDate?: string
   team?: string
   avatarImage: string | null
+  qrCode: string | null
 }
 
 const form = ref<User>({
@@ -211,6 +182,7 @@ const form = ref<User>({
   joinDate: '',
   team: '',
   avatarImage: null,
+  qrCode: null,
 })
 
 const passwordData = ref({
@@ -219,6 +191,7 @@ const passwordData = ref({
   confirmPassword: '',
 })
 const avatar = ref<string | null>(null)
+const qrCode = ref<string | null>(null)
 // const fetchAvatar = async () => {
 //   try {
 //     const response = await axiosInstance.get(`/users/${user.value.id}/avatar`, {
@@ -230,22 +203,31 @@ const avatar = ref<string | null>(null)
 //     console.error('Error fetching avatar:', error)
 //   }
 // }
-
 const fetchUserProfile = async () => {
   try {
     const response = await axiosInstance.post('/users/get-user', { email: user.value.email })
     form.value = response.data
     oldId.value = response.data.id
     console.log(response.data)
+
     const imageRes = await axiosInstance.get(`/users/${user.value.id}/avatar`, {
       responseType: 'blob',
     })
-    const blob = new Blob([imageRes.data], { type: 'image/png' })
-    form.value.avatarImage = URL.createObjectURL(blob)
+    const image = new Blob([imageRes.data], { type: 'image/png' })
+    form.value.avatarImage = URL.createObjectURL(image)
+
+    const qrCodeRes = await axiosInstance.get(`/users/${user.value.id}/qr-code`, {
+      responseType: 'blob',
+    })
+    const qrCode = new Blob([qrCodeRes.data], { type: 'image/png' })
+    form.value.qrCode = URL.createObjectURL(qrCode)
+    console.log('form.value', form.value)
+
   } catch (error) {
     console.error('Error fetching user profile:', error)
   }
 }
+
 const validatePassword = () => {
   if (!passwordData.value.currentPassword) {
     error.value.oldPass = 'Vui lòng nhập mật khẩu hiện tại!'
@@ -347,6 +329,14 @@ const handleFileUpload = (event: any) => {
     avatar.value = URL.createObjectURL(file)
   }
 }
+
+const handleQrCodeUpload = (event: any) => {
+  const file = event.files[0]
+  if (file) {
+    form.value.qrCode = file
+    qrCode.value = URL.createObjectURL(file)
+  }
+}
 // update user profile
 const teams = ref<{ id: string; name: string; slug: string }[]>([])
 const selectedTeam = ref('')
@@ -375,6 +365,7 @@ const errors = ref({
   joinDate: '',
   slugTeam: '',
   avatar: '',
+  qrCode: '',
 })
 const resetErrors = () => {
   errors.value = {
@@ -387,6 +378,7 @@ const resetErrors = () => {
     joinDate: '',
     slugTeam: '',
     avatar: '',
+    qrCode: '',
   }
 }
 
@@ -409,8 +401,10 @@ const openUpdateDialog = (user: User) => {
     joinDate: user.joinDate,
     team: findTeam(user.team ?? ''),
     avatarImage: user.avatarImage,
+    qrCode: user.qrCode,
   }
   avatar.value = user.avatarImage
+  qrCode.value = user.qrCode
   selectedTeam.value = findTeam(user.team ?? '')
   oldId.value = user.id
   // console.log('team', user.team, 'slug', user.team)
@@ -434,14 +428,15 @@ const validateUserForm = async () => {
     joinDate: '',
     slugTeam: '',
     avatar: '',
+    qrCode: '',
   }
 
   if (!form.value.id) errors.value.id = 'Vui lòng nhập mã nhân viên!'
   if (form.value.id <= 0) errors.value.id = 'Mã nhân viên không hợp lệ!'
+
   if (!form.value.email) {
     errors.value.email = 'Vui lòng nhập email!'
   } else {
-    // Kiểm tra email có bị trùng với users hay không
     const response = await axiosInstance.post('/users/check-email', {
       email: form.value.email,
     })
@@ -449,6 +444,7 @@ const validateUserForm = async () => {
       errors.value.email = 'Email đã tồn tại!'
     }
   }
+
   if (!form.value.phoneNumber) {
     errors.value.phone = 'Vui lòng nhập số điện thoại!'
   } else if (!/^\d{10}$/.test(form.value.phoneNumber)) {
@@ -460,8 +456,17 @@ const validateUserForm = async () => {
   if (!seletedJoinDate.value) errors.value.joinDate = 'Vui lòng chọn ngày tham gia!'
   if (!selectedTeam.value) errors.value.slugTeam = 'Vui lòng nhập team!'
 
+  if (!form.value.avatarImage) {
+    errors.value.avatar = 'Vui lòng chọn ảnh đại diện!'
+  }
+
+  if (!form.value.qrCode) {
+    errors.value.qrCode = 'Vui lòng chọn mã QR!'
+  }
+
   return Object.values(errors.value).every((err) => err === '')
 }
+
 
 //save user
 // Sửa lại hàm saveUser để xử lý file upload đúng cách
@@ -491,6 +496,11 @@ const saveUser = async () => {
     if (form.value.avatarImage && typeof form.value.avatarImage !== 'string') {
       formData.append('avatarImage', form.value.avatarImage)
     }
+
+    if (form.value.qrCode && typeof form.value.qrCode !== 'string') {
+      formData.append('qrCode', form.value.qrCode)
+    }
+    console.log('formData', formData)
 
     // Gửi request với FormData
     await axiosInstance.put(`/users/${oldId.value}/update`, formData, {

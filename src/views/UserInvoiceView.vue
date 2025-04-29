@@ -3,32 +3,12 @@
     <div class="p-4">
       <h2 class="text-center text-xl">DANH SÁCH THU CHI</h2>
       <div class="mb-3">
-        <InputText
-          v-if="invoices.length > 0"
-          v-model="searchQuery"
-          placeholder="Tìm kiếm theo tên chi tiêu..."
-          style="width: 20%"
-          class="w-full p-inputtext-sm"
-        />
-        <Button
-          label="Tạo phiếu"
-          class="btn-create"
-          severity="success"
-          raised
-          size="small"
-          @click="openCreateDialog"
-        />
+        <InputText v-if="invoices.length > 0" v-model="searchQuery" placeholder="Tìm kiếm theo tên chi tiêu..."
+          style="width: 20%" class="w-full p-inputtext-sm" />
+        <Button label="Tạo phiếu" class="btn-create" severity="success" raised size="small" @click="openCreateDialog" />
       </div>
-      <DataTable
-        v-if="invoices.length > 0"
-        :value="filteredInvoice"
-        paginator
-        :rows="10"
-        :first="first"
-        @page="onPage"
-        :rowsPerPageOptions="[10, 50, 100]"
-        class="p-datatable-sm"
-      >
+      <DataTable v-if="invoices.length > 0" :value="filteredInvoice" paginator :rows="10" :first="first" @page="onPage"
+        :rowsPerPageOptions="[10, 50, 100]" class="p-datatable-sm">
         <Column header="STT" sortable>
           <template #body="{ index }">
             {{ index + 1 }}
@@ -47,18 +27,12 @@
         </Column>
         <Column field="invoiceType" header="Loại" sortable>
           <template #body="{ data }">
-            <Tag
-              :value="getInvoiceTypeLabel(data.invoiceType)"
-              :severity="getInvoiceTypeSeverity(data.invoiceType)"
-            />
+            <Tag :value="getInvoiceTypeLabel(data.invoiceType)" :severity="getInvoiceTypeSeverity(data.invoiceType)" />
           </template>
         </Column>
         <Column field="status" header="Trạng thái" sortable>
           <template #body="{ data }">
-            <Tag
-              :value="getInvoiceStatusLabel(data.status)"
-              :severity="getInvoiceStatusSeverity(data.status)"
-            />
+            <Tag :value="getInvoiceStatusLabel(data.status)" :severity="getInvoiceStatusSeverity(data.status)" />
           </template>
         </Column>
         <!-- <Column field="userId" header="Tạo bởi" sortable></Column> -->
@@ -69,21 +43,10 @@
         </Column>
         <Column header="Actions" style="width: 20%">
           <template #body="{ data }">
-            <Button
-              label="Sửa"
-              icon="pi pi-refresh"
-              severity="info"
-              @click="openUpdateDialog(data)"
-              :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'"
-            />
-            <Button
-              label="Delete"
-              icon="pi pi-trash"
-              severity="danger"
-              @click="confirmDeleteInvoice(data)"
-              style="margin-left: 10px"
-              :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'"
-            />
+            <Button label="Sửa" icon="pi pi-refresh" severity="info" @click="openUpdateDialog(data)"
+              :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
+            <Button label="Delete" icon="pi pi-trash" severity="danger" @click="confirmDeleteInvoice(data)"
+              style="margin-left: 10px" :hidden="data.status === 'APPROVED' || data.status === 'CANCELLED'" />
             <p v-if="data.status === 'APPROVED' || data.status === 'CANCELLED'">Đã duyệt</p>
           </template>
         </Column>
@@ -93,12 +56,7 @@
       </div>
     </div>
   </div>
-  <Dialog
-    v-model:visible="showConfirmDialog"
-    modal
-    header="Xác nhận xóa"
-    :style="{ width: '25rem' }"
-  >
+  <Dialog v-model:visible="showConfirmDialog" modal header="Xác nhận xóa" :style="{ width: '25rem' }">
     <div>Bạn có chắc chắn muốn xóa quỹ này?</div>
     <div class="d-flex justify-content-end gap-2 mt-3">
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
@@ -106,13 +64,8 @@
     </div>
   </Dialog>
 
-  <Dialog
-    v-model:visible="showInvoice"
-    modal
-    :header="isUpdate ? 'Cập nhật' : 'Tạo'"
-    @hide="resetErrors"
-    :style="{ width: '30rem' }"
-  >
+  <Dialog v-model:visible="showInvoice" modal :header="isUpdate ? 'Cập nhật' : 'Tạo'" @hide="resetErrors"
+    :style="{ width: '30rem' }">
     <div class="mb-3">
       <label for="name" class="fw-bold">Tên</label>
       <InputText id="name" v-model="user.fullName" class="w-100" autocomplete="off" disabled />
@@ -124,36 +77,26 @@
     </div>
     <div class="mb-3">
       <label for="amount" class="fw-bold">Số tiền<span class="text-danger">*</span></label>
-      <InputNumber
-        id="amount"
-        v-model="form.amount"
-        mode="currency"
-        currency="VND"
-        class="w-100"
-        locale="en-US"
-        :min="0"
-      />
+      <InputNumber id="amount" v-model="form.amount" mode="currency" currency="VND" class="w-100" locale="en-US"
+        :min="0" />
       <small class="text-danger" v-if="errors.amount">{{ errors.amount }}</small>
     </div>
     <div class="mb-3">
       <label for="type" class="fw-bold">Loại quỹ<span class="text-danger">*</span></label>
-      <Dropdown
-        v-model="selectedType"
-        :options="types"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Chọn loại quỹ"
-        class="w-100 md:w-56"
-      />
+      <Dropdown v-model="selectedType" :options="types" optionLabel="label" optionValue="value"
+        placeholder="Chọn loại quỹ" class="w-100 md:w-56" />
       <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
     </div>
+    <div class="mb-3">
+      <label class="fw-bold">Hóa đơn<span class="text-danger">*</span></label>
+      <FileUpload mode="basic" accept="image/*" customUpload @select="handleInvoiceUpload" />
+      <div class="avatar-image">
+        <img v-if="billImage" :src="billImage" class="avatar-preview" />
+      </div>
+      <small class="text-danger" v-if="errors.billImage">{{ errors.billImage }}</small>
+    </div>
     <div class="d-flex justify-content-end gap-2">
-      <Button
-        type="button"
-        label="Cancel"
-        severity="secondary"
-        @click="showInvoice = false"
-      ></Button>
+      <Button type="button" label="Cancel" severity="secondary" @click="showInvoice = false"></Button>
       <Button type="button" label="Save" severity="primary" @click="saveInvoice"></Button>
     </div>
   </Dialog>
@@ -174,6 +117,7 @@ import Dropdown from 'primevue/dropdown'
 import InvoiceType from '@/types/InvoiceType'
 import Tag from 'primevue/tag'
 import type FundType from '@/types/FundType'
+import FileUpload from 'primevue/fileupload'
 
 // const baseURL = "http://localhost:8080/api/v1";
 const showConfirmDialog = ref(false)
@@ -183,11 +127,12 @@ const invoices = ref<Invoice[]>([])
 const searchQuery = ref('')
 const showInvoice = ref(false)
 const isUpdate = ref(false)
-const form = ref({ id: 0, invoiceType: '', description: '', userId: 0, amount: 0 })
-const errors = ref({ description: '', type: '', amount: '' })
+const form = ref({ id: 0, invoiceType: '', description: '', userId: 0, amount: 0, billImage: null as string | null })
+const errors = ref({ description: '', type: '', amount: '', billImage: '' })
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+const billImage = ref<string | null>(null)
 
 //pagenation
 const first = ref<number>(0)
@@ -219,7 +164,7 @@ interface Invoice {
 
 const getInvoiceStatusSeverity = (status: string) => {
   switch (
-    status.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
+  status.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
   ) {
     case 'PENDING':
       return 'info' // Chưa duyệt -> màu xanh dương
@@ -233,7 +178,7 @@ const getInvoiceStatusSeverity = (status: string) => {
 }
 const getInvoiceTypeSeverity = (type: string) => {
   switch (
-    type.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
+  type.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
   ) {
     case 'EXPENSE':
       return 'warn'
@@ -243,7 +188,7 @@ const getInvoiceTypeSeverity = (type: string) => {
 }
 const getInvoiceTypeLabel = (type: string) => {
   switch (
-    type.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
+  type.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
   ) {
     case 'EXPENSE':
       return 'Chi' // Chưa duyệt -> màu xanh dương
@@ -253,7 +198,7 @@ const getInvoiceTypeLabel = (type: string) => {
 }
 const getInvoiceStatusLabel = (status: string) => {
   switch (
-    status.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
+  status.toUpperCase() // Đảm bảo không phân biệt chữ hoa/thường
   ) {
     case 'PENDING':
       return 'Chờ duyệt' // Chưa duyệt -> màu xanh dương
@@ -267,7 +212,8 @@ const getInvoiceStatusLabel = (status: string) => {
 const fetchInvoice = async () => {
   try {
     const response = await axiosInstance.get(`/invoices/user/${user.value.id}`)
-    invoices.value = response.data
+    invoices.value = response.data;
+
     console.log(invoices.value)
   } catch (error) {
     console.error('Error fetching invoices:', error)
@@ -281,20 +227,42 @@ const filteredInvoice = computed(() => {
   )
 })
 
+//handle upload image
+const handleInvoiceUpload = (event: any) => {
+  const file = event.files[0]
+  if (file) {
+    form.value.billImage = file
+    billImage.value = URL.createObjectURL(file)
+  }
+}
+
+
 const openCreateDialog = () => {
-  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0 }
+  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0, billImage: null }
   isUpdate.value = false
   selectedType.value = null
   showInvoice.value = true
 }
 
-const openUpdateDialog = (invoice: Invoice) => {
+const openUpdateDialog = async (invoice: Invoice) => {
+  try {
+    const imageRes = await axiosInstance.get(`/invoices/${invoice.id}/bill-image`, {
+      responseType: 'blob',
+    })
+    const image = new Blob([imageRes.data], { type: 'image/png' })
+    billImage.value = URL.createObjectURL(image)
+    console.log(billImage.value);
+
+  } catch (error) {
+    console.error('Error fetching image:', error)
+  }
   form.value = {
     id: invoice.id,
     userId: user.value.id,
     description: invoice.description,
     invoiceType: invoice.invoiceType,
     amount: invoice.amount,
+    billImage: billImage.value,
   }
 
   // Just use this line - set selectedType to the enum value directly
@@ -312,9 +280,13 @@ const confirmDeleteInvoice = (invoice: Invoice) => {
 }
 
 const validateForm = () => {
-  errors.value = { description: '', type: '', amount: '' }
+  errors.value = { description: '', type: '', amount: '', billImage: '' }
   if (!form.value.description) errors.value.description = 'Vui lòng nhập mô tả về phí!'
   if (!selectedType.value) errors.value.type = 'Vui lòng chọn loại phí!'
+  if (!form.value.billImage) {
+    errors.value.billImage = 'Vui lòng upload hóa đơn làm bằng chứng!'
+  }
+
   if (!form.value.amount || form.value.amount <= 0)
     errors.value.amount = 'Số tiền cần phải lớn hơn 0!'
   return Object.values(errors.value).every((err) => err === '')
@@ -322,40 +294,60 @@ const validateForm = () => {
 
 const saveInvoice = async () => {
   if (!validateForm()) return
+
   try {
-    if (isUpdate.value) {
-      if (selectedType.value) {
-        form.value.invoiceType = selectedType.value.toString()
-      }
-      console.log(form.value)
-
-      await axiosInstance.put(`/invoices/${form.value.id}/update`, form.value)
-      // console.log(form.value);
-    } else {
-      if (selectedType.value) {
-        form.value.invoiceType = selectedType.value
-        form.value.userId = user.value.id
-        selectedType.value = null
-        // console.log(form.value);
-
-        // console.log(form.value);
-        await axiosInstance.post(`/invoices`, form.value)
-        resetForm()
-      }
+    if (selectedType.value) {
+      form.value.invoiceType = selectedType.value.toString()
     }
+    form.value.userId = user.value.id
+
+    const formData = new FormData()
+
+    const invoiceData = {
+      invoiceType: form.value.invoiceType,
+      description: form.value.description,
+      userId: form.value.userId,
+      amount: form.value.amount,
+    }
+
+    formData.append(
+      'invoice',
+      new Blob([JSON.stringify(invoiceData)], { type: 'application/json' })
+    )
+
+    if (form.value.billImage && typeof form.value.billImage !== 'string') {
+      formData.append('billImage', form.value.billImage)
+    }
+
+    if (isUpdate.value) {
+      await axiosInstance.put(`/invoices/${form.value.id}/update`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    } else {
+      await axiosInstance.post('/invoices', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+
     showInvoice.value = false
     fetchInvoice()
+    resetForm()
+    selectedType.value = null
+    resetErrors()
+    billImage.value = null
   } catch (error) {
-    console.error('Error saving fund:', error)
+    console.error('Error saving invoice:', error)
   }
 }
 
+
+
 const resetErrors = () => {
-  errors.value = { description: '', type: '', amount: '' }
+  errors.value = { description: '', type: '', amount: '', billImage: '' }
 }
 
 const resetForm = () => {
-  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0 }
+  form.value = { id: 0, userId: 0, description: '', invoiceType: '', amount: 0, billImage: null }
   selectedType.value = null
 }
 
@@ -397,6 +389,7 @@ onMounted(() => {
 .btn-create {
   margin-left: 10px;
 }
+
 .p-tag {
   width: 60%;
   text-align: center;

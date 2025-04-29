@@ -226,6 +226,7 @@ const dialogTitle = computed(() => {
     : 'Kiểm tra thông báo đi muộn ngay'
 })
 
+
 // Kiểm tra quyền admin
 const checkIsAdmin = async () => {
   if (!token) return
@@ -343,6 +344,11 @@ const fetchSchedule = async () => {
         type: response.data.type.toLowerCase(),
         channelId: '',
       }
+    }
+
+    if (dialogMode.value === 'check') {
+      scheduleForm.value.sendTime = new Date()
+      scheduleForm.value.sendTime.setHours(10, 0, 0, 0) // Set sendTime to 10:00AM
     }
   } catch (error) {
     console.error('Error fetching schedule:', error)

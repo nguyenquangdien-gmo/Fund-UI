@@ -104,7 +104,7 @@ interface UserReminder {
 const isSticky = ref(false)
 
 const handleScroll = (): void => {
-  isSticky.value = window.scrollY > 200
+  isSticky.value = window.scrollY > 300
 }
 
 const userReminders = ref<UserReminder[]>([])

@@ -30,7 +30,6 @@
       @page="onPage"
       :rows="10"
       :rowsPerPageOptions="[10, 50, 100]"
-      responsiveLayout="scroll"
       :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
     >
       <Column header="STT" sortable>
@@ -373,6 +372,7 @@ const fetchAllData = async (): Promise<void> => {
   }
 }
 
+
 // Helper function to check if status is pending
 const isPending = (status: string): boolean => {
   return status === 'PENDING'
@@ -605,6 +605,7 @@ const canPerformAction = (item: DisplayItem): boolean => {
     )
   }
 }
+
 </script>
 
 <style>

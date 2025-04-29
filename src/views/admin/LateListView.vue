@@ -245,8 +245,7 @@ const checkIsAdmin = async () => {
   if (!userData) return false;
   try {
     const user = JSON.parse(userData);
-    console.log('User role:', user.role);
-    console.log(user.role === 'ADMIN');
+    searchTerm.value = user.id.toString()
     isAdmin.value = user.role === 'ADMIN';
   } catch (error) {
     console.error('Error parsing user data from sessionStorage:', error);
@@ -336,7 +335,6 @@ function searchItems(event: { query: string }) {
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
   const selected = event.value
   const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
-
   searchTerm.value = selectedId
 }
 

@@ -463,7 +463,7 @@ const checkNow = async () => {
     await axiosInstance.post(`/late/check-now`, dataForm)
     showScheduleDialog.value = false
   } catch (error) {
-    toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
+    toast.add({ severity: 'warn', summary: 'Hãy cấu hình channel id trong phần schedule để không cần nhập!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
   }
 }

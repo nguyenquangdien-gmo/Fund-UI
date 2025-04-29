@@ -227,19 +227,32 @@ const onPage = (event: { first: number }) => {
 }
 
 const admin = ref(false)
+// const checkAdmin = async () => {
+//   const token = localStorage.getItem('accessToken')
+//   if (!token) return false
+//   try {
+//     const response = await axiosInstance.get('/tokens/is-admin', {
+//       params: { token },
+//     })
+//     return response.data // Trả về true nếu là admin
+//   } catch {
+//     // console.error('Lỗi khi kiểm tra quyền admin')
+//     return false
+//   }
+// }
+
 const checkAdmin = async () => {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return false
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get('/tokens/is-admin', {
-      params: { token },
-    })
-    return response.data // Trả về true nếu là admin
-  } catch {
-    // console.error('Lỗi khi kiểm tra quyền admin')
-    return false
+    const user = JSON.parse(userData);
+    return user.role === 'ADMIN';
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+    return false;
   }
-}
+};
 
 const form = ref({
   id: 0,

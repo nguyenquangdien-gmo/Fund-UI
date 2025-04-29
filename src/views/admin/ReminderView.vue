@@ -328,16 +328,29 @@ const errors = ref({
 })
 
 // Check if user is admin
+// const checkIsAdmin = async () => {
+//   if (!token) return
+//   try {
+//     const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
+//     isAdmin.value = response.data
+//   } catch (error) {
+//     console.error('Error checking admin status:', error)
+//     isAdmin.value = false
+//   }
+// }
+
 const checkIsAdmin = async () => {
-  if (!token) return
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
-    isAdmin.value = response.data
+    const user = JSON.parse(userData);
+    isAdmin.value = user.role === 'ADMIN';
   } catch (error) {
-    console.error('Error checking admin status:', error)
-    isAdmin.value = false
+    console.error('Error parsing user data from sessionStorage:', error);
+    isAdmin.value = false;
   }
-}
+};
 
 // Data Fetching Methods
 const fetchUsers = async () => {

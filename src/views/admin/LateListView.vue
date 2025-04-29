@@ -20,6 +20,7 @@
         />
         Tìm kiếm
         <AutoComplete
+          v-model="selectedUser"
           :suggestions="suggestions"
           @complete="searchItems"
           @item-select="handleSelect"
@@ -195,6 +196,7 @@ interface LateRecord {
 
 //pagination
 const first = ref<number>(0)
+const selectedUser = ref({ label: '', value: '' })
 
 const onPage = (event: { first: number }) => {
   first.value = event.first
@@ -333,6 +335,8 @@ function searchItems(event: { query: string }) {
 }
 
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
+  console.log('Selected item:', event.value);
+  
   const selected = event.value
   const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
   searchTerm.value = selectedId
@@ -526,9 +530,25 @@ const deleteRecord = async (data: LateRecord) => {
   }
 }
 
+const fillSelectUser = async () => {
+  try {
+    const userData = sessionStorage.getItem('user');
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+    selectedUser.value = {
+      label: `${user.id} - ${user.fullName}`,
+      value: user.id,
+    };
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+  }
+};
+
 onMounted(() => {
   fetchLateRecords()
   checkIsAdmin()
+  fillSelectUser()
 })
 
 // Cải tiến hàm lọc với kiểm tra an toàn

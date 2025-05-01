@@ -169,7 +169,7 @@ const lateCountData = computed(() => {
   }
 
   // Extract names and counts
-  const labels = lateUsers.value.map(user => user.fullName.split(' ').pop()) // Get last name
+  const labels = lateUsers.value.map(user => user.fullName) // Get last name
   const counts = lateUsers.value.map(user => user.lateCount)
 
   // Generate random colors

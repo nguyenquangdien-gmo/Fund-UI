@@ -27,6 +27,7 @@ import type JwtPayload from '@/types/JwtPayload'
 import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
 import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
+import GGDriveView from '@/views/GGDriveView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -85,6 +86,11 @@ const router = createRouter({
       name: 'contributions',
       component: ContributionsView,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/drive',
+      name: 'drive',
+      component: GGDriveView
     },
     {
       path: '/bills',

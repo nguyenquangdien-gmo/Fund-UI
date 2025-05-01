@@ -1470,7 +1470,7 @@ async function registerEntry() {
     try {
       console.log('Request data:', requestData)
       const workResult = await workStore.createWorkFromRequest(requestData);
-      if (workResult.status !== 400) {
+      if (!workResult.success) {
         console.error('Failed to create work entry:', workResult.error);
         // Optionally show a warning toast that work entry creation failed
         toast.add({ 
@@ -1821,8 +1821,8 @@ const endTimeValue = ref<Date | null>(null)
 const editDateValue = ref<Date | null>(null)
 
 // Add helper functions for date and time formatting
-function formatCalendarDate(date: Date | null): string {
-  if (!date) return '';
+function formatCalendarDate(date: Date | Date[] | (Date | null)[] | null | undefined): string {
+  if (!date || Array.isArray(date)) return '';
   
   // Use the local date to avoid timezone issues
   const year = date.getFullYear();
@@ -1833,9 +1833,9 @@ function formatCalendarDate(date: Date | null): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatTimeValue(date: Date | null): string {
-  if (!date) return ''
-  return date.toTimeString().substring(0, 5)
+function formatTimeValue(date: Date | Date[] | (Date | null)[] | null | undefined): string {
+  if (!date || Array.isArray(date)) return '';
+  return date.toTimeString().substring(0, 5);
 }
 
 // When editing, convert date string to Date object
@@ -1888,8 +1888,8 @@ function formatDateDisplay(dateStr: string | undefined): string {
 const showDeleteConfirmModal = ref<boolean>(false);
 const deleteLoading = ref<boolean>(false);
 
-// Add this variable to the script section
-const isDevelopment = ref<boolean>(process.env.NODE_ENV === 'development');
+// Fix for process.env.NODE_ENV
+const isDevelopment = ref<boolean>(false);
 
 // Function to load all user data
 // async function loadUserData(): Promise<void> {

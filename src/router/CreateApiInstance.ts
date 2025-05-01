@@ -4,7 +4,7 @@ import Cookies from 'js-cookie'
 
 // Tạo instance axios với cấu hình cơ bản
 const createApi: AxiosInstance = axios.create({
-  baseURL: 'http://10.1.12.181:8081/mock/404',
+  baseURL: import.meta.env.VITE_API_CREATE_URL,
   headers: {
     Authorization: 'Basic ZHhpbnRlcm5hbF9wbDpnb0R4QDIwMjE=',
   },

@@ -25,8 +25,7 @@ declare global {
 }
 window.Chart = Chart
 const app = createApp(App)
-const pinia = createPinia()
-app.use(pinia)
+app.use(createPinia())
 app.use(router)
 app.use(ToastService)
 app.component('InputNumber', InputNumber)

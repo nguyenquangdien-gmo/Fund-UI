@@ -84,8 +84,6 @@ import axiosInstance from '@/router/Interceptor'
 import type Reminder from '@/types/Reminder'
 import ReminderType from '@/types/ReminderType'
 import { eventBus } from '@/event/EventBus'
-import { removeAuthToken } from '@/router/CreateApiInstance'
-import Cookies from 'js-cookie'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -106,7 +104,7 @@ interface UserReminder {
 const isSticky = ref(false)
 
 const handleScroll = (): void => {
-  isSticky.value = window.scrollY > 200
+  isSticky.value = window.scrollY > 300
 }
 
 const userReminders = ref<UserReminder[]>([])
@@ -122,19 +120,32 @@ const fetchReminders = async () => {
   }
 }
 
+// const checkAdmin = async () => {
+//   const token = localStorage.getItem('accessToken')
+//   if (!token) return false
+//   try {
+//     const response = await axiosInstance.get('/tokens/is-admin', {
+//       params: { token },
+//     })
+//     return response.data // Trả về true nếu là admin
+//   } catch (error) {
+//     // console.error('Lỗi khi kiểm tra quyền admin:', error)
+//     return false
+//   }
+// }
+
 const checkAdmin = async () => {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return false
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get('/tokens/is-admin', {
-      params: { token },
-    })
-    return response.data // Trả về true nếu là admin
+    const user = JSON.parse(userData);
+    return user.role === 'ADMIN';
   } catch (error) {
-    // console.error('Lỗi khi kiểm tra quyền admin:', error)
-    return false
+    console.error('Error parsing user data from sessionStorage:', error);
+    return false;
   }
-}
+};
 
 const unreadRemindersCount = computed(() => {
   return userReminders.value.filter((userReminder) => userReminder.status === 'SENT').length
@@ -254,6 +265,7 @@ const baseItems = [
       { label: 'Đi muộn', icon: 'pi pi-calendar-times', command: () => router.push('/user/late') },
       { label: 'Nợ phạt', icon: 'pi pi-times-circle', command: () => router.push('/bills') },
       { label: 'Hóa đơn', icon: 'pi pi-receipt', command: () => router.push('/user/invoices') },
+      { label: 'Đặt nước', icon: 'pi pi-shopping-cart', command: () => router.push('/restaurants') },
       { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
     ],
   },
@@ -315,19 +327,9 @@ const filteredItems = computed(() => {
 const handleLogout = async () => {
   try {
     await axiosInstance.post('/auth/logout', {})
-    
-    // Clear both token and user data from cookies
-    removeAuthToken()
-    Cookies.remove('user')
-    
-    // Clear store data
     userStore.logout()
-    
-    // Reset local component state
-    userReminders.value = []
-    
-    // Navigate to login page
     router.push('/login')
+    userReminders.value = []
   } catch (error) {
     console.error('Logout error:', error)
   }

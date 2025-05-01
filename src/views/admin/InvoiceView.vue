@@ -139,19 +139,32 @@ const onPage = (event: { first: number }) => {
 }
 //check role
 const admin = ref(false)
+// const checkAdmin = async () => {
+//   const token = localStorage.getItem('accessToken')
+//   if (!token) return false
+//   try {
+//     const response = await axiosInstance.get('/tokens/is-admin', {
+//       params: { token },
+//     })
+//     return response.data // Trả về true nếu là admin
+//   } catch (error) {
+//     // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
+//     return false
+//   }
+// }
+
 const checkAdmin = async () => {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return false
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get('/tokens/is-admin', {
-      params: { token },
-    })
-    return response.data // Trả về true nếu là admin
+    const user = JSON.parse(userData);
+    return user.role === 'ADMIN';
   } catch (error) {
-    // consol e.error('Lỗi khi kiểm tra quyền admin:', error)
-    return false
+    console.error('Error parsing user data from sessionStorage:', error);
+    return false;
   }
-}
+};
 
 // const selectedType = ref<InvoiceType | null>(null)
 // const types = ref([

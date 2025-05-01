@@ -9,8 +9,16 @@
         đến
         <Calendar v-model="toDate" dateFormat="dd-mm-yy" placeholder="Đến ngày" @date-select="fetchLateRecords" />
         Tìm kiếm
-        <AutoComplete :suggestions="suggestions" @complete="searchItems" @item-select="handleSelect" optionLabel="label"
-          dropdown placeholder="🔍 Tìm theo tên hoặc ID" class="p-inputtext-sm w-64" />
+        <AutoComplete
+          v-model="selectedUser"
+          :suggestions="suggestions"
+          @complete="searchItems"
+          @item-select="handleSelect"
+          optionLabel="label"
+          dropdown
+          placeholder="🔍 Tìm theo tên hoặc ID"
+          class="p-inputtext-sm w-64"
+        />
       </div>
       <div>
         <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
@@ -143,6 +151,7 @@ interface LateRecord {
 
 //pagination
 const first = ref<number>(0)
+const selectedUser = ref({ label: '', value: '' })
 
 const onPage = (event: { first: number }) => {
   first.value = event.first
@@ -174,17 +183,32 @@ const dialogTitle = computed(() => {
     : 'Kiểm tra thông báo đi muộn ngay'
 })
 
+
 // Kiểm tra quyền admin
+// const checkIsAdmin = async () => {
+//   if (!token) return
+//   try {
+//     const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
+//     isAdmin.value = response.data
+//   } catch (error) {
+//     console.error('Error checking admin status:', error)
+//     isAdmin.value = false
+//   }
+// }
+
 const checkIsAdmin = async () => {
-  if (!token) return
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
-    isAdmin.value = response.data
+    const user = JSON.parse(userData);
+    searchTerm.value = user.id.toString()
+    isAdmin.value = user.role === 'ADMIN';
   } catch (error) {
-    console.error('Error checking admin status:', error)
-    isAdmin.value = false
+    console.error('Error parsing user data from sessionStorage:', error);
+    isAdmin.value = false;
   }
-}
+};
 
 const fetchLateRecords = async () => {
   if (!fromDate.value || !toDate.value) return
@@ -267,9 +291,10 @@ function searchItems(event: { query: string }) {
 }
 
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
+  console.log('Selected item:', event.value);
+  
   const selected = event.value
   const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
-
   searchTerm.value = selectedId
 }
 
@@ -292,6 +317,11 @@ const fetchSchedule = async () => {
         type: response.data.type.toLowerCase(),
         channelId: '',
       }
+    }
+
+    if (dialogMode.value === 'check') {
+      scheduleForm.value.sendTime = new Date()
+      scheduleForm.value.sendTime.setHours(10, 0, 0, 0) // Set sendTime to 10:00AM
     }
   } catch (error) {
     console.error('Error fetching schedule:', error)
@@ -412,7 +442,7 @@ const checkNow = async () => {
     await axiosInstance.post(`/late/check-now`, dataForm)
     showScheduleDialog.value = false
   } catch (error) {
-    toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
+    toast.add({ severity: 'warn', summary: 'Hãy cấu hình channel id trong phần schedule để không cần nhập!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
   }
 }
@@ -456,9 +486,25 @@ const deleteRecord = async (data: LateRecord) => {
   }
 }
 
+const fillSelectUser = async () => {
+  try {
+    const userData = sessionStorage.getItem('user');
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+    selectedUser.value = {
+      label: `${user.id} - ${user.fullName}`,
+      value: user.id,
+    };
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+  }
+};
+
 onMounted(() => {
   fetchLateRecords()
   checkIsAdmin()
+  fillSelectUser()
 })
 
 // Cải tiến hàm lọc với kiểm tra an toàn

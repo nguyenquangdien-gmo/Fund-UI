@@ -11,9 +11,17 @@
     <p v-if="loading">Đang tải dữ liệu...</p>
 
     <!-- Unified Approval Table -->
-    <DataTable v-if="filteredItems.length > 0" :value="filteredItems" class="p-datatable" paginator :first="first"
-      @page="onPage" :rows="10" :rowsPerPageOptions="[10, 50, 100]" responsiveLayout="scroll"
-      :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')">
+    <DataTable
+      v-if="filteredItems.length > 0"
+      :value="filteredItems"
+      class="p-datatable"
+      paginator
+      :first="first"
+      @page="onPage"
+      :rows="10"
+      :rowsPerPageOptions="[10, 50, 100]"
+      :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
+    >
       <Column header="STT" sortable>
         <template #body="{ index }">
           {{ first + index + 1 }}
@@ -380,6 +388,7 @@ const fetchAllData = async (): Promise<void> => {
   }
 }
 
+
 // Helper function to check if status is pending
 const isPending = (status: string): boolean => {
   return status === 'PENDING'
@@ -618,6 +627,7 @@ const canPerformAction = (item: DisplayItem): boolean => {
     )
   }
 }
+
 </script>
 
 <style>

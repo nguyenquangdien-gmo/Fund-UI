@@ -3,19 +3,9 @@
     <h2 class="text-xl font-bold mb-4">PHÊ DUYỆT</h2>
 
     <div class="mb-4 flex items-center">
-      <InputText
-        v-model="searchQuery"
-        placeholder="Tìm kiếm theo tên or mô tả..."
-        class="p-inputtext w-64 mr-3"
-      />
-      <Dropdown
-        v-model="selectedType"
-        :options="typeFilterOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Tất cả loại"
-        class="w-48"
-      />
+      <InputText v-model="searchQuery" placeholder="Tìm kiếm theo tên or mô tả..." class="p-inputtext w-64 mr-3" />
+      <Dropdown v-model="selectedType" :options="typeFilterOptions" optionLabel="label" optionValue="value"
+        placeholder="Tất cả loại" class="w-48" />
     </div>
 
     <p v-if="loading">Đang tải dữ liệu...</p>
@@ -30,7 +20,6 @@
       @page="onPage"
       :rows="10"
       :rowsPerPageOptions="[10, 50, 100]"
-      responsiveLayout="scroll"
       :rowClass="(data) => (isPending(data.displayStatus) ? 'bg-blue-50' : '')"
     >
       <Column header="STT" sortable>
@@ -51,10 +40,7 @@
       </Column>
       <Column field="displayStatus" header="Trạng thái" sortable style="text-align: center">
         <template #body="slotProps">
-          <Tag
-            :value="getStatusLabel(slotProps.data)"
-            :severity="getStatusSeverity(slotProps.data)"
-          />
+          <Tag :value="getStatusLabel(slotProps.data)" :severity="getStatusSeverity(slotProps.data)" />
         </template>
       </Column>
       <Column field="displayAmount" header="Số tiền" sortable>
@@ -69,21 +55,10 @@
       </Column>
       <Column header="Hành động" style="width: 22%" v-if="hasActionableItems">
         <template #body="{ data }">
-          <Button
-            label="Xác nhận"
-            icon="pi pi-check"
-            severity="success"
-            @click="openConfirmDialog(data, 'confirm')"
-            :hidden="!canPerformAction(data)"
-          />
-          <Button
-            label="Hủy"
-            icon="pi pi-times"
-            severity="danger"
-            class="ml-2 left-10"
-            @click="openConfirmDialog(data, 'cancel')"
-            :hidden="!canPerformAction(data)"
-          />
+          <Button label="Xác nhận" icon="pi pi-check" severity="success" @click="openConfirmDialog(data, 'confirm')"
+            :hidden="!canPerformAction(data)" />
+          <Button label="Hủy" icon="pi pi-times" severity="danger" class="ml-2 left-10"
+            @click="openConfirmDialog(data, 'cancel')" :hidden="!canPerformAction(data)" />
         </template>
       </Column>
     </DataTable>
@@ -96,46 +71,48 @@
     <Dialog v-model:visible="showConfirmDialog" header="Xác nhận" modal :style="{ width: '17%' }">
       <div class="confirmation-content">
         <span>{{ confirmDialogMessage }}</span>
+
         <div class="flex col-2 mt-3" v-if="confirmAction !== 'confirm'">
           <label for="reason">Lý do<span class="text-danger">*</span></label>
           <Textarea v-model="rejectedReason" class="mt-3" rows="5" cols="30" />
         </div>
       </div>
 
-      <div
-        v-if="
-          selectedItemToConfirm &&
-          selectedItemToConfirm.itemType === 'invoice' &&
-          confirmAction === 'confirm'
-        "
-        class="mt-3"
-      >
+      <div v-if="
+        selectedItemToConfirm &&
+        selectedItemToConfirm.itemType === 'invoice' &&
+        confirmAction === 'confirm'
+      " class="mt-3">
         <label for="fundType" class="block mb-2">
           Chọn quỹ: <span class="text-danger">*</span>
         </label>
-        <Dropdown
-          id="fundType"
-          v-model="selectedFundType"
-          :options="fundOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Chọn quỹ"
-          class="w-full"
-        />
+        <Dropdown id="fundType" v-model="selectedFundType" :options="fundOptions" optionLabel="label"
+          optionValue="value" placeholder="Chọn quỹ" class="w-full" />
         <div>
           <small class="text-danger">{{ errorMessage }}</small>
+        </div>
+        <label class="block mb-2 mt-3">
+          QR:
+        </label>
+        <div class="avatar-image">
+          <img v-if="qrCode" :src="qrCode" class="avatar-preview cursor-pointer" @click="zoomImage(qrCode)" />
+        </div>
+        <label class="block mb-2">
+          Hóa đơn:
+        </label>
+        <div class="avatar-image">
+          <img v-if="billImage" :src="billImage" class="avatar-preview cursor-pointer" @click="zoomImage(billImage)" />
         </div>
       </div>
 
       <template #footer>
-        <Button
-          label="Không"
-          icon="pi pi-times"
-          @click="showConfirmDialog = false"
-          severity="secondary"
-        />
+        <Button label="Không" icon="pi pi-times" @click="showConfirmDialog = false" severity="secondary" />
         <Button label="Có" icon="pi pi-check" @click="handleConfirmAction" severity="primary" />
       </template>
+    </Dialog>
+    <Dialog v-model:visible="showImageDialog" class="image-preview" modal :closable="true" header="Xem ảnh"
+      :style="{ width: '60vw' }">
+      <img :src="zoomedImageSrc" class="w-full" />
     </Dialog>
   </div>
 </template>
@@ -252,6 +229,7 @@ interface DisplayItem {
   status?: string
   paymentStatus?: string
   user?: {
+    id: number
     fullName: string
   }
   invoiceType?: string
@@ -261,6 +239,43 @@ interface DisplayItem {
   [key: string]: any // For additional properties
 }
 
+//zoom image
+const showImageDialog = ref(false)
+const zoomedImageSrc = ref('')
+
+const zoomImage = (src: string) => {
+  zoomedImageSrc.value = src
+  showImageDialog.value = true
+}
+
+//qrcode of member
+
+const qrCode = ref<string | null>(null)
+const fetchQrCode = async (userId: number) => {
+  try {
+    const qrCodeRes = await axiosInstance.get(`/users/${userId}/qr-code`, {
+      responseType: 'blob',
+    })
+    const blob = new Blob([qrCodeRes.data], { type: 'image/png' })
+    qrCode.value = URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Error fetching QR code:', error)
+  }
+}
+
+//bill image of invoice
+const billImage = ref<string | null>(null)
+const fetchBillImage = async (userId: number) => {
+  try {
+    const billRes = await axiosInstance.get(`/invoices/${userId}/bill-image`, {
+      responseType: 'blob',
+    })
+    const blob = new Blob([billRes.data], { type: 'image/png' })
+    billImage.value = URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Error fetching QR code:', error)
+  }
+}
 //hide action button if no items to approve
 const hasActionableItems = computed<boolean>(() => {
   return filteredItems.value.some((item) => canPerformAction(item))
@@ -372,6 +387,7 @@ const fetchAllData = async (): Promise<void> => {
     loading.value = false
   }
 }
+
 
 // Helper function to check if status is pending
 const isPending = (status: string): boolean => {
@@ -578,6 +594,10 @@ const handleConfirmAction = async (): Promise<void> => {
 
 // Open confirmation dialog
 const openConfirmDialog = (item: DisplayItem, action: 'confirm' | 'cancel'): void => {
+  console.log('item:', item)
+  if (item.user && item.user.id) {
+    fetchQrCode(item.user.id)
+  }
   selectedItemToConfirm.value = item
   confirmAction.value = action
   confirmDialogMessage.value =
@@ -587,7 +607,9 @@ const openConfirmDialog = (item: DisplayItem, action: 'confirm' | 'cancel'): voi
 
   if (action === 'confirm' && item.itemType === 'invoice') {
     selectedFundType.value = null
+    fetchBillImage(item.id)
   }
+
 
   rejectedReason.value = ''
   showConfirmDialog.value = true
@@ -605,12 +627,14 @@ const canPerformAction = (item: DisplayItem): boolean => {
     )
   }
 }
+
 </script>
 
 <style>
 :global(.p-button) {
   margin-left: 10px;
 }
+
 .left-10 {
   margin-left: 10px;
 }
@@ -625,6 +649,7 @@ const canPerformAction = (item: DisplayItem): boolean => {
 .bg-blue-50 {
   background-color: #eff6ff !important;
 }
+
 .p-tag {
   width: 90%;
 }
@@ -632,5 +657,23 @@ const canPerformAction = (item: DisplayItem): boolean => {
 /* Add spacing between the search and dropdown */
 .mr-3 {
   margin-right: 0.75rem;
+}
+
+.avatar-preview {
+  margin-top: 5px;
+  max-width: 100%;
+  height: 100%;
+  text-align: center;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.avatar-image {
+  text-align: center;
+}
+
+.image-preview {
+  text-align: center;
+  margin-top: 10px;
 }
 </style>

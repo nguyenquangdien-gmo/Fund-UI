@@ -5,21 +5,12 @@
     <div class="navbar-actions">
       <div class="flex gap-4">
         Từ
-        <Calendar
-          v-model="fromDate"
-          dateFormat="dd-mm-yy"
-          placeholder="Từ ngày"
-          @date-select="fetchLateRecords"
-        />
+        <Calendar v-model="fromDate" dateFormat="dd-mm-yy" placeholder="Từ ngày" @date-select="fetchLateRecords" />
         đến
-        <Calendar
-          v-model="toDate"
-          dateFormat="dd-mm-yy"
-          placeholder="Đến ngày"
-          @date-select="fetchLateRecords"
-        />
+        <Calendar v-model="toDate" dateFormat="dd-mm-yy" placeholder="Đến ngày" @date-select="fetchLateRecords" />
         Tìm kiếm
         <AutoComplete
+          v-model="selectedUser"
           :suggestions="suggestions"
           @complete="searchItems"
           @item-select="handleSelect"
@@ -31,54 +22,31 @@
       </div>
       <div>
         <!-- <Button label="Tìm kiếm" icon="pi pi-search" class="p-button-sm mr-2" @click="fetchLateRecords" /> -->
-        <Button
-          v-if="isAdmin"
-          label="Cài đặt"
-          icon="pi pi-cog"
-          class="p-button-sm"
-          severity="success"
-          raised
-          @click="openScheduleDialog('settings')"
-        />
-        <Button
-          v-if="isAdmin"
-          label="Check now"
-          icon="pi pi-check"
-          class="p-button-sm"
-          severity="success"
-          raised
-          @click="openScheduleDialog('check')"
-        />
+        <Button v-if="isAdmin" label="Cài đặt" icon="pi pi-cog" class="p-button-sm" severity="success" raised
+          @click="openScheduleDialog('settings')" />
+        <Button v-if="isAdmin" label="Check now" icon="pi pi-check" class="p-button-sm" severity="success" raised
+          @click="openScheduleDialog('check')" />
       </div>
     </div>
 
-    <DataTable
-      v-if="filteredRecords.length > 0"
-      :value="filteredRecords"
-      :paginator="true"
-      :rows="15"
-      :first="first"
-      @page="onPage"
-      :rowsPerPageOptions="[10, 50, 100]"
-      stripedRows
-      responsiveLayout="scroll"
-    >
+    <DataTable v-if="filteredRecords.length > 0" :value="filteredRecords" :paginator="true" :rows="15" :first="first"
+      @page="onPage" :rowsPerPageOptions="[10, 50, 100]" stripedRows responsiveLayout="scroll">
       <Column header="STT" sortable>
         <template #body="{ index }">
           {{ first + index + 1 }}
         </template>
       </Column>
-      <Column field="user.id" header="Mã nhân viên">
+      <Column field="user.id" header="Mã nhân viên" sortable>
         <template #body="{ data }">
           {{ data.user?.id || '-' }}
         </template>
       </Column>
-      <Column field="user.fullName" header="Tên nhân viên">
+      <Column field="user.fullName" header="Tên nhân viên" sortable>
         <template #body="{ data }">
           {{ data.user?.fullName || '-' }}
         </template>
       </Column>
-      <Column field="checkinAt" header="Check-in">
+      <Column field="checkinAt" header="Check-in" sortable>
         <template #body="{ data }">
           {{ data.checkinAt ?? '-' }}
         </template>
@@ -88,12 +56,12 @@
           {{ data.note?.trim() ? data.note : 'Không có' }}
         </template>
       </Column>
-      <Column field="date" header="Ngày">
+      <Column field="date" header="Ngày" sortable>
         <template #body="{ data }">
           {{ formatDate(data.date) }}
         </template>
       </Column>
-      <Column field="penBill" header="Trạng thái">
+      <Column field="penBill" header="Trạng thái" sortable>
         <template #body="{ data }">
           <Tag style="width: 100%" :severity="getReminderTypeSeverity(data.penBill?.paymentStatus)">
             {{
@@ -110,12 +78,7 @@
       </Column>
       <Column header="Hành động" v-if="isAdmin">
         <template #body="{ data }">
-          <Button
-            label="Xóa"
-            icon="pi pi-trash"
-            class="p-button-danger p-button-sm"
-            @click="deleteRecord(data)"
-          />
+          <Button label="Xóa" icon="pi pi-trash" class="p-button-danger p-button-sm" @click="deleteRecord(data)" />
         </template>
       </Column>
     </DataTable>
@@ -134,25 +97,18 @@
     <!-- Form chọn lại -->
     <div class="col-12 mb-3 item-dialog">
       <label class="font-bold mb-2"> Channel id</label>
-      <InputText
-        v-model="scheduleForm.channelId"
-        placeholder="Vui lòng nhập channel id của chatops"
-        class="w-full"
-      />
+      <InputText v-model="scheduleForm.channelId" placeholder="Vui lòng nhập channel id của chatops" class="w-full" />
       <small class="text-danger" v-if="errors.channelId && dialogMode !== 'settings'">{{
         errors.channelId
-      }}</small>
+        }}</small>
       <label class="font-bold mb-2"> Thời gian gửi <span class="text-danger">*</span> </label>
       <Calendar v-model="scheduleForm.sendTime" timeOnly hourFormat="24" class="w-full" />
     </div>
 
     <div class="actions-dialog">
       <Button label="Hủy" severity="secondary" @click="showScheduleDialog = false" />
-      <Button
-        :label="dialogMode === 'settings' ? 'Cập nhật' : 'Kiểm tra ngay'"
-        severity="primary"
-        @click="handleAction"
-      />
+      <Button :label="dialogMode === 'settings' ? 'Cập nhật' : 'Kiểm tra ngay'" severity="primary"
+        @click="handleAction" />
     </div>
   </Dialog>
 </template>
@@ -195,6 +151,7 @@ interface LateRecord {
 
 //pagination
 const first = ref<number>(0)
+const selectedUser = ref({ label: '', value: '' })
 
 const onPage = (event: { first: number }) => {
   first.value = event.first
@@ -226,17 +183,32 @@ const dialogTitle = computed(() => {
     : 'Kiểm tra thông báo đi muộn ngay'
 })
 
+
 // Kiểm tra quyền admin
+// const checkIsAdmin = async () => {
+//   if (!token) return
+//   try {
+//     const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
+//     isAdmin.value = response.data
+//   } catch (error) {
+//     console.error('Error checking admin status:', error)
+//     isAdmin.value = false
+//   }
+// }
+
 const checkIsAdmin = async () => {
-  if (!token) return
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get(`/tokens/is-admin?token=${token}`)
-    isAdmin.value = response.data
+    const user = JSON.parse(userData);
+    searchTerm.value = user.id.toString()
+    isAdmin.value = user.role === 'ADMIN';
   } catch (error) {
-    console.error('Error checking admin status:', error)
-    isAdmin.value = false
+    console.error('Error parsing user data from sessionStorage:', error);
+    isAdmin.value = false;
   }
-}
+};
 
 const fetchLateRecords = async () => {
   if (!fromDate.value || !toDate.value) return
@@ -270,6 +242,7 @@ const fetchLateRecords = async () => {
       },
     })
     lateRecords.value = response.data
+    console.log(response.data)
     // Trường hợp API trả về chuỗi JSON, cần parse
     const parsedData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
 
@@ -318,9 +291,10 @@ function searchItems(event: { query: string }) {
 }
 
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
+  console.log('Selected item:', event.value);
+  
   const selected = event.value
   const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
-
   searchTerm.value = selectedId
 }
 
@@ -343,6 +317,11 @@ const fetchSchedule = async () => {
         type: response.data.type.toLowerCase(),
         channelId: '',
       }
+    }
+
+    if (dialogMode.value === 'check') {
+      scheduleForm.value.sendTime = new Date()
+      scheduleForm.value.sendTime.setHours(10, 0, 0, 0) // Set sendTime to 10:00AM
     }
   } catch (error) {
     console.error('Error fetching schedule:', error)
@@ -463,7 +442,7 @@ const checkNow = async () => {
     await axiosInstance.post(`/late/check-now`, dataForm)
     showScheduleDialog.value = false
   } catch (error) {
-    toast.add({ severity: 'warn', summary: 'Hãy kiểm tra lại channel id!', life: 3000 })
+    toast.add({ severity: 'warn', summary: 'Hãy cấu hình channel id trong phần schedule để không cần nhập!', life: 3000 })
     console.error('Lỗi khi kiểm tra ngay:', error)
   }
 }
@@ -507,9 +486,25 @@ const deleteRecord = async (data: LateRecord) => {
   }
 }
 
+const fillSelectUser = async () => {
+  try {
+    const userData = sessionStorage.getItem('user');
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+    selectedUser.value = {
+      label: `${user.id} - ${user.fullName}`,
+      value: user.id,
+    };
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+  }
+};
+
 onMounted(() => {
   fetchLateRecords()
   checkIsAdmin()
+  fillSelectUser()
 })
 
 // Cải tiến hàm lọc với kiểm tra an toàn

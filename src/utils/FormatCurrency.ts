@@ -1,4 +1,9 @@
-const formatCurrency = (value: string) => {
-  return Number(value).toLocaleString('vi-VN') + ' VND'
+const formatCurrency = (value: string | number): string => {
+  const numberValue = typeof value === 'string' ? parseFloat(value) : value
+
+  if (isNaN(numberValue)) return '0 VND'
+
+  return numberValue.toLocaleString('vi-VN') + ' VND'
 }
+
 export default formatCurrency

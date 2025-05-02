@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <div class="header">
+      <h1>Google Drive</h1>
+      <div class="header-actions">
+        <router-link to="/drive/accounts" class="account-link">
+          <PButton icon="pi pi-cog" label="Quản lý tài khoản dịch vụ" class="p-button-text" />
+        </router-link>
+      </div>
+    </div>
 
     <div class="main-content">
       <GGDriveSidebar
@@ -24,10 +32,11 @@
         @select-folder="selectFolder"
         @navigate-to-breadcrumb="navigateToBreadcrumb"
         @show-upload-modal="showUploadModal = true"
-        @show-create-folder-modal="showCreateFolderModal = true"
+        @show-create-folder-modal="handleMainContentCreateFolder"
         @add-to-favorites="addToFavorites"
         @copy-share-link="copyShareLink"
         @download-file="downloadFile"
+        @download-folder="downloadFolder"
         @delete-file="deleteFile"
         @delete-folder="deleteFolder"
         @rename-file="showRenameFileDialog"
@@ -50,12 +59,17 @@
       v-model:visible="showCreateFolderModal"
       :parent-folder-id="selectedFolderId"
       :existing-folders="folderContents.subFolders"
+      :existing-files="folderContents.files"
+      :error-message="createFolderError"
+      @update:error-message="createFolderError = $event"
       @create-folder="createFolder"
     />
 
     <GGDriveRenameItemDialog
       v-model:visible="showRenameItemModal"
       :item="itemToRename"
+      :existing-folders="folderContents.subFolders"
+      :existing-files="folderContents.files"
       @rename-item="renameItem"
     />
 
@@ -75,15 +89,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import PToast from 'primevue/toast';
+import PButton from 'primevue/button';
 import { useToast } from 'primevue/usetoast';
-import GGDriveSidebar from '@/components/GGDrive/Sidebar.vue';
-import GGDriveMainContent from '@/components/GGDrive/MainContent.vue';
-import GGDriveUploadDialog from '@/components/GGDrive/UploadDialog.vue';
-import GGDriveEditFavoriteDialog from '@/components/GGDrive/EditFavoriteDialog.vue';
-import GGDriveCreateFolderDialog from '@/components/GGDrive/CreateFolderDialog.vue';
-import GGDriveRenameItemDialog from '@/components/GGDrive/RenameItemDialog.vue';
-import GGDriveConfirmDialog from '@/components/GGDrive/ConfirmDialog.vue';
-import { useDriveStore } from '@/stores/drive';
+import GGDriveSidebar from '../components/GGDrive/Sidebar.vue';
+import GGDriveMainContent from '../components/GGDrive/MainContent.vue';
+import GGDriveUploadDialog from '../components/GGDrive/UploadDialog.vue';
+import GGDriveEditFavoriteDialog from '../components/GGDrive/EditFavoriteDialog.vue';
+import GGDriveCreateFolderDialog from '../components/GGDrive/CreateFolderDialog.vue';
+import GGDriveRenameItemDialog from '../components/GGDrive/RenameItemDialog.vue';
+import GGDriveConfirmDialog from '../components/GGDrive/ConfirmDialog.vue';
+import { useDriveStore } from '../stores/drive';
 
 interface User {
   name: string;
@@ -121,6 +136,12 @@ interface Breadcrumb {
 interface DriveFolder {
   id: number;
   name: string;
+  parentFolderId?: number | null;
+  parentFolderName?: string | null;
+  webViewLink?: string;
+  createdTime?: string;
+  modifiedTime?: string;
+  createdByUsername?: string;
 }
 
 interface FolderContents {
@@ -139,7 +160,8 @@ export default defineComponent({
     GGDriveCreateFolderDialog,
     GGDriveRenameItemDialog,
     GGDriveConfirmDialog,
-    PToast
+    PToast,
+    PButton
   },
   setup() {
     const toast = useToast();
@@ -192,6 +214,7 @@ export default defineComponent({
       
       // Create folder
       showCreateFolderModal: false,
+      createFolderError: '',
       
       // Rename item
       showRenameItemModal: false,
@@ -247,7 +270,7 @@ export default defineComponent({
         };
         
         // Xây dựng breadcrumb
-        this.buildBreadcrumbs(id, contents.currentFolder);
+        await this.buildBreadcrumbs(id, contents.currentFolder);
       } catch (error) {
         console.error('Error fetching folder contents:', error);
         this.showToast('Không thể tải nội dung thư mục', 'error');
@@ -264,18 +287,45 @@ export default defineComponent({
     },
     
     // Xây dựng breadcrumb từ dữ liệu thư mục
-    buildBreadcrumbs(folderId: number, folder: DriveFolder | null): void {
+    async buildBreadcrumbs(folderId: number, folder: DriveFolder | null): Promise<void> {
       // Nếu không có folder, breadcrumbs rỗng
       if (!folder) {
         this.breadcrumbs = [];
         return;
       }
       
-      // Tạo breadcrumb chỉ với folder hiện tại
-      this.breadcrumbs = [{ id: folder.id, name: folder.name }];
+      // Khởi tạo mảng breadcrumb với thư mục hiện tại
+      const breadcrumbList: Breadcrumb[] = [{ id: folder.id, name: folder.name }];
       
-      // Nếu có thông tin về parent folder, có thể mở rộng breadcrumb
-      // (Cần backend trả về thông tin đầy đủ về đường dẫn)
+      // Lấy thông tin về path đầy đủ
+      try {
+        const currentFolder = folder;
+        let parentId = currentFolder.parentFolderId;
+        
+        // Duyệt ngược lên cây thư mục
+        while (parentId !== null) {
+          const parentFolder = await this.driveStore.getFolderById(parentId);
+          if (!parentFolder) break;
+          
+          // Thêm folder cha vào đầu mảng breadcrumb
+          breadcrumbList.unshift({ id: parentFolder.id, name: parentFolder.name });
+          
+          // Cập nhật cho lần lặp tiếp theo
+          parentId = parentFolder.parentFolderId;
+        }
+        
+        // Thêm breadcrumb gốc nếu có thư mục cha
+        if (breadcrumbList.length > 1) {
+          this.breadcrumbs = breadcrumbList;
+        } else {
+          // Nếu chỉ có thư mục hiện tại (không có cha)
+          this.breadcrumbs = [{ id: folder.id, name: folder.name }];
+        }
+      } catch (error) {
+        console.error('Error building breadcrumbs:', error);
+        // Trong trường hợp lỗi, chỉ hiển thị thư mục hiện tại
+        this.breadcrumbs = [{ id: folder.id, name: folder.name }];
+      }
     },
     
     navigateToBreadcrumb(id: number): void {
@@ -292,13 +342,63 @@ export default defineComponent({
       });
     },
     
-    downloadFile(file: DriveFile): void {
+    async downloadFile(file: DriveFile): Promise<void> {
       try {
-        window.open(file.webContentLink, '_blank');
         this.showToast(`Đang tải xuống ${file.name}...`, 'info');
+        
+        // Lấy nội dung file từ API
+        const blobData = await this.driveStore.downloadFile(file.id);
+        
+        // Tạo URL tạm thời cho blob
+        const blobUrl = window.URL.createObjectURL(blobData);
+        
+        // Tạo một thẻ a ẩn để tải xuống
+        const downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = file.name;
+        document.body.appendChild(downloadLink);
+        
+        // Kích hoạt tải xuống
+        downloadLink.click();
+        
+        // Dọn dẹp
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(downloadLink);
+        
+        this.showToast(`Đã tải xuống ${file.name} thành công`, 'success');
       } catch (error) {
         console.error('Error downloading file:', error);
         this.showToast('Không thể tải xuống tập tin', 'error');
+      }
+    },
+    
+    async downloadFolder(folder: DriveFolder): Promise<void> {
+      try {
+        this.showToast(`Đang tải xuống thư mục ${folder.name}...`, 'info');
+        
+        // Lấy nội dung folder dưới dạng zip từ API
+        const blobData = await this.driveStore.downloadFolderAsZip(folder.id);
+        
+        // Tạo URL tạm thời cho blob
+        const blobUrl = window.URL.createObjectURL(blobData);
+        
+        // Tạo một thẻ a ẩn để tải xuống
+        const downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = `${folder.name}.zip`;
+        document.body.appendChild(downloadLink);
+        
+        // Kích hoạt tải xuống
+        downloadLink.click();
+        
+        // Dọn dẹp
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(downloadLink);
+        
+        this.showToast(`Đã tải xuống thư mục ${folder.name} thành công`, 'success');
+      } catch (error) {
+        console.error('Error downloading folder:', error);
+        this.showToast('Không thể tải xuống thư mục', 'error');
       }
     },
     
@@ -455,23 +555,39 @@ export default defineComponent({
     // Create folder methods
     async createFolder(data: { name: string, parentFolderId: number }): Promise<void> {
       try {
+        console.log('Creating folder with data:', data);
+        
         // If selectedFolderId is 0, it means we're creating at root level
         // and parentFolderId should be null
         const parentId = data.parentFolderId === 0 ? null : data.parentFolderId;
         
+        console.log(`Sending create folder request: name=${data.name}, parentId=${parentId}`);
         await this.driveStore.createFolder(data.name, parentId);
         this.showToast(`Đã tạo thư mục ${data.name} thành công`, 'success');
         
+        // Đóng dialog sau khi tạo thành công
+        this.showCreateFolderModal = false;
+        
         // Reload folder contents if we're in a specific folder
         if (this.selectedFolderId !== 0) {
+          console.log(`Reloading folder contents for folder: ${this.selectedFolderId}`);
           await this.selectFolder(this.selectedFolderId);
         }
         
         // Reload folder tree in sidebar
         await this.refreshFolderTree();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error creating folder:', error);
-        this.showToast('Không thể tạo thư mục', 'error');
+        
+        // Kiểm tra nếu lỗi là 409 Conflict
+        if (error && typeof error === 'object' && 'response' in error && 
+            error.response && typeof error.response === 'object' && 
+            'status' in error.response && error.response.status === 409) {
+          this.createFolderError = 'Tên thư mục đã tồn tại trong thư mục này';
+        } else {
+          this.showToast('Không thể tạo thư mục', 'error');
+          this.showCreateFolderModal = false;
+        }
       }
     },
     
@@ -542,8 +658,21 @@ export default defineComponent({
       });
     },
 
+    // Handler cho nút "Thư mục mới" từ MainContent
+    handleMainContentCreateFolder(): void {
+      console.log(`MainContent requested to create folder in current folder ID: ${this.selectedFolderId}`);
+      // Đảm bảo đang có thư mục được chọn
+      if (this.selectedFolderId === 0) {
+        this.showToast('Vui lòng chọn thư mục trước khi tạo thư mục con', 'warning');
+        return;
+      }
+      // Hiển thị dialog tạo thư mục với ID thư mục cha là thư mục hiện tại
+      this.showCreateFolderModal = true;
+    },
+
     // Method to create a root-level folder
     createRootFolder(): void {
+      console.log('Creating root folder');
       // Set the context for folder creation to root level
       this.selectedFolderId = 0;
       // Show the create folder dialog
@@ -552,6 +681,7 @@ export default defineComponent({
 
     // Method to create a subfolder within a parent folder
     createSubfolder(parentFolderId: number): void {
+      console.log(`Creating subfolder in parent ID: ${parentFolderId}`);
       // Set the selected folder ID to the parent ID to prepare for folder creation
       this.selectedFolderId = parentFolderId;
       // Show the create folder dialog
@@ -601,6 +731,31 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.account-link {
+  text-decoration: none;
 }
 
 .main-content {

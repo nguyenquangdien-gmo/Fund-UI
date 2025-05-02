@@ -1,89 +1,85 @@
 <template>
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <h2>Google Drive</h2>
-    </div>
+  <div class="sidebar">
+    <div class="sidebar-content">
     
-    <div class="section">
-      <div class="section-header">
-        <h3>Thư mục</h3>
-        <button class="add-root-folder-btn" @click="$emit('create-root-folder')" title="Tạo thư mục mới ở Root">
-          <i class="pi pi-folder-plus" style="font-size: 1rem"></i>
-        </button>
-      </div>
-      <div class="folder-tree">
-        <div v-if="isLoading" class="loading-folders">
-          <div class="loader"></div>
-          <span>Đang tải...</span>
-        </div>
-        
-        <div v-else-if="folderTree.length === 0" class="empty-folders">
-          Không có thư mục nào
-          <button class="create-folder-link" @click="$emit('create-root-folder')">
-            <i class="pi pi-folder-plus" style="font-size: 0.875rem; margin-right: 0.25rem;"></i>
-            Tạo thư mục
+      
+      <!-- Folders section -->
+      <div class="section folders-section">
+        <div class="section-header">
+          <h3>Thư mục</h3>
+          <button class="add-folder-btn" @click="$emit('create-root-folder')" title="Tạo thư mục mới">
+            <i class="pi pi-plus"></i>
           </button>
         </div>
         
-        <div v-else class="folders-container">
-          <folder-tree-item
-            v-for="folder in folderTree"
-            :key="folder.id"
-            :folder="folder"
-            :selected-folder-id="selectedFolderId"
-            @select-folder="handleSelectFolder"
-            @rename-folder="handleRenameFolder"
-            @delete-folder="handleDeleteFolder"
-            @create-subfolder="handleCreateSubfolder"
-          />
-        </div>
-      </div>
-    </div>
-    
-    <div class="section">
-      <h3>Yêu thích</h3>
-      <div v-if="favorites.length === 0" class="empty-favorites">
-        Chưa có mục yêu thích nào
-      </div>
-      <div v-else class="favorites-list">
-        <div v-for="favorite in favorites" :key="favorite.id" class="favorite-item">
-          <div class="favorite-icon">
-            <svg v-if="favorite.type === 'folder'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
+        <div class="folders-tree">
+          <div v-if="isLoadingFolders" class="loading-folders">
+            <div class="spinner"></div>
+            <span>Đang tải thư mục...</span>
           </div>
-          <div class="favorite-details">
-            <span class="favorite-name">{{ favorite.name }}</span>
-            <span class="favorite-path">{{ favorite.path }}</span>
+          
+          <div v-else-if="folders.length === 0" class="empty-folders">
+            Chưa có thư mục nào
+            <button class="create-folder-link" @click="$emit('create-root-folder')">
+              <i class="pi pi-folder-plus"></i>
+              Tạo thư mục
+            </button>
           </div>
-          <div class="favorite-actions">
-            <button class="action-btn" @click="$emit('edit-favorite', favorite.id)" title="Chỉnh sửa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                <path d="m15 5 4 4"/>
-              </svg>
-            </button>
-            <button class="action-btn" @click="$emit('remove-favorite', favorite.id)" title="Xóa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-              </svg>
-            </button>
+          
+          <div v-else class="folder-items">
+            <folder-tree-item 
+              v-for="folder in rootFolders" 
+              :key="folder.id"
+              :folder="folder"
+              :selected-folder-id="selectedFolderId"
+              :sub-folders="getSubfolders(folder.id)"
+              @select-folder="$emit('select-folder', $event)"
+              @rename-folder="$emit('rename-folder', $event)"
+              @delete-folder="$emit('delete-folder', $event)"
+              @create-subfolder="$emit('create-subfolder', $event)"
+            />
           </div>
         </div>
       </div>
+        <!-- Favorites section -->
+        <div class="section favorites-section">
+        <div class="section-header">
+          <h3>Yêu thích</h3>
+        </div>
+        
+        <div class="favorites-list">
+          <div v-if="favorites.length === 0" class="empty-favorites">
+            Chưa có mục yêu thích nào
+          </div>
+          <div v-else class="favorite-items">
+            <div 
+              v-for="favorite in favorites" 
+              :key="favorite.id" 
+              class="favorite-item"
+            >
+              <div class="favorite-icon">
+                <i :class="favorite.type === 'folder' ? 'pi pi-folder' : 'pi pi-file'"></i>
+              </div>
+              <span class="favorite-name">{{ favorite.name }}</span>
+              <div class="favorite-actions">
+                <button @click="$emit('edit-favorite', favorite.id)" class="action-btn" title="Chỉnh sửa">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button @click="$emit('remove-favorite', favorite.id)" class="action-btn" title="Xóa">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </aside>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted } from 'vue';
-import { useDriveStore } from '@/stores/drive';
+import { defineComponent, ref, onMounted } from 'vue';
+import { useDriveStore } from '../../stores/drive';
 import FolderTreeItem from './FolderTreeItem.vue';
 
 interface Favorite {
@@ -103,12 +99,7 @@ interface DriveFolder {
   parentFolderId: number | null;
   parentFolderName: string | null;
   createdByUsername: string;
-}
-
-interface TreeFolder {
-  id: number;
-  name: string;
-  children: TreeFolder[];
+  children: DriveFolder[];
 }
 
 export default defineComponent({
@@ -126,33 +117,41 @@ export default defineComponent({
       required: true
     }
   },
-  emits: ['select-folder', 'edit-favorite', 'remove-favorite', 'rename-folder', 'delete-folder', 'create-root-folder', 'create-subfolder'],
+  emits: [
+    'select-folder', 
+    'edit-favorite', 
+    'remove-favorite', 
+    'rename-folder', 
+    'delete-folder', 
+    'create-root-folder', 
+    'create-subfolder'
+  ],
   setup(props, { emit }) {
     const driveStore = useDriveStore();
-    const isLoading = ref(false);
-    const folderTree = ref<TreeFolder[]>([]);
+    const isLoadingFolders = ref(false);
+    const folders = ref<DriveFolder[]>([]);
+    const rootFolders = ref<DriveFolder[]>([]);
     
     // Chuyển đổi danh sách folder phẳng thành cấu trúc cây
-    const buildFolderTree = (folders: DriveFolder[]) => {
-      const folderMap = new Map<number, TreeFolder>();
-      const rootFolders: TreeFolder[] = [];
+    const buildFolderTree = (foldersList: DriveFolder[]) => {
+      const folderMap = new Map<number, DriveFolder>();
+      const rootFoldersList: DriveFolder[] = [];
       
       // Tạo đối tượng TreeFolder cho mỗi folder
-      folders.forEach(folder => {
+      foldersList.forEach(folder => {
         folderMap.set(folder.id, {
-          id: folder.id,
-          name: folder.name,
+          ...folder,
           children: []
         });
       });
       
       // Xây dựng cấu trúc cây
-      folders.forEach(folder => {
+      foldersList.forEach(folder => {
         const folderNode = folderMap.get(folder.id);
         if (!folderNode) return;
         
         if (folder.parentFolderId === null) {
-          rootFolders.push(folderNode);
+          rootFoldersList.push(folderNode);
         } else {
           const parentFolder = folderMap.get(folder.parentFolderId);
           if (parentFolder) {
@@ -161,50 +160,31 @@ export default defineComponent({
         }
       });
       
-      return rootFolders;
+      return rootFoldersList;
     };
     
     // Lấy danh sách thư mục từ API
     const fetchFolders = async () => {
-      isLoading.value = true;
+      isLoadingFolders.value = true;
       try {
-        const folders = await driveStore.getAllFolders();
-        folderTree.value = buildFolderTree(folders);
+        const foldersList = await driveStore.getAllFolders();
+        folders.value = foldersList;
+        rootFolders.value = buildFolderTree(foldersList);
         
         // Nếu có folders và chưa có folder nào được chọn, tự động chọn folder đầu tiên
-        if (folderTree.value.length > 0 && props.selectedFolderId === 0) {
-          emit('select-folder', folderTree.value[0].id);
+        if (rootFolders.value.length > 0 && props.selectedFolderId === 0) {
+          emit('select-folder', rootFolders.value[0].id);
         }
       } catch (error) {
         console.error('Lỗi khi lấy danh sách thư mục:', error);
       } finally {
-        isLoading.value = false;
+        isLoadingFolders.value = false;
       }
     };
     
-    // Theo dõi thay đổi trong store để cập nhật cây thư mục
-    watch(() => driveStore.folders, () => {
-      folderTree.value = buildFolderTree(driveStore.folders);
-    });
-    
-    // Chọn folder
-    const handleSelectFolder = (folderId: number) => {
-      emit('select-folder', folderId);
-    };
-    
-    // Xử lý đổi tên folder
-    const handleRenameFolder = (folder: TreeFolder) => {
-      emit('rename-folder', folder);
-    };
-    
-    // Xử lý xóa folder
-    const handleDeleteFolder = (folder: TreeFolder) => {
-      emit('delete-folder', folder);
-    };
-    
-    // Xử lý tạo thư mục con
-    const handleCreateSubfolder = (folderId: number) => {
-      emit('create-subfolder', folderId);
+    // Tìm tất cả subfolder của một folder
+    const getSubfolders = (folderId: number) => {
+      return folders.value.filter(folder => folder.parentFolderId === folderId);
     };
     
     // Lấy danh sách folder khi component được tạo
@@ -213,12 +193,10 @@ export default defineComponent({
     });
     
     return {
-      isLoading,
-      folderTree,
-      handleSelectFolder,
-      handleRenameFolder,
-      handleDeleteFolder,
-      handleCreateSubfolder,
+      isLoadingFolders,
+      folders,
+      rootFolders,
+      getSubfolders,
       fetchFolders
     };
   }
@@ -269,7 +247,7 @@ export default defineComponent({
   margin-bottom: 0.75rem;
 }
 
-.add-root-folder-btn {
+.add-folder-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,7 +261,7 @@ export default defineComponent({
   transition: background-color 0.2s, color 0.2s;
 }
 
-.add-root-folder-btn:hover {
+.add-folder-btn:hover {
   background-color: rgba(0, 0, 0, 0.05);
   color: var(--primary-color);
 }
@@ -331,7 +309,7 @@ export default defineComponent({
   gap: 0.5rem;
 }
 
-.loader {
+.spinner {
   border: 2px solid #f3f3f3;
   border-radius: 50%;
   border-top: 2px solid var(--primary-color);

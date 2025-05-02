@@ -6,12 +6,22 @@
         <span v-if="breadcrumbs.length === 0" class="breadcrumb-empty">
           Không có thư mục nào được chọn
         </span>
-        <span v-else v-for="(crumb, index) in breadcrumbs" :key="index">
-          <span class="breadcrumb-item" @click="$emit('navigate-to-breadcrumb', crumb.id)">{{ crumb.name }}</span>
-          <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">/</span>
-        </span>
+        <template v-else>
+          <!-- Thêm nút Trang chủ/Home ở đầu breadcrumb -->
+          <span class="breadcrumb-item home" @click="$emit('navigate-to-breadcrumb', 0)">
+            <i class="pi pi-home"></i> Trang chủ
+          </span>
+          <span class="breadcrumb-separator">/</span>
+          
+          <!-- Hiển thị breadcrumb -->
+          <span v-for="(crumb, index) in breadcrumbs" :key="index">
+            <span class="breadcrumb-item" @click="$emit('navigate-to-breadcrumb', crumb.id)">{{ crumb.name }}</span>
+            <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">/</span>
+          </span>
+        </template>
       </div>
       <div class="actions">
+        <PButton icon="pi pi-folder-plus" label="Thư mục mới" class="p-button-secondary mr-2" @click="$emit('show-create-folder-modal')" />
         <PButton icon="pi pi-upload" label="Tải lên" @click="$emit('show-upload-modal')" />
       </div>
     </div>
@@ -45,6 +55,7 @@
             <PButton v-if="isFavorite(folder)" icon="pi pi-star-fill" class="p-button-text favorite-icon" @click="$emit('add-to-favorites', folder)" />
             <PButton v-else icon="pi pi-star" class="p-button-text" @click="$emit('add-to-favorites', folder)" />
             <PButton icon="pi pi-share-alt" class="p-button-text" @click="$emit('copy-share-link', folder)" />
+            <PButton icon="pi pi-download" class="p-button-text" @click="$emit('download-folder', folder)" title="Tải xuống ZIP" />
             <PButton icon="pi pi-pencil" class="p-button-text" @click="$emit('rename-folder', folder)" />
             <PButton v-if="isAdmin" icon="pi pi-trash" class="p-button-text p-button-danger" @click="$emit('delete-folder', folder)" />
           </div>
@@ -155,13 +166,15 @@ export default defineComponent({
     'select-folder',
     'navigate-to-breadcrumb',
     'show-upload-modal',
+    'show-create-folder-modal',
     'add-to-favorites',
     'copy-share-link',
     'download-file',
     'delete-file',
     'delete-folder',
     'rename-file',
-    'rename-folder'
+    'rename-folder',
+    'download-folder'
   ],
   setup(props) {
     // Kiểm tra xem thư mục có nội dung hay không
@@ -216,60 +229,92 @@ export default defineComponent({
 <style scoped>
 .content {
   flex: 1;
+  background-color: #fafafa;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .breadcrumb {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.25rem;
+  font-size: 1rem;
+  max-width: 70%;
+  overflow: hidden;
 }
 
 .breadcrumb-item {
   cursor: pointer;
-  color: var(--text-secondary);
+  color: #3B82F6;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: color 0.2s;
 }
 
 .breadcrumb-item:hover {
-  color: var(--primary-color);
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.breadcrumb-item.home {
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.breadcrumb-item.home i {
+  font-size: 0.9rem;
 }
 
 .breadcrumb-separator {
-  margin: 0 0.5rem;
-  color: var(--text-secondary);
+  color: #6c757d;
+  margin: 0 0.25rem;
+}
+
+.breadcrumb-empty {
+  color: #6c757d;
+  font-style: italic;
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .loading-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  height: 100%;
+  color: #6c757d;
 }
 
 .loading-spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3B82F6;
   border-radius: 50%;
-  border-top: 4px solid var(--primary-color);
   width: 40px;
   height: 40px;
-  margin-bottom: 1rem;
   animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {
@@ -279,8 +324,16 @@ export default defineComponent({
 
 .files-container {
   flex: 1;
-  padding: 1.5rem;
   overflow-y: auto;
+}
+
+.empty-state {
+  color: #6c757d;
+  text-align: center;
+  padding: 3rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
 }
 
 .files-list {
@@ -293,57 +346,55 @@ export default defineComponent({
   display: flex;
   align-items: center;
   padding: 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   background-color: white;
-  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: background-color 0.2s;
 }
 
 .file-item:hover {
-  background-color: var(--secondary-color);
+  background-color: #f8f9fa;
 }
 
 .file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #e9ecef;
   margin-right: 1rem;
-  color: var(--text-secondary);
+  color: #6c757d;
 }
 
 .file-details {
   flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
 .file-name {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
 }
 
 .file-meta {
   display: flex;
   gap: 1rem;
+  color: #6c757d;
   font-size: 0.875rem;
-  color: var(--text-secondary);
 }
 
 .file-actions {
   display: flex;
-  gap: 0.5rem;
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
-.breadcrumb-empty {
-  color: var(--text-secondary);
-  font-style: italic;
+  gap: 0.25rem;
 }
 
 .favorite-icon {
-  color: #f59e0b !important; /* Use warning color for filled star */
+  color: #f59e0b;
 }
 </style> 

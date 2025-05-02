@@ -1,40 +1,62 @@
 <template>
-  <PDialog :visible="visible" modal header="Tạo thư mục mới" :style="{ width: '500px' }" @update:visible="$emit('update:visible', $event)">
-    <div class="form-group">
-      <label for="folder-name">Tên thư mục</label>
-      <input
-        id="folder-name"
-        v-model="folderName"
-        type="text"
-        class="form-input"
-        placeholder="Nhập tên thư mục mới"
-        ref="nameInput"
-        @keyup.enter="handleCreateFolder"
-      />
-      <small v-if="isDuplicate" class="error-text">Tên thư mục đã tồn tại trong thư mục này</small>
-    </div>
-    <template #footer>
-      <PButton label="Hủy" icon="pi pi-times" @click="$emit('update:visible', false)" class="p-button-text" />
-      <PButton label="Tạo" icon="pi pi-plus" @click="handleCreateFolder" :disabled="!folderName.trim() || isDuplicate" />
-    </template>
-  </PDialog>
+  <div>
+    <Dialog 
+      :visible="visible" 
+      modal 
+      header="Tạo thư mục mới" 
+      :style="{ width: '500px' }" 
+      @update:visible="$emit('update:visible', $event)"
+      :blockScroll="true"
+    >
+      <div class="form-group">
+        <label for="folder-name">Tên thư mục</label>
+        <input
+          id="folder-name"
+          v-model="folderName"
+          type="text"
+          class="form-input"
+          placeholder="Nhập tên thư mục mới"
+          ref="nameInput"
+          @keyup.enter="handleCreateFolder"
+        />
+        <div v-if="errorMessage" class="error-text">{{ errorMessage }}</div>
+        <div v-if="isDuplicate" class="error-text">Tên thư mục đã tồn tại</div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" icon="pi pi-times" @click="$emit('update:visible', false)" class="p-button-text" />
+        <Button label="Tạo" icon="pi pi-plus" @click="handleCreateFolder" :disabled="!folderName.trim() || isDuplicate" />
+      </template>
+    </Dialog>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, nextTick } from 'vue';
-import PDialog from 'primevue/dialog';
-import PButton from 'primevue/button';
+import { defineComponent, ref, watch, nextTick, computed } from 'vue';
+// Import được bỏ qua vì chúng ta sẽ sử dụng global component
 
 interface DriveFolder {
   id: number;
   name: string;
 }
 
+interface DriveFile {
+  id: number;
+  name: string;
+  mimeType: string;
+  size: number;
+  webViewLink: string;
+  webContentLink: string;
+  createdTime: string;
+  modifiedTime: string;
+  folderId: number;
+  folderName: string;
+  createdByUsername: string;
+}
+
 export default defineComponent({
   name: 'GGDriveCreateFolderDialog',
   components: {
-    PDialog,
-    PButton
+    // Không cần khai báo components vì đã đăng ký global
   },
   props: {
     visible: {
@@ -48,9 +70,17 @@ export default defineComponent({
     existingFolders: {
       type: Array as () => DriveFolder[],
       required: true
+    },
+    existingFiles: {
+      type: Array as () => DriveFile[],
+      default: () => []
+    },
+    errorMessage: {
+      type: String,
+      default: ''
     }
   },
-  emits: ['update:visible', 'create-folder'],
+  emits: ['update:visible', 'create-folder', 'update:error-message'],
   setup(props, { emit }) {
     const folderName = ref('');
     const nameInput = ref<HTMLInputElement | null>(null);
@@ -59,31 +89,54 @@ export default defineComponent({
     watch(() => props.visible, (isVisible) => {
       if (isVisible) {
         folderName.value = '';
+        emit('update:error-message', ''); // Reset error message
         nextTick(() => {
           if (nameInput.value) {
             nameInput.value.focus();
           }
         });
+        
+        console.log(`CreateFolderDialog opened with parentFolderId: ${props.parentFolderId}`);
+        console.log(`Existing folders:`, props.existingFolders);
       }
     });
-
-    // Check if folder name already exists
+    
+    // Kiểm tra trùng lặp tên
     const isDuplicate = computed(() => {
       if (!folderName.value.trim()) return false;
-      return props.existingFolders.some(
-        folder => folder.name.toLowerCase() === folderName.value.trim().toLowerCase()
+      
+      const trimmedName = folderName.value.trim().toLowerCase();
+      
+      // Kiểm tra trùng tên với các thư mục hiện có
+      const folderNameExists = props.existingFolders.some(
+        folder => folder.name.toLowerCase() === trimmedName
       );
+      
+      // Kiểm tra trùng tên với các file hiện có
+      const fileNameExists = props.existingFiles.some(
+        file => file.name.toLowerCase() === trimmedName
+      );
+      
+      return folderNameExists || fileNameExists;
     });
 
     const handleCreateFolder = () => {
-      if (folderName.value.trim() && !isDuplicate.value) {
-        emit('create-folder', {
-          name: folderName.value.trim(),
-          parentFolderId: props.parentFolderId
-        });
-        folderName.value = '';
-        emit('update:visible', false);
+      const trimmedName = folderName.value.trim();
+      
+      if (!trimmedName) {
+        return;
       }
+      
+      if (isDuplicate.value) {
+        emit('update:error-message', 'Tên thư mục đã tồn tại');
+        return;
+      }
+      
+      console.log(`Creating folder with name: "${trimmedName}", parentId: ${props.parentFolderId}`);
+      emit('create-folder', {
+        name: trimmedName,
+        parentFolderId: props.parentFolderId
+      });
     };
 
     return {

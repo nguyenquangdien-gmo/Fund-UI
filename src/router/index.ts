@@ -28,6 +28,7 @@ import SurveyView from '@/views/admin/SurveyView.vue'
 import WorkCalendarView from '@/views/WorkCalendarView.vue'
 import PenaltySlipsView from '@/views/admin/PenaltySlipsView.vue'
 import GGDriveView from '@/views/GGDriveView.vue'
+import DriveAccountManager from '@/views/DriveAccountManager.vue'
 import RestaurantView from '@/views/RestaurantView.vue'
 import OrdersView from '@/views/OrdersView.vue'
 import OrderDetailView from '@/views/OrderDetailView.vue'
@@ -92,8 +93,21 @@ const router = createRouter({
     },
     {
       path: '/drive',
-      name: 'drive',
-      component: GGDriveView
+      name: 'GGDriveView',
+      component: GGDriveView,
+      meta: {
+        requiresAuth: true,
+        title: 'Google Drive'
+      }
+    },
+    {
+      path: '/drive/accounts',
+      name: 'DriveAccountManager',
+      component: DriveAccountManager,
+      meta: {
+        requiresAuth: true,
+        title: 'Quản lý tài khoản dịch vụ Google Drive'
+      }
     },
     {
       path: '/bills',

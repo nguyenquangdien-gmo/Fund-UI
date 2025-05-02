@@ -40,33 +40,278 @@ interface DriveBookmark {
   createdByUsername: string
 }
 
+interface GoogleServiceAccount {
+  id: number
+  accountName: string
+  applicationName: string
+  description?: string
+  rootFolderId?: string
+  isDefault: boolean
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface GoogleServiceAccountRequest {
+  accountName: string;
+  applicationName: string;
+  description?: string;
+  rootFolderId?: string;
+  isDefault?: boolean;
+}
+
 export const useDriveStore = defineStore('drive', {
   state: () => ({
     files: [] as DriveFile[],
     folders: [] as DriveFolder[],
     bookmarks: [] as DriveBookmark[],
+    serviceAccounts: [] as GoogleServiceAccount[],
+    defaultServiceAccount: null as GoogleServiceAccount | null,
     currentFolder: null as DriveFolder | null,
     loading: false,
     error: null as string | null,
   }),
 
   actions: {
-    // File operations
-    async uploadFile(folderId: number, file: File) {
+    // Service Account operations
+    async configureServiceAccount(credentialsFile: File, accountData: GoogleServiceAccountRequest) {
       try {
         const formData = new FormData()
-        formData.append('file', file)
-        const response = await axiosInstance.post(`/drive/folders/${folderId}/upload`, formData)
+        formData.append('credentials', credentialsFile)
+        formData.append('accountName', accountData.accountName)
+        formData.append('applicationName', accountData.applicationName)
+        
+        if (accountData.description) {
+          formData.append('description', accountData.description)
+        }
+        
+        if (accountData.rootFolderId) {
+          formData.append('rootFolderId', accountData.rootFolderId)
+        }
+        
+        formData.append('isDefault', String(accountData.isDefault || false))
+        
+        console.log('Configuring service account with', accountData.accountName, credentialsFile.name)
+        
+        const response = await axiosInstance.post('/drive/service-accounts', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
         return response.data
-      } catch (error) {
-        this.error = 'Failed to upload file'
+      } catch (error: any) {
+        console.error('Error configuring service account:', error)
+        this.error = 'Failed to configure service account'
         throw error
       }
     },
 
-    async deleteFile(fileId: number) {
+    async addServiceAccount(credentialsFile: File, accountData: GoogleServiceAccountRequest) {
       try {
-        await axiosInstance.delete(`/drive/files/${fileId}`)
+        const formData = new FormData()
+        formData.append('credentials', credentialsFile)
+        formData.append('accountName', accountData.accountName)
+        formData.append('applicationName', accountData.applicationName)
+        
+        if (accountData.description) {
+          formData.append('description', accountData.description)
+        }
+        
+        if (accountData.rootFolderId) {
+          formData.append('rootFolderId', accountData.rootFolderId)
+        }
+        
+        formData.append('isDefault', String(accountData.isDefault || false))
+        
+        console.log('Adding service account with', accountData.accountName, credentialsFile.name)
+        
+        const response = await axiosInstance.post('/drive/service-accounts/add', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        return response.data
+      } catch (error: any) {
+        console.error('Error adding service account:', error)
+        this.error = 'Failed to add service account'
+        throw error
+      }
+    },
+
+    async updateServiceAccount(accountId: number, accountData: GoogleServiceAccountRequest, credentialsFile?: File) {
+      try {
+        const formData = new FormData()
+        formData.append('accountName', accountData.accountName)
+        formData.append('applicationName', accountData.applicationName)
+        
+        if (accountData.description) {
+          formData.append('description', accountData.description)
+        }
+        
+        if (accountData.rootFolderId) {
+          formData.append('rootFolderId', accountData.rootFolderId)
+        }
+        
+        formData.append('isDefault', String(accountData.isDefault || false))
+        
+        if (credentialsFile) {
+          formData.append('credentials', credentialsFile)
+        }
+        
+        console.log('Updating service account', accountId, 'with', accountData.accountName)
+        
+        const response = await axiosInstance.put(`/drive/service-accounts/${accountId}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        return response.data
+      } catch (error: any) {
+        console.error('Error updating service account:', error)
+        this.error = 'Failed to update service account'
+        throw error
+      }
+    },
+
+    async getUserServiceAccounts() {
+      try {
+        const response = await axiosInstance.get('/drive/service-accounts')
+        this.serviceAccounts = response.data
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to get service accounts'
+        throw error
+      }
+    },
+
+    async getUserServiceAccountById(accountId: number) {
+      try {
+        const response = await axiosInstance.get(`/drive/service-accounts/${accountId}`)
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to get service account'
+        throw error
+      }
+    },
+
+    async getDefaultServiceAccount() {
+      try {
+        const response = await axiosInstance.get('/drive/service-accounts/default')
+        this.defaultServiceAccount = response.data
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to get default service account'
+        throw error
+      }
+    },
+
+    async setDefaultServiceAccount(accountId: number) {
+      try {
+        const response = await axiosInstance.put(`/drive/service-accounts/${accountId}/set-default`)
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to set default service account'
+        throw error
+      }
+    },
+
+    async disableServiceAccount(accountId: number) {
+      try {
+        await axiosInstance.put(`/drive/service-accounts/${accountId}/disable`)
+      } catch (error) {
+        this.error = 'Failed to disable service account'
+        throw error
+      }
+    },
+
+    async enableServiceAccount(accountId: number) {
+      try {
+        const response = await axiosInstance.put(`/drive/service-accounts/${accountId}/enable`)
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to enable service account'
+        throw error
+      }
+    },
+
+    async deleteServiceAccount(accountId: number) {
+      try {
+        await axiosInstance.delete(`/drive/service-accounts/${accountId}`)
+      } catch (error) {
+        this.error = 'Failed to delete service account'
+        throw error
+      }
+    },
+
+    // File operations
+    async uploadFile(folderId: number, file: File, accountId?: number) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        let url = `/drive/folders/${folderId}/upload`
+        if (accountId) {
+          url += `?accountId=${accountId}`
+        }
+        
+        const response = await axiosInstance.post(url, formData)
+        return response.data
+      } catch (error: any) {
+        if (error.response && error.response.status === 409) {
+          this.error = 'File already exists in this folder'
+        } else {
+          this.error = 'Failed to upload file'
+        }
+        throw error
+      }
+    },
+
+    async downloadFile(fileId: number, accountId?: number) {
+      try {
+        let url = `/drive/files/${fileId}/download`
+        if (accountId) {
+          url += `?accountId=${accountId}`
+        }
+        
+        // Sử dụng responseType blob để tải về file
+        const response = await axiosInstance.get(url, {
+          responseType: 'blob'
+        })
+        
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to download file'
+        throw error
+      }
+    },
+
+    async downloadFolderAsZip(folderId: number, accountId?: number) {
+      try {
+        let url = `/drive/folders/${folderId}/download`
+        if (accountId) {
+          url += `?accountId=${accountId}`
+        }
+        
+        // Sử dụng responseType blob để tải về file zip
+        const response = await axiosInstance.get(url, {
+          responseType: 'blob'
+        })
+        
+        return response.data
+      } catch (error) {
+        this.error = 'Failed to download folder'
+        throw error
+      }
+    },
+
+    async deleteFile(fileId: number, accountId?: number) {
+      try {
+        let url = `/drive/files/${fileId}`
+        if (accountId) {
+          url += `?accountId=${accountId}`
+        }
+        
+        await axiosInstance.delete(url)
       } catch (error) {
         this.error = 'Failed to delete file'
         throw error
@@ -97,11 +342,17 @@ export const useDriveStore = defineStore('drive', {
     },
 
     // Folder operations
-    async listFolderContents(folderId: number) {
+    async listFolderContents(folderId: number, accountId?: number) {
       try {
         // Thêm timestamp để tránh cache
         const timestamp = new Date().getTime();
-        const response = await axiosInstance.get(`/drive/folders/${folderId}/contents?_=${timestamp}`);
+        let url = `/drive/folders/${folderId}/contents?_=${timestamp}`
+        
+        if (accountId) {
+          url += `&accountId=${accountId}`
+        }
+        
+        const response = await axiosInstance.get(url);
         
         // Cập nhật state local
         if (response.data.files) {
@@ -124,16 +375,50 @@ export const useDriveStore = defineStore('drive', {
       }
     },
 
-    async createFolder(name: string, parentFolderId?: number | null) {
+    async createFolder(name: string, parentFolderId?: number | null, accountId?: number) {
       try {
-        const response = await axiosInstance.post('/drive/folders', {
-          name,
-          parentFolderId
-        })
-        return response.data
-      } catch (error) {
-        this.error = 'Failed to create folder'
-        throw error
+        // Đảm bảo gửi đúng định dạng như đã test thành công
+        console.log(`Creating folder: name=${name}, parentId=${parentFolderId === null ? 'null' : parentFolderId}, accountId=${accountId || 'none'}`);
+        
+        // Luôn gửi parentFolderId dưới dạng string, null sẽ được chuyển đổi trong backend
+        const request = {
+          name: name,
+          parentFolderId: parentFolderId !== null && parentFolderId !== undefined ? String(parentFolderId) : null
+        };
+        
+        console.log('Request payload:', request);
+        
+        // Thêm accountId vào URL nếu có
+        let url = '/drive/folders';
+        if (accountId) {
+          url += `?accountId=${accountId}`;
+        }
+        
+        // Thực hiện gọi API và log kết quả
+        const response = await axiosInstance.post(url, request);
+        console.log('Created folder response:', response.data);
+        
+        // Đảm bảo trả về dữ liệu đầy đủ của folder mới tạo để có thể active vào nó
+        return response.data;
+      } catch (error: any) {
+        console.error('Error creating folder:', error);
+        // Hiển thị chi tiết lỗi từ phản hồi API nếu có
+        if (error.response) {
+          console.error('Error response:', error.response.data);
+          console.error('Status:', error.response.status);
+          if (error.response.status === 409) {
+            this.error = 'Folder already exists in this location';
+          } else {
+            this.error = `Failed to create folder: ${error.response.data?.message || error.response.statusText}`;
+          }
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+          this.error = 'Failed to create folder: No response from server';
+        } else {
+          console.error('Error message:', error.message);
+          this.error = `Failed to create folder: ${error.message}`;
+        }
+        throw error;
       }
     },
 
@@ -214,13 +499,18 @@ export const useDriveStore = defineStore('drive', {
     },
 
     // Bookmark operations
-    async createBookmark(name: string, googleId: string, type: string) {
+    async createBookmark(name: string, googleId: string, type: string, accountId?: number) {
       try {
-        const response = await axiosInstance.post('/drive/bookmarks', null, {
-          params: { name, googleId, type }
-        })
+        const url = '/drive/bookmarks'
+        const params = { name, googleId, type }
+        
+        if (accountId) {
+          Object.assign(params, { accountId })
+        }
+        
+        const response = await axiosInstance.post(url, null, { params })
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         this.error = 'Failed to create bookmark'
         throw error
       }

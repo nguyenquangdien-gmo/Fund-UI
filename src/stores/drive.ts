@@ -26,18 +26,22 @@ interface DriveFolder {
   createdByUsername: string
 }
 
-interface DriveBookmark {
+interface DriveBookmarkResponse {
+  id: number;
+  name: string;
+  url: string;
+  googleId: string;
+  type: 'FILE' | 'FOLDER' | 'EXTERNAL';
+  source: 'DRIVE' | 'EXTERNAL';
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ExternalBookmark {
   id: number
   name: string
-  url: string
+  link: string
   type: string
-  googleId: string
-  category: string
-  createdAt: string
-  updatedAt: string
-  folderId: number
-  folderName: string
-  createdByUsername: string
 }
 
 interface GoogleServiceAccount {
@@ -64,7 +68,7 @@ export const useDriveStore = defineStore('drive', {
   state: () => ({
     files: [] as DriveFile[],
     folders: [] as DriveFolder[],
-    bookmarks: [] as DriveBookmark[],
+    bookmarks: [] as DriveBookmarkResponse[],
     serviceAccounts: [] as GoogleServiceAccount[],
     defaultServiceAccount: null as GoogleServiceAccount | null,
     currentFolder: null as DriveFolder | null,
@@ -499,62 +503,88 @@ export const useDriveStore = defineStore('drive', {
     },
 
     // Bookmark operations
-    async createBookmark(name: string, googleId: string, type: string, accountId?: number) {
+    async createBookmark(name: string, googleId: string, type: string, accountId?: number): Promise<DriveBookmarkResponse> {
       try {
-        const url = '/drive/bookmarks'
-        const params = { name, googleId, type }
-        
+        const params = new URLSearchParams();
+        params.append('name', name);
+        params.append('googleId', googleId);
+        params.append('type', type);
         if (accountId) {
-          Object.assign(params, { accountId })
+          params.append('accountId', accountId.toString());
         }
-        
-        const response = await axiosInstance.post(url, null, { params })
-        return response.data
-      } catch (error: any) {
-        this.error = 'Failed to create bookmark'
-        throw error
-      }
-    },
 
-    async getUserBookmarks() {
-      try {
-        const response = await axiosInstance.get('/drive/bookmarks')
-        this.bookmarks = response.data
-        return response.data
+        const response = await axiosInstance.post('/drive/bookmarks', null, {
+          params: {
+            name,
+            googleId,
+            type,
+            ...(accountId ? { accountId } : {})
+          }
+        });
+        return response.data;
       } catch (error) {
-        this.error = 'Failed to get bookmarks'
-        throw error
+        console.error('Error creating bookmark:', error);
+        this.error = 'Failed to create bookmark';
+        throw error;
       }
     },
 
-    async deleteBookmark(bookmarkId: number) {
+    async createExternalBookmark(name: string, url: string): Promise<DriveBookmarkResponse> {
       try {
-        await axiosInstance.delete(`/drive/bookmarks/${bookmarkId}`)
+        const response = await axiosInstance.post('/drive/bookmarks/external', null, {
+          params: { name, url }
+        });
+        return response.data;
       } catch (error) {
-        this.error = 'Failed to delete bookmark'
-        throw error
+        console.error('Error creating external bookmark:', error);
+        this.error = 'Failed to create external bookmark';
+        throw error;
       }
     },
 
-    async updateBookmark(bookmarkId: number, name: string, category: string) {
+    async getUserBookmarks(): Promise<DriveBookmarkResponse[]> {
+      try {
+        const response = await axiosInstance.get('/drive/bookmarks');
+        this.bookmarks = response.data;
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user bookmarks:', error);
+        this.error = 'Failed to get bookmarks';
+        throw error;
+      }
+    },
+
+    async deleteBookmark(bookmarkId: number): Promise<void> {
+      try {
+        await axiosInstance.delete(`/drive/bookmarks/${bookmarkId}`);
+      } catch (error) {
+        console.error('Error deleting bookmark:', error);
+        this.error = 'Failed to delete bookmark';
+        throw error;
+      }
+    },
+
+    async updateBookmark(bookmarkId: number, name: string): Promise<DriveBookmarkResponse> {
       try {
         const response = await axiosInstance.put(`/drive/bookmarks/${bookmarkId}`, null, {
-          params: { name, category }
-        })
-        return response.data
+          params: { name }
+        });
+        return response.data;
       } catch (error) {
-        this.error = 'Failed to update bookmark'
-        throw error
+        console.error('Error updating bookmark:', error);
+        this.error = 'Failed to update bookmark';
+        throw error;
       }
     },
 
-    async getBookmarksByCategory(category: string) {
+    async getBookmarksBySource(source: string): Promise<DriveBookmarkResponse[]> {
       try {
-        const response = await axiosInstance.get(`/drive/bookmarks/category/${category}`)
-        return response.data
+        const response = await axiosInstance.get(`/drive/bookmarks/source/${source}`);
+        return response.data;
       } catch (error) {
-        this.error = 'Failed to get bookmarks by category'
-        throw error
+        console.error('Error getting bookmarks by source:', error);
+        this.error = 'Failed to get bookmarks by source';
+        throw error;
       }
     }
   }

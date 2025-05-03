@@ -34,11 +34,16 @@
 import { defineComponent, ref, watch } from 'vue';
 
 interface Favorite {
-  id: string;
+  id: number;
   name: string;
-  type: 'file' | 'folder';
-  path: string;
-  originalId: string;
+  type: string;
+  source: string;
+  googleId?: string;
+  url?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  path?: string;
+  originalId?: string;
 }
 
 export default defineComponent({

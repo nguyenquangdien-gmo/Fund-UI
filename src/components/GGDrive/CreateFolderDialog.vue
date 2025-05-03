@@ -133,9 +133,15 @@ export default defineComponent({
       }
       
       console.log(`Creating folder with name: "${trimmedName}", parentId: ${props.parentFolderId}`);
+      
+      // Ensure we're passing the correct parent folder ID
+      const effectiveParentId = props.parentFolderId;
+      console.log(`Effective parent folder ID: ${effectiveParentId}`);
+      
+      // Emit the event with the folder details
       emit('create-folder', {
         name: trimmedName,
-        parentFolderId: props.parentFolderId
+        parentFolderId: effectiveParentId
       });
     };
 

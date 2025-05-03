@@ -19,7 +19,7 @@
       
       <div class="folder-actions" @click.stop>
         <div class="menu-trigger" @click.stop="toggleMenu">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="1"/>
             <circle cx="12" cy="5" r="1"/>
             <circle cx="12" cy="19" r="1"/>
@@ -31,20 +31,28 @@
             <i class="pi pi-folder-plus" style="font-size: 1rem"></i>
             <span>Thư mục mới</span>
           </div>
+          <div class="menu-item" @click="handleDownloadFolder">
+            <i class="pi pi-download" style="font-size: 1rem"></i>
+            <span>Tải xuống</span>
+          </div>
           <div class="menu-item" @click="handleRename">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
             </svg>
             <span>Đổi tên</span>
           </div>
           <div class="menu-item delete" @click="handleDelete">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18"/>
               <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
             </svg>
             <span>Xóa</span>
+          </div>
+          <div class="menu-item" @click="handleAddToFavorites">
+            <i class="pi pi-star" style="font-size: 1rem"></i>
+            <span>Thêm vào yêu thích</span>
           </div>
         </div>
       </div>
@@ -56,16 +64,20 @@
         :key="subfolder.id"
         :folder="subfolder"
         :selected-folder-id="selectedFolderId"
+        :expand-folder-ids="expandFolderIds"
         @select-folder="$emit('select-folder', $event)"
         @rename-folder="$emit('rename-folder', $event)"
         @delete-folder="$emit('delete-folder', $event)"
+        @create-subfolder="$emit('create-subfolder', $event)"
+        @download-folder="$emit('download-folder', $event)"
+        @add-to-favorites="$emit('add-to-favorites', $event)"
       />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { defineComponent, ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 
 // Tạo biến toàn cục để theo dõi menu đang mở
 const activeMenu = ref<string | null>(null);
@@ -86,15 +98,37 @@ export default defineComponent({
     selectedFolderId: {
       type: Number,
       required: true
+    },
+    expandFolderIds: {
+      type: Array as () => number[],
+      default: () => []
     }
   },
-  emits: ['select-folder', 'rename-folder', 'delete-folder', 'create-subfolder'],
+  emits: ['select-folder', 'rename-folder', 'delete-folder', 'create-subfolder', 'download-folder', 'add-to-favorites'],
   setup(props, { emit }) {
     const isExpanded = ref(false);
     const menuId = `folder-menu-${props.folder.id}`;
     
     // Tính toán xem menu của folder này có đang hiển thị không
     const showMenu = computed(() => activeMenu.value === menuId);
+
+    // Theo dõi expandFolderIds và mở rộng folder khi cần
+    watch(() => props.expandFolderIds, (newIds) => {
+      if (newIds.includes(props.folder.id)) {
+        console.log(`Mở rộng folder từ prop: ${props.folder.name} (ID: ${props.folder.id})`);
+        isExpanded.value = true;
+      }
+    }, { immediate: true });
+
+    // Theo dõi selectedFolderId để đảm bảo UI cập nhật khi folder được chọn
+    watch(() => props.selectedFolderId, (newId) => {
+      if (newId === props.folder.id) {
+        console.log(`Folder được chọn: ${props.folder.name} (ID: ${props.folder.id})`);
+        
+        // Không cần tự động mở rộng folder khi được chọn
+        // Chỉ cập nhật UI để hiển thị folder đã được chọn
+      }
+    }, { immediate: true });
 
     const handleFolderClick = () => {
       if (props.folder.children.length > 0) {
@@ -118,6 +152,11 @@ export default defineComponent({
       activeMenu.value = null;
     };
 
+    const handleDownloadFolder = () => {
+      emit('download-folder', props.folder);
+      activeMenu.value = null;
+    };
+
     const handleRename = () => {
       emit('rename-folder', props.folder);
       activeMenu.value = null;
@@ -125,6 +164,11 @@ export default defineComponent({
 
     const handleDelete = () => {
       emit('delete-folder', props.folder);
+      activeMenu.value = null;
+    };
+
+    const handleAddToFavorites = () => {
+      emit('add-to-favorites', props.folder);
       activeMenu.value = null;
     };
 
@@ -152,8 +196,10 @@ export default defineComponent({
       handleFolderClick,
       toggleMenu,
       handleCreateSubfolder,
+      handleDownloadFolder,
       handleRename,
-      handleDelete
+      handleDelete,
+      handleAddToFavorites
     };
   }
 });
@@ -161,7 +207,7 @@ export default defineComponent({
 
 <style scoped>
 .folder-tree-item {
-  margin-left: 1rem;
+  margin-left: 0.5rem;
 }
 
 .folder-content {
@@ -193,13 +239,13 @@ export default defineComponent({
 .folder-icons {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   color: var(--text-secondary);
 }
 
 .toggle-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
   color: var(--text-secondary);
   transition: transform 0.2s;
 }
@@ -209,13 +255,13 @@ export default defineComponent({
 }
 
 .empty-space {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .folder-icon {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .folder-content.is-selected .folder-icon {
@@ -223,7 +269,7 @@ export default defineComponent({
 }
 
 .folder-name {
-  margin-left: 0.5rem;
+  margin-left: 0.25rem;
   font-size: 0.875rem;
   white-space: nowrap;
   overflow: hidden;
@@ -231,7 +277,7 @@ export default defineComponent({
 }
 
 .subfolders {
-  margin-left: 1rem;
+  margin-left: 0.5rem;
 }
 
 .folder-actions {
@@ -240,14 +286,19 @@ export default defineComponent({
 }
 
 .menu-trigger {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   color: var(--text-secondary);
   transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-trigger svg {
+  width: 14px;
+  height: 14px;
 }
 
 .menu-trigger:hover {
@@ -312,13 +363,15 @@ export default defineComponent({
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   cursor: pointer;
   transition: background-color 0.2s;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .menu-item svg {
+  width: 12px;
+  height: 12px;
   color: currentColor;
 }
 

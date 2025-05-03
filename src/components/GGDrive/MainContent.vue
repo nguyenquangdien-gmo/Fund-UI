@@ -63,7 +63,7 @@
 
         <!-- Files -->
         <div v-for="file in folderContents.files" :key="'file-' + file.id" class="file-item">
-          <div class="file-icon">
+          <div class="file-icon" @click="previewFile(file)">
             <svg v-if="file.mimeType.includes('image')" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
               <circle cx="9" cy="9" r="2"></circle>
@@ -81,7 +81,7 @@
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
           </div>
-          <div class="file-details">
+          <div class="file-details" @click="previewFile(file)">
             <div class="file-name">{{ file.name }}</div>
             <div class="file-meta">
               <span>{{ formatDate(file.modifiedTime) }}</span>
@@ -127,11 +127,16 @@ interface DriveFile {
 }
 
 interface Favorite {
-  id: string;
+  id: number;
   name: string;
-  type: 'file' | 'folder';
-  path: string;
-  originalId: string;
+  type: string;
+  source: string;
+  googleId?: string;
+  url?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  path?: string;
+  originalId?: string;
 }
 
 export default defineComponent({
@@ -174,23 +179,31 @@ export default defineComponent({
     'delete-folder',
     'rename-file',
     'rename-folder',
-    'download-folder'
+    'download-folder',
+    'preview-file'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     // Kiểm tra xem thư mục có nội dung hay không
     const hasContent = computed(() => {
       return props.folderContents.files.length > 0 || props.folderContents.subFolders.length > 0;
     });
 
     // Kiểm tra xem một item có phải là favorite hay không
-    const isFavorite = (item: {id: number}) => {
-      return props.favorites.some(fav => fav.originalId === item.id.toString());
+    const isFavorite = (item: {id: number, googleId?: string}) => {
+      // Sử dụng googleId từ item thay vì id
+      // Fallback đến item.id.toString() nếu không có googleId
+      const itemId = item.googleId || item.id.toString();
+      
+      return props.favorites.some(fav => 
+        (fav.googleId === itemId) || (fav.originalId === itemId)
+      );
     };
     
     // Xem trước file
     const previewFile = (file: DriveFile) => {
       if (file.webViewLink) {
-        window.open(file.webViewLink, '_blank');
+        // Emit event to parent component
+        emit('preview-file', file);
       }
     };
 
@@ -366,12 +379,26 @@ export default defineComponent({
   background-color: #e9ecef;
   margin-right: 1rem;
   color: #6c757d;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.file-icon:hover {
+  background-color: #dee2e6;
+  transform: scale(1.05);
 }
 
 .file-details {
   flex: 1;
   min-width: 0;
   cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.file-details:hover {
+  background-color: rgba(59, 130, 246, 0.1);
 }
 
 .file-name {

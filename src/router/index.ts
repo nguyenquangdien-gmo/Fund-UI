@@ -97,8 +97,8 @@ const router = createRouter({
       component: GGDriveView,
       meta: {
         requiresAuth: true,
-        title: 'Google Drive'
-      }
+        title: 'Google Drive',
+      },
     },
     {
       path: '/drive/accounts',
@@ -106,8 +106,8 @@ const router = createRouter({
       component: DriveAccountManager,
       meta: {
         requiresAuth: true,
-        title: 'Quản lý tài khoản dịch vụ Google Drive'
-      }
+        title: 'Quản lý tài khoản dịch vụ Google Drive',
+      },
     },
     {
       path: '/bills',

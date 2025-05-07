@@ -1,7 +1,7 @@
 // src/stores/leaveRequestStore.ts
 import { defineStore } from 'pinia'
 import Cookies from 'js-cookie'
-import axiosInstance, { saveAuthToken, removeAuthToken } from '@/router/CreateApiInstance'
+import axiosInstance from '@/router/Interceptor'
 
 // Định nghĩa các interface dựa trên dữ liệu thực tế
 interface Position {
@@ -150,7 +150,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
   }),
 
   getters: {
-    isAuthenticated: (): boolean => !!Cookies.get('AUTHTOKEN'),
+    isAuthenticated: (): boolean => !!Cookies.get('user'),
     getUserId: (state): string | undefined => state.user?.userObjId,
     getUserInfo: (state): User | null => state.user,
   },
@@ -169,20 +169,18 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
         formData.append('username', username)
         formData.append('password', password)
 
-        const response = await axiosInstance.post<ApiResponse<User>>('/signIn', formData, {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+        const response = await axiosInstance.post<ApiResponse<User>>(
+          '/admin-create/login',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
           },
-        })
+        )
 
         if (response.data.success) {
           this.user = response.data.data
-          const token = response.data.token
-
-          // Save token to cookie
-          saveAuthToken(token)
-
-          // Store stringified user data in cookie
           Cookies.set(
             'user',
             JSON.stringify({
@@ -211,7 +209,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
     // Đăng xuất
     logout(): void {
       this.user = null
-      removeAuthToken()
+      Cookies.remove('user')
     },
 
     // Lấy danh sách loại đơn nghỉ
@@ -220,7 +218,9 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<LeaveType[]>>('/list-staff-attendance')
+        const response = await axiosInstance.get<ApiResponse<LeaveType[]>>(
+          '/admin-create/leave-types',
+        )
 
         if (response.data.success) {
           this.leaveTypes = response.data.data || []
@@ -244,9 +244,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<Reporter[]>>(
-          '/authDefault/listReporter',
-        )
+        const response = await axiosInstance.get<ApiResponse<Reporter[]>>('/admin-create/reporters')
 
         if (response.data.success) {
           this.reporters = response.data.data || []
@@ -264,73 +262,6 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       }
     },
 
-    // Tạo đơn nghỉ phép
-    async createLeaveRequest(payload: {
-      attendanceTypeObjId: string
-      reportObjId: string
-      fromDate: string
-      endDate: string
-      reason: string
-    }): Promise<{ success: boolean; data?: LeaveRequest; error?: string }> {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await axiosInstance.post<ApiResponse<LeaveRequest>>(
-          '/auth/staff-attendance/create',
-          payload,
-        )
-
-        if (response.data.success) {
-          const newLeaveRequest = response.data.data
-          this.leaveRequests.push(newLeaveRequest)
-          return { success: true, data: newLeaveRequest }
-        } else {
-          throw new Error(response.data.message || 'Tạo đơn nghỉ thất bại')
-        }
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo đơn nghỉ'
-        this.error = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Tạo đơn WFH
-    async createWfhRequest(payload: {
-      reportObjId: string
-      fromDate: string
-      endDate: string
-      reason: string
-    }): Promise<{ success: boolean; data?: LeaveRequest; error?: string }> {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await axiosInstance.post<ApiResponse<LeaveRequest>>(
-          '/auth/staff-wfh/create',
-          payload,
-        )
-
-        if (response.data.success) {
-          const newWfhRequest = response.data.data
-          this.leaveRequests.push(newWfhRequest)
-          return { success: true, data: newWfhRequest }
-        } else {
-          throw new Error(response.data.message || 'Tạo đơn WFH thất bại')
-        }
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo đơn WFH'
-        this.error = errorMessage
-        return { success: false, error: errorMessage }
-      } finally {
-        this.loading = false
-      }
-    },
-
     // Xóa đơn nghỉ
     async deleteLeaveRequest(
       staffAttendanceObjId: string,
@@ -340,7 +271,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.delete<ApiResponse<Record<string, unknown>>>(
-          '/auth/staff-attendance/delete',
+          '/admin-create/leave/delete',
           {
             data: { staffAttendanceObjId },
           },
@@ -374,7 +305,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.delete<ApiResponse<Record<string, unknown>>>(
-          '/auth/staff-wfh/delete',
+          '/admin-create/wfh/delete',
           {
             data: { wfhObjId },
           },
@@ -408,7 +339,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.get<ApiResponse<LeaveRequest[]>>(
-          '/auth/staff-attendance/list',
+          '/admin-create/staff-attendance/list',
         )
 
         if (response.data.success) {
@@ -489,7 +420,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
         }
 
         const response = await axiosInstance.post<ApiResponse<LeaveRequest>>(
-          '/auth/staff-attendance/create',
+          '/admin-create/leave/create',
           apiPayload,
         )
 
@@ -528,7 +459,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.post<ApiResponse<LeaveRequest>>(
-          '/auth/staff-wfh/create',
+          '/admin-create/wfh/create',
           payload,
         )
 
@@ -563,7 +494,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
-          '/auth/staff-attendance/personalStaffAttendance',
+          '/admin-create/personal-staff-attendance',
           { params },
         )
 
@@ -595,7 +526,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
-          '/auth/staff-wfh/personalStaffWfh',
+          '/admin-create/personal-staff-wfh',
           { params },
         )
 

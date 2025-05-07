@@ -1223,25 +1223,21 @@ function isMultiDayEntry(entry: WorkEntry | undefined): boolean {
 async function checkAuthentication() {
   loading.value = true;
   try {
-    const tokenExists = Cookies.get('AUTHTOKEN');
     const userDataExists = Cookies.get('user');
     // console.log('tokenExists:', tokenExists);
     // console.log('userDataExists', userDataExists);
 
     // Nếu không có token hoặc không có user data, cần đăng nhập
-    if (!tokenExists || !userDataExists) {
+    if (!userDataExists) {
       isLoggedIn.value = false;
 
-      if (tokenExists && !userDataExists) {
-        // Nếu có token nhưng không có user data, xóa token
-        removeAuthToken();
-        toast.add({
-          severity: 'warn',
-          summary: 'Thông tin đăng nhập thiếu',
-          detail: 'Vui lòng đăng nhập lại.',
-          life: 4000
-        });
-      }
+      toast.add({
+        severity: 'warn',
+        summary: 'Thông tin đăng nhập thiếu',
+        detail: 'Vui lòng đăng nhập lại.',
+        life: 4000
+      });
+
       loading.value = false;
       return;
     }

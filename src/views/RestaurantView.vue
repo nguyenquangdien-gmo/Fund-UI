@@ -81,7 +81,8 @@
         <template #body="{ data }">
           <div class="flex space-x-2">
             <Button
-              icon="pi pi-pencil"
+              icon="pi pi-refresh" 
+              severity="info"
               label="Sửa"
               class="p-button-warning"
               size="small"

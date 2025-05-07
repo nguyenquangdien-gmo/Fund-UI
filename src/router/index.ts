@@ -15,6 +15,7 @@ import ApprovingView from '@/views/admin/ApprovingView.vue'
 import EventView from '@/views/EventView.vue'
 import LateHistories from '@/views/LateHistories.vue'
 import TeamView from '@/views/admin/TeamView.vue'
+import TeamViewDetail from '@/views/admin/TeamViewDetail.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import RoleView from '@/views/admin/RoleView.vue'
 import ReminderView from '@/views/admin/ReminderView.vue'
@@ -185,6 +186,12 @@ const router = createRouter({
       path: '/teams',
       name: 'teams',
       component: TeamView,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/teams/:teamId',
+      name: 'teams-detail',
+      component: TeamViewDetail,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {

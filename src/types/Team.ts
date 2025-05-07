@@ -4,5 +4,6 @@ export default interface Team {
   slug: string
   qrcode: Uint8Array
   description: string
+  regulation: string
   created_at: string
 }

@@ -36,13 +36,14 @@
             {{ formatDate(data.joinDate) }}
           </template>
         </Column>
-        <Column v-if="admin" header="Actions" style="width: 25%">
+        <Column header="Actions" style="width: 25%">
           <template #body="{ data }">
             <Button icon="pi pi-dollar" severity="help" @click="handleTransferClick" class="left-10" />
-            <Button icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" class="left-10" />
-            <Button icon="pi pi-undo" severity="Warn" class="left-10" @click="confirmReset(data.email)"
+            <Button v-if="admin" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)"
+              class="left-10" />
+            <Button v-if="admin" icon="pi pi-undo" severity="Warn" class="left-10" @click="confirmReset(data.email)"
               :hidden="data.email === user.email" />
-            <Button class="left-10" icon="pi pi-trash" severity="danger" @click="confirmDelete(data)"
+            <Button v-if="admin" class="left-10" icon="pi pi-trash" severity="danger" @click="confirmDelete(data)"
               :hidden="data.email === user.email" />
           </template>
         </Column>
@@ -179,7 +180,7 @@ const admin = ref(false)
 
 const checkAdmin = async () => {
   const userData = sessionStorage.getItem('user');
-  
+
   if (!userData) return false;
   try {
     const user = JSON.parse(userData);

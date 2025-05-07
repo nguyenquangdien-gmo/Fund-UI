@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 space-y-4">
     <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-semibold" style="text-align: center; padding: 1rem;">Danh sách quán ăn</h2>
+      <h2 class="text-2xl font-semibold" style="text-align: center; padding: 1rem;">DANH SÁCH QUÁN ĂN</h2>
       <div class="p-input-icon-left my-2 d-flex justify-content-between ">
         <!-- <i class="pi pi-search" /> -->
          <div class="d-flex gap-2">
@@ -196,7 +196,7 @@
                   class="p-button-outlined"
                   
                 >
-                  <i class="pi pi-spin pi-spinner" style="padding: 0.2rem 0;"></i>
+                  <i class="pi pi-sync" style="padding: 0.2rem 0;"></i>
               </Button>
             </div>
             <div v-else style="width: 53%;" >

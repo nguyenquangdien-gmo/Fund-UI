@@ -162,8 +162,9 @@
               <Button 
                 v-if="data.user.id === users?.id" 
                 label="Sửa" 
+                icon="pi pi-refresh" 
+                severity="info"
                 class="p-button-sm p-button-warning" 
-                icon="pi pi-pencil" 
                 iconPos="left" 
                 @click="openEditDialog(data.id)" 
               />

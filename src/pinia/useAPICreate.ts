@@ -562,13 +562,13 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<LeaveRequest[]>>(
+        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
           '/auth/staff-attendance/personalStaffAttendance',
           { params },
         )
 
         if (response.data.success) {
-          return { success: true, data: response.data.data }
+          return { success: true, data: response.data.data.items }
         } else {
           throw new Error(response.data.message || 'Không thể lấy dữ liệu staff attendance')
         }
@@ -582,7 +582,6 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       }
     },
 
-    // Fetch personal staff WFH
     async fetchPersonalStaffWfh(params: {
       startDate: string
       endDate: string
@@ -595,13 +594,13 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<LeaveRequest[]>>(
+        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
           '/auth/staff-wfh/personalStaffWfh',
           { params },
         )
 
         if (response.data.success) {
-          return { success: true, data: response.data.data }
+          return { success: true, data: response.data.data.items }
         } else {
           throw new Error(response.data.message || 'Không thể lấy dữ liệu staff WFH')
         }

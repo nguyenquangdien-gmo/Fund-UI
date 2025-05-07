@@ -1225,8 +1225,8 @@ async function checkAuthentication() {
   try {
     const tokenExists = Cookies.get('AUTHTOKEN');
     const userDataExists = Cookies.get('user');
-    console.log('tokenExists:', tokenExists);
-    console.log('userDataExists', userDataExists);
+    // console.log('tokenExists:', tokenExists);
+    // console.log('userDataExists', userDataExists);
 
     // Nếu không có token hoặc không có user data, cần đăng nhập
     if (!tokenExists || !userDataExists) {
@@ -1275,7 +1275,6 @@ async function checkAuthentication() {
         leaveRequestStore.fetchReporters()
       ]);
     } catch (e) {
-      console.error('Error parsing user cookie:', e);
       isLoggedIn.value = false;
       removeAuthToken();
       Cookies.remove('user');
@@ -1287,7 +1286,6 @@ async function checkAuthentication() {
       });
     }
   } catch (error) {
-    console.error('Error validating user data:', error);
     isLoggedIn.value = false;
     removeAuthToken();
     Cookies.remove('user');
@@ -1331,7 +1329,6 @@ async function confirmDelete() {
     showDayModal.value = false;
     showDeleteConfirmModal.value = false;
   } catch (error) {
-    console.error('Error deleting work status:', error);
     toast.add({
       severity: 'error',
       summary: 'Lỗi',
@@ -1353,7 +1350,6 @@ function formatDateDisplay(dateStr: string | undefined): string {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     return `${day}-${month}-${date.getFullYear()}`;
   } catch (error) {
-    console.error('Error formatting date:', error);
     return dateStr; // Return original string if parsing fails
   }
 }
@@ -1449,7 +1445,6 @@ async function syncData() {
       page: 1,
       userObjId: cookieUser.userObjId
     });
-    console.log('attendanceResponse', attendanceResponse);
 
 
     // Get personal staff WFH
@@ -1461,8 +1456,6 @@ async function syncData() {
       page: 1,
       userObjId: cookieUser.userObjId
     });
-    console.log('wfhResponse', wfhResponse);
-
     let syncCount = 0;
     let failedCount = 0;
     const syncPromises = [];
@@ -1495,13 +1488,11 @@ async function syncData() {
     }
 
     // Process attendance data (LEAVE)
-    if (attendanceResponse.success && attendanceResponse.data && attendanceResponse.data.items) {
-      for (const item of attendanceResponse.data.items) {
+    if (attendanceResponse.success && attendanceResponse.data) {
+      for (const item of attendanceResponse.data) {
         if (!existingWorkMap.has(item._id)) {
           const fromDateTime = parseDateTime(item.fromDate);
           const endDateTime = parseDateTime(item.endDate);
-
-          const leaveType = item.staffAttendanceType?.type || 'LEAVE';
 
           try {
             const workResult = await workStore.createWorkDirect({
@@ -1510,7 +1501,7 @@ async function syncData() {
               endDate: endDateTime.date,
               startTime: fromDateTime.time,
               endTime: endDateTime.time,
-              type: leaveType,
+              type: 'LEAVE',
               reason: item.reason || '',
               idCreate: item._id,
             });
@@ -1519,19 +1510,17 @@ async function syncData() {
               syncCount++;
             } else {
               failedCount++;
-              console.error('Failed to sync leave entry:', item._id, workResult?.error);
             }
           } catch (error) {
             failedCount++;
-            console.error('Error creating work entry for leave:', error);
           }
         }
       }
     }
 
     // Process WFH data
-    if (wfhResponse.success && wfhResponse.data && wfhResponse.data.items) {
-      for (const item of wfhResponse.data.items) {
+    if (wfhResponse.success && wfhResponse.data) {
+      for (const item of wfhResponse.data) {
         if (!existingWorkMap.has(item._id)) {
           const fromDateTime = parseDateTime(item.fromDate);
           const endDateTime = parseDateTime(item.endDate);
@@ -1552,11 +1541,11 @@ async function syncData() {
               syncCount++;
             } else {
               failedCount++;
-              console.error('Failed to sync WFH entry:', item._id, workResult?.error);
             }
+
           } catch (error) {
             failedCount++;
-            console.error('Error creating work entry for WFH:', error);
+
           }
         }
       }
@@ -1566,24 +1555,22 @@ async function syncData() {
     loadMonthData();
 
     // Show detailed success/failure message
-    if (syncCount > 0 || failedCount > 0) {
+    if (syncCount > 0) {
 
       toast.add({
-        severity: failedCount > 0 ? 'warn' : 'success',
-        summary: failedCount > 0 ? 'Đồng bộ một phần' : 'Đồng bộ thành công',
+        severity: 'success',
+        summary: 'Đồng bộ thành công',
         life: 4000
       });
     } else {
       toast.add({
-        severity: 'info',
+        severity: 'error',
         summary: 'Thông báo',
-        detail: 'Không có dữ liệu mới cần đồng bộ',
+        detail: 'Đồng bộ không thành công or đã đồng bộ trước đó',
         life: 3000
       });
     }
-
   } catch (error) {
-    console.error('Error during sync:', error);
     toast.add({
       severity: 'error',
       summary: 'Lỗi đồng bộ',

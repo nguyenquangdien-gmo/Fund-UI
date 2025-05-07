@@ -3,31 +3,13 @@
     <div class="p-4">
       <h2 class="text-xl">DANH SÁCH THÀNH VIÊN</h2>
       <div class="mb-3 mt-3">
-        <InputText
-          v-model="searchQuery"
-          placeholder="Tìm kiếm theo email, tên, MNV..."
-          class="w-full p-inputtext-sm"
-          style="width: 20%"
-        />
-        <Button
-          v-if="admin"
-          label="Thêm thành viên"
-          severity="success"
-          raised
-          size="small"
-          @click="openCreateDialog"
-          style="margin-left: 10px"
-        />
+        <InputText v-model="searchQuery" placeholder="Tìm kiếm theo email, tên, MNV..." class="w-full p-inputtext-sm"
+          style="width: 20%" />
+        <Button v-if="admin" label="Thêm thành viên" severity="success" raised size="small" @click="openCreateDialog"
+          style="margin-left: 10px" />
       </div>
-      <DataTable
-        :value="filteredFunds"
-        paginator
-        :first="first"
-        @page="onPage"
-        :rows="10"
-        :rowsPerPageOptions="[10, 50, 100]"
-        class="p-datatable-sm"
-      >
+      <DataTable :value="filteredFunds" paginator :first="first" @page="onPage" :rows="10"
+        :rowsPerPageOptions="[10, 50, 100]" class="p-datatable-sm">
         <Column header="STT" sortable style="width: 5%">
           <template #body="{ index }">
             {{ first + index + 1 }}
@@ -44,8 +26,8 @@
         <Column field="phoneNumber" header="SĐT" sortable>
           <template #body="{ data }">
             {{ data.phoneNumber ? data.phoneNumber : 'Chưa cập nhật' }}
-          </template></Column
-        >
+          </template>
+        </Column>
         <!-- <Column field="position" header="Chức vụ" sortable></Column> -->
         <Column field="role" header="Vai trò " sortable></Column>
 
@@ -56,56 +38,35 @@
         </Column>
         <Column v-if="admin" header="Actions" style="width: 25%">
           <template #body="{ data }">
-            <Button
-              label="Sửa"
-              icon="pi pi-user-edit"
-              severity="info"
-              @click="openUpdateDialog(data)"
-            />
-            <Button
-              label="Reset"
-              icon="pi pi-undo"
-              severity="Warn"
-              class="left-10"
-              @click="confirmReset(data.email)"
-              :hidden="data.email === user.email"
-            />
-            <Button
-              label="Xóa"
-              class="left-10"
-              icon="pi pi-trash"
-              severity="danger"
-              @click="confirmDelete(data)"
-              :hidden="data.email === user.email"
-            />
+            <Button icon="pi pi-dollar" severity="help" @click="handleTransferClick" class="left-10" />
+            <Button icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)" class="left-10" />
+            <Button icon="pi pi-undo" severity="Warn" class="left-10" @click="confirmReset(data.email)"
+              :hidden="data.email === user.email" />
+            <Button class="left-10" icon="pi pi-trash" severity="danger" @click="confirmDelete(data)"
+              :hidden="data.email === user.email" />
           </template>
         </Column>
       </DataTable>
     </div>
   </div>
-  <Dialog
-    v-if="admin"
-    v-model:visible="showConfirmDialog"
-    modal
-    :header="isDelete ? 'Xác nhận xóa' : 'Xác nhận tạo lại mật khẩu'"
-    :style="{ width: '25rem' }"
-  >
-    <div>Bạn có chắc chắn muốn {{ isDelete ? 'xóa thành viên này' : 'tạo lại mật khẩu' }}?</div>
+  <Dialog v-if="admin" v-model:visible="showConfirmDialog" modal
+    :header="type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' : 'Chuyển khoản'"
+    :style="{ width: '25rem' }">
+    <div>Bạn có chắc chắn muốn {{ type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' :
+      'Chuyển khoản' }}?</div>
+    <div class="avatar-image">
+      <img v-if="qrCode" :src="qrCode" class="avatar-preview" />
+    </div>
     <div class="d-flex justify-content-end gap-2 mt-3">
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
-      <Button v-if="isDelete" label="Xóa" severity="danger" @click="deleteUser" />
-      <Button v-else label="Reset" severity="success" @click="resetPassword(emailToReset)" />
+      <Button v-if="type === 'delete'" label="Xóa" severity="danger" @click="deleteUser" />
+      <Button v-if="type === 'reset'" label="Reset" severity="success" @click="resetPassword(emailToReset)" />
+      <Button v-else label="Xác nhận" severity="success" @click="showConfirmDialog = false" />
     </div>
   </Dialog>
 
-  <Dialog
-    v-if="admin"
-    v-model:visible="showUserDialog"
-    modal
-    :header="isUpdate ? 'Cập nhật' : 'Thêm'"
-    @hide="resetErrors"
-    :style="{ width: '30rem' }"
-  >
+  <Dialog v-if="admin" v-model:visible="showUserDialog" modal :header="isUpdate ? 'Cập nhật' : 'Thêm'"
+    @hide="resetErrors" :style="{ width: '30rem' }">
     <div class="mb-3">
       <label for="id" class="fw-bold"> Mã nhân viên <span class="text-danger">*</span> </label>
       <InputText id="id" v-model="userId" class="w-100" type="number" autocomplete="off" />
@@ -138,50 +99,25 @@
     </div> -->
     <div class="mb-3">
       <label for="slugTeam" class="fw-bold"> Team <span class="text-danger">*</span> </label>
-      <Dropdown
-        id="slugTeam"
-        v-model="selectedTeam"
-        :options="teams"
-        optionLabel="name"
-        optionValue="slug"
-        placeholder="Chọn Team"
-        class="w-100"
-      />
+      <Dropdown id="slugTeam" v-model="selectedTeam" :options="teams" optionLabel="name" optionValue="slug"
+        placeholder="Chọn Team" class="w-100" />
       <small class="text-danger" v-if="errors.slugTeam">{{ errors.slugTeam }}</small>
     </div>
     <div class="mb-3">
       <label for="joinDate" class="fw-bold">
         Ngày tham gia <span class="text-danger">*</span>
       </label>
-      <Calendar
-        id="joinDate"
-        v-model="seletedJoinDate"
-        dateFormat="dd/mm/yy"
-        class="w-100"
-        showIcon
-      />
+      <Calendar id="joinDate" v-model="seletedJoinDate" dateFormat="dd/mm/yy" class="w-100" showIcon />
       <small class="text-danger" v-if="errors.joinDate">{{ errors.joinDate }}</small>
     </div>
     <div class="mb-3">
       <label for="type" class="fw-bold"> Vai trò <span class="text-danger">*</span> </label>
-      <Dropdown
-        :disabled="form.email === user.email"
-        v-model="selectedRole"
-        :options="roles"
-        optionLabel="name"
-        optionValue="name"
-        placeholder="Chọn vai trò"
-        class="w-100"
-      />
+      <Dropdown :disabled="form.email === user.email" v-model="selectedRole" :options="roles" optionLabel="name"
+        optionValue="name" placeholder="Chọn vai trò" class="w-100" />
       <small class="text-danger" v-if="errors.role">{{ errors.role }}</small>
     </div>
     <div class="d-flex justify-content-end gap-2">
-      <Button
-        type="button"
-        label="Hủy"
-        severity="secondary"
-        @click="showUserDialog = false"
-      ></Button>
+      <Button type="button" label="Hủy" severity="secondary" @click="showUserDialog = false"></Button>
       <Button type="button" label="Lưu" severity="primary" @click="saveUser"></Button>
     </div>
   </Dialog>
@@ -213,7 +149,7 @@ const users = ref<User[]>([])
 const searchQuery = ref('')
 const showUserDialog = ref(false)
 const isUpdate = ref(false)
-const isDelete = ref(false)
+const type = ref('')
 const isAdmin = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
@@ -263,7 +199,7 @@ const form = ref({
   phoneNumber: '',
   position: '',
   joinDate: '',
-  slugTeam: '',
+  slugTeam: ''
 })
 
 const errors = ref({
@@ -287,6 +223,7 @@ const seletedJoinDate = ref<Date | null>(null)
 const roles = ref<{ id: number; name: string }[]>([])
 const teams = ref<{ id: string; name: string; slug: string }[]>([])
 const selectedTeam = ref('')
+const qrCode = ref<string | null>(null)
 
 const fetchTeams = async () => {
   try {
@@ -310,7 +247,13 @@ const fetchUsers = async () => {
   try {
     const response = await axiosInstance.get(`/users`)
     users.value = response.data
+
     console.log(users.value)
+    const qrCodeRes = await axiosInstance.get(`/users/${user.value.id}/qr-code`, {
+      responseType: 'blob',
+    })
+    const blob = new Blob([qrCodeRes.data], { type: 'image/png' })
+    qrCode.value = URL.createObjectURL(blob)
   } catch (error) {
     console.error('Error fetching users:', error)
   }
@@ -336,7 +279,7 @@ const openCreateDialog = () => {
     phoneNumber: '',
     position: '',
     joinDate: '',
-    slugTeam: '',
+    slugTeam: ''
   }
   userId.value = ''
   selectedRole.value = ''
@@ -350,6 +293,12 @@ const findTeam = (slugTeam: string) => {
   const team = teams.value.find((team) => team.name === slugTeam)
   return team ? team.slug : ''
 }
+
+function handleTransferClick() {
+  showConfirmDialog.value = true
+  type.value = 'transfer'
+}
+
 const openUpdateDialog = (user: User) => {
   form.value = {
     id: user.id,
@@ -387,15 +336,15 @@ const openUpdateDialog = (user: User) => {
 const confirmDelete = (user: User) => {
   userToDelete.value = user
   showConfirmDialog.value = true
-  isDelete.value = true
+  type.value = 'delete'
 }
 
 //confirm reset password
 const emailToReset = ref('')
 const confirmReset = (email: string) => {
   emailToReset.value = email
+  type.value = 'reset'
   showConfirmDialog.value = true
-  isDelete.value = false
 }
 
 const validateForm = () => {
@@ -545,5 +494,17 @@ onMounted(async () => {
 .left-10 {
   margin-left: 5px;
   margin-top: 5px;
+}
+
+.avatar-preview {
+  margin-top: 5px;
+  max-width: 100%;
+  height: 100%;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.avatar-image {
+  text-align: center;
 }
 </style>

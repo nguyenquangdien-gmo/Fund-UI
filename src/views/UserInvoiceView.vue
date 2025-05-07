@@ -311,7 +311,7 @@ const saveInvoice = async () => {
     }
 
     formData.append(
-      'invoice',
+      'dto',
       new Blob([JSON.stringify(invoiceData)], { type: 'application/json' })
     )
 
@@ -320,13 +320,9 @@ const saveInvoice = async () => {
     }
 
     if (isUpdate.value) {
-      await axiosInstance.put(`/invoices/${form.value.id}/update`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      await axiosInstance.put(`/invoices/${form.value.id}/update`, formData)
     } else {
-      await axiosInstance.post('/invoices', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      await axiosInstance.post('/invoices', formData)
     }
 
     showInvoice.value = false

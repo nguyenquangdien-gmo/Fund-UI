@@ -41,6 +41,10 @@
             </span>
             <small class="text-danger">{{ errors.password }}</small>
           </div>
+          <div class="mb-3 d-flex align-items-center">
+            <Checkbox v-model="rememberMe" binary class="me-2" />
+            <label for="remember-me" class="mb-0">Remember me</label>
+          </div>
           <Button label="Login" class="w-100 p-button-info text-white" type="submit" />
           <small class="text-danger">{{ errorMessage }}</small>
         </form>
@@ -50,13 +54,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
+import Checkbox from 'primevue/checkbox';
 import { useRouter } from 'vue-router'
 import axiosInstance, { resetAuthFlags } from '@/router/Interceptor'
+import { useUserStore } from '@/pinia/userStore'
+import CryptoJS from "crypto-js";
 
 // const baseURL = "http://localhost:8080/api/v1";
 interface Error {
@@ -64,8 +71,11 @@ interface Error {
   password: string
 }
 
+
+const SECRET_KEY = import.meta.env.VITE_SECRET_KEY;
 const email = ref('')
 const password = ref('')
+const rememberMe = ref(false);
 const errors = reactive<Error>({
   email: '',
   password: '',
@@ -96,7 +106,30 @@ const validateForm = (): boolean => {
 
   return isValid
 }
-import { useUserStore } from '@/pinia/userStore'
+
+const encrypt = (text: string): string => {
+  return CryptoJS.AES.encrypt(text, SECRET_KEY).toString();
+};
+
+const decrypt = (cipher: string): string => {
+  const bytes = CryptoJS.AES.decrypt(cipher, SECRET_KEY);
+  return bytes.toString(CryptoJS.enc.Utf8);
+};
+
+
+onMounted(() => {
+
+  const encryptedEmail = localStorage.getItem("savedEmail");
+  const encryptedPassword = localStorage.getItem("savedPassword");
+
+
+  if (encryptedEmail && encryptedPassword) {
+    email.value = decrypt(encryptedEmail);
+    password.value = decrypt(encryptedPassword);
+    rememberMe.value = true;
+  }
+});
+
 
 const userStore = useUserStore()
 const handleLogin = async () => {
@@ -114,6 +147,13 @@ const handleLogin = async () => {
         // console.log('user', user);
         userStore.setUser(user)
         resetAuthFlags()
+        if (rememberMe.value) {
+          localStorage.setItem("savedEmail", encrypt(email.value));
+          localStorage.setItem("savedPassword", encrypt(password.value));
+        } else {
+          localStorage.removeItem("savedEmail");
+          localStorage.removeItem("savedPassword");
+        }
         router.push('/')
       } else {
         errorMessage.value = 'Email or password is incorrect'

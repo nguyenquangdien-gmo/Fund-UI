@@ -62,7 +62,6 @@
       </DataTable>
     </div>
   </div>
-
   <Dialog
     v-model:visible="showTeamDialog"
     modal
@@ -128,7 +127,7 @@
   </Dialog>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import InputText from 'primevue/inputtext'

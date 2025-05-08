@@ -1,9 +1,5 @@
 <template>
-  <div
-    v-if="isLoggedIn"
-    ref="header"
-    :class="['card', { 'fixed top-0 left-0 right-0 z-50 shadow-md': isSticky }]"
-  >
+  <div v-if="isLoggedIn" ref="header" :class="['card', { 'fixed top-0 left-0 right-0 z-50 shadow-md': isSticky }]">
     <Menubar :model="filteredItems">
       <template #end>
         <div class="flex items-center gap-2 info-box">
@@ -14,20 +10,11 @@
               </span>
 
               <!-- Nút Thông báo -->
-              <Button
-                icon="pi pi-bell"
-                style="font-size: 1.2rem"
-                class="p-button-rounded p-button-text p-button-plain"
-                @mouseenter="toggleReminder($event)"
-                @click="handleClick"
-              />
+              <Button icon="pi pi-bell" style="font-size: 1.2rem" class="p-button-rounded p-button-text p-button-plain"
+                @mouseenter="toggleReminder($event)" @click="handleClick" />
 
-              <Badge
-                v-if="unreadRemindersCount > 0"
-                :value="unreadRemindersCount"
-                class="notification-badge"
-                style="background-color: #f77a86"
-              />
+              <Badge v-if="unreadRemindersCount > 0" :value="unreadRemindersCount" class="notification-badge"
+                style="background-color: #f77a86" />
             </template>
           </Message>
 
@@ -35,12 +22,8 @@
           <OverlayPanel ref="reminderPanel">
             <div v-if="userReminders.length > 0" class="remainder-panel">
               <ul class="reminder-list">
-                <li
-                  v-for="userReminder in userReminders"
-                  :key="userReminder.reminder.id"
-                  @click="markAsReadAndGo(userReminder)"
-                  class="reminder-item"
-                >
+                <li v-for="userReminder in userReminders" :key="userReminder.reminder.id"
+                  @click="markAsReadAndGo(userReminder)" class="reminder-item">
                   <div :style="getReminderStyle(userReminder.status)">
                     <strong>{{ userReminder.reminder.title }}</strong>
                     <p>{{ userReminder.reminder.description }}</p>
@@ -49,22 +32,13 @@
               </ul>
               <!-- Nút Đã xem tất cả -->
             </div>
-            <Button
-              v-if="unreadRemindersCount > 0"
-              label="Đã xem tất cả"
-              class="p-button-sm p-button-text mark-all-read-btn"
-              @click="markAllAsRead"
-            />
+            <Button v-if="unreadRemindersCount > 0" label="Đã xem tất cả"
+              class="p-button-sm p-button-text mark-all-read-btn" @click="markAllAsRead" />
             <div v-if="userReminders.length === 0">Bạn không có thông báo nào!</div>
           </OverlayPanel>
 
           <!-- Nút Logout -->
-          <Button
-            label="Logout"
-            icon="pi pi-sign-out"
-            class="p-button-danger"
-            @click="handleLogout"
-          />
+          <Button label="Logout" icon="pi pi-sign-out" class="p-button-danger" @click="handleLogout" />
         </div>
       </template>
     </Menubar>
@@ -84,6 +58,7 @@ import axiosInstance from '@/router/Interceptor'
 import type Reminder from '@/types/Reminder'
 import ReminderType from '@/types/ReminderType'
 import { eventBus } from '@/event/EventBus'
+import Cookies from 'js-cookie'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -136,7 +111,7 @@ const fetchReminders = async () => {
 
 const checkAdmin = async () => {
   const userData = sessionStorage.getItem('user');
-  
+
   if (!userData) return false;
   try {
     const user = JSON.parse(userData);
@@ -330,6 +305,7 @@ const handleLogout = async () => {
     userStore.logout()
     router.push('/login')
     userReminders.value = []
+    Cookies.remove('user')
   } catch (error) {
     console.error('Logout error:', error)
   }
@@ -381,8 +357,10 @@ const handleLogout = async () => {
   padding: 10px;
   color: #888;
 }
+
 .card {
-  transition: all 0.3s ease; /* Thêm hiệu ứng chuyển động */
+  transition: all 0.3s ease;
+  /* Thêm hiệu ứng chuyển động */
 }
 
 .card.fixed {

@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid calendar-wrapper">
+  <div class="calendar-wrapper">
     <div class="p-3">
       <h2 class="text-center mb-4 text-xl">LỊCH LÀM VIỆC</h2>
 
@@ -35,4 +35,17 @@ import TeamCalendar from '@/components/calendar/TeamCalendar.vue'
 const activeTab = ref<'personal' | 'team'>('personal')
 </script>
 
-<style scoped></style>
+<style scoped>
+.calendar-container {
+  width: 100%;
+}
+
+.calendar-wrapper {
+  margin: 0;
+}
+
+.p-3 {
+  margin-left: 0;
+  margin-right: 0;
+}
+</style>

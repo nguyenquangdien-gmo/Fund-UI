@@ -44,7 +44,7 @@
       </div>
 
       <!-- Calendar Table -->
-      <div class="table-wrapper">
+      <div class="table-wrapper" ref="tableWrapperRef">
         <!-- Góc trên bên trái (cố định) -->
         <div class="fixed-corner">
           <table class="table table-bordered mb-0">
@@ -65,26 +65,24 @@
 
         <!-- Header cố định (phần trên, không có scroll ngang) -->
         <div class="fixed-header" ref="headerRef">
-          <div class="header-container" :style="{ width: calendarDates.length * cellWidth + 'px' }">
-            <table class="table table-bordered mb-0 no-bottom-border" :style="{ width: '100%' }">
-              <thead>
-                <tr class="day-row">
-                  <th v-for="(date, index) in calendarDates" :key="`day-${index}`" class="cell header-cell"
-                    :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
-                    {{ date.getDate() }}
-                  </th>
-                  <th class="cell header-cell stats" rowspan="2">WFH</th>
-                  <th class="cell header-cell stats" rowspan="2">OFF</th>
-                </tr>
-                <tr class="weekday-row">
-                  <th v-for="(date, index) in calendarDates" :key="`weekday-${index}`" class="cell header-cell weekday"
-                    :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
-                    {{ getWeekdayName(date) }}
-                  </th>
-                </tr>
-              </thead>
-            </table>
-          </div>
+          <table class="table table-bordered mb-0 no-bottom-border" style="width: 100%">
+            <thead>
+              <tr class="day-row">
+                <th v-for="(date, index) in calendarDates" :key="`day-${index}`" class="cell header-cell"
+                  :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
+                  {{ date.getDate() }}
+                </th>
+                <th class="cell header-cell stats" rowspan="2"><span>WFH</span></th>
+                <th class="cell header-cell stats" rowspan="2"><span>OFF</span></th>
+              </tr>
+              <tr class="weekday-row">
+                <th v-for="(date, index) in calendarDates" :key="`weekday-${index}`" class="cell header-cell weekday"
+                  :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
+                  {{ getWeekdayName(date) }}
+                </th>
+              </tr>
+            </thead>
+          </table>
         </div>
 
         <!-- Cột cố định (bên trái, có thể scroll dọc) -->
@@ -99,10 +97,9 @@
           </table>
         </div>
 
-        <!-- Phần nội dung chính (có thể scroll cả dọc và ngang) -->
+        <!-- Phần nội dung chính (chỉ scroll dọc) -->
         <div class="scrollable-content" @scroll="handleScroll" ref="contentRef">
-          <table class="table table-bordered mb-0 no-top-border"
-            :style="{ width: calendarDates.length * cellWidth + 'px' }">
+          <table class="table table-bordered mb-0 no-top-border" style="width: 100%">
             <tbody>
               <tr v-for="(person, pIndex) in people" :key="`row-${pIndex}`" class="person-row">
                 <td v-for="(date, dIndex) in calendarDates" :key="`cell-${pIndex}-${dIndex}`" class="cell data-cell"
@@ -125,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue';
 import axiosInstance from '@/router/Interceptor';
 
 interface Person {
@@ -139,9 +136,6 @@ interface AttendanceRecord {
   status: string;
   timePeriod: string; // P (Present), V (Absent), Đ (Late), N (Leave)
 }
-
-// Standard cell width
-const cellWidth = 50;
 
 // Month and year options
 const currentDate = new Date();
@@ -160,6 +154,19 @@ const selectedYear = ref(currentYear);
 // Calendar dates array (actual Date objects)
 const calendarDates = ref<Date[]>([]);
 
+// Container width and dynamic cell width calculation
+const containerWidth = ref(0);
+const fixedColumnsWidth = 240; // STT + Họ Tên columns width
+const statsColumnsWidth = 80; // WFH + OFF columns width
+
+// Dynamically calculate cell width based on available space
+const cellWidth = computed(() => {
+  if (containerWidth.value <= 0 || calendarDates.value.length === 0) return 30;
+  const availableWidth = containerWidth.value - fixedColumnsWidth - statsColumnsWidth;
+  const calculatedWidth = Math.floor(availableWidth / calendarDates.value.length);
+  return Math.max(calculatedWidth, 25); // Minimum width of 25px
+});
+
 // Weekday names in Vietnamese
 const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -167,6 +174,7 @@ const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const headerRef = ref<HTMLElement | null>(null);
 const columnRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
+const tableWrapperRef = ref<HTMLElement | null>(null);
 
 // Kết quả API
 const attendanceData = ref<AttendanceRecord[]>([]);
@@ -200,7 +208,7 @@ async function fetchAttendanceData() {
   try {
     // 1. Lấy danh sách users và viết tắt tên
     const usersRes = await axiosInstance.get<User[]>('/users');
-    people.value = usersRes.data.map(u => ({ id: u.id, name: abbreviateName(u.fullName) }));
+    people.value = usersRes.data.map(u => ({ id: u.id, name: u.fullName }));
 
     // 2. Lấy tóm tắt công theo từng user
     const summaryRes = await axiosInstance.get<WorkSummary[]>('/works/work-summary', {
@@ -277,28 +285,24 @@ function isWeekend(date: Date): boolean {
   return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
 }
 
+// Function to update container width
+function updateContainerWidth() {
+  if (tableWrapperRef.value) {
+    containerWidth.value = tableWrapperRef.value.clientWidth;
+  }
+}
+
 // Cập nhật khi đổi tháng hoặc mount
 async function updateCalendarData() {
   initCalendarDates();
   await fetchAttendanceData();
-  nextTick(syncScrollPositions);
+  nextTick(() => {
+    updateContainerWidth();
+  });
 }
 
 watch([selectedMonth, selectedYear], updateCalendarData);
 onMounted(updateCalendarData);
-
-// Function to sync scroll positions
-function syncScrollPositions() {
-  if (contentRef.value && headerRef.value) {
-    const headerContainer = headerRef.value.querySelector('.header-container') as HTMLElement | null;
-    if (headerContainer) {
-      headerContainer.style.transform = `translateX(-${contentRef.value.scrollLeft}px)`;
-    }
-  }
-  if (contentRef.value && columnRef.value) {
-    columnRef.value.scrollTop = contentRef.value.scrollTop;
-  }
-}
 
 // Improved scroll handler with requestAnimationFrame for performance
 let isScrolling = false;
@@ -332,26 +336,25 @@ onMounted(() => {
   // Initialize attendance data
   fetchAttendanceData();
 
-  // Add scroll event listener
-  if (contentRef.value) {
-    contentRef.value.addEventListener('scroll', handleScroll, { passive: true });
-  }
+  // Update container width
+  updateContainerWidth();
+
+  // Add resize event listener
+  window.addEventListener('resize', updateContainerWidth);
 
   // Add resize observer to keep table alignment when window resizes
   const resizeObserver = new ResizeObserver(() => {
-    syncScrollPositions();
+    updateContainerWidth();
   });
 
-  if (contentRef.value) {
-    resizeObserver.observe(contentRef.value);
+  if (tableWrapperRef.value) {
+    resizeObserver.observe(tableWrapperRef.value);
   }
 
   // Cleanup on unmount
   onBeforeUnmount(() => {
     resizeObserver.disconnect();
-    if (contentRef.value) {
-      contentRef.value.removeEventListener('scroll', handleScroll);
-    }
+    window.removeEventListener('resize', updateContainerWidth);
   });
 });
 </script>
@@ -400,10 +403,7 @@ onMounted(() => {
   border: 1px solid #dee2e6;
   border-radius: 0.25rem;
   height: 600px;
-  overflow-x: hidden;
-  /* hide any horizontal overflow on wrapper */
-  overflow-y: visible;
-  /* allow child scrollbars for vertical scrolling */
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -426,14 +426,15 @@ onMounted(() => {
 
 /* Common cell styles */
 .cell {
-  padding: 8px;
+  padding: 2px;
   text-align: center;
-  height: 40px;
-  overflow: visible !important;
+  height: 30px;
+  overflow: hidden !important;
   white-space: nowrap !important;
-  text-overflow: clip !important;
+  text-overflow: ellipsis !important;
   box-sizing: border-box;
   vertical-align: middle;
+  font-size: 0.75rem;
 }
 
 /* Cell status styles */
@@ -441,12 +442,16 @@ onMounted(() => {
   background-color: #e6f7ff;
   /* Light yellow-blue color */
   color: #0050b3;
+  font-weight: 700;
+  font-size: 8px;
 }
 
 .data-cell.off {
   background-color: #ffebee;
   /* Light red color */
   color: #c62828;
+  font-weight: 700;
+  font-size: 8px;
 }
 
 /* Weekend styling */
@@ -457,9 +462,9 @@ onMounted(() => {
 
 /* Cell widths */
 .stt {
-  width: 60px !important;
-  min-width: 60px !important;
-  max-width: 60px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
 }
 
 .name {
@@ -467,12 +472,18 @@ onMounted(() => {
   min-width: 200px !important;
   max-width: 200px !important;
   text-align: left;
+  font-size: 0.85rem;
 }
 
 .stats {
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+}
+
+.stats span {
+  font-weight: 700;
+  font-size: 11px;
 }
 
 /* Fixed elements */
@@ -482,7 +493,7 @@ onMounted(() => {
   left: 0;
   z-index: 3;
   background-color: white;
-  width: 260px !important;
+  width: 240px !important;
   /* Tổng chiều rộng của cột STT và Họ Tên */
   border-right: 1px solid #dee2e6;
   border-bottom: 1px solid #dee2e6;
@@ -490,19 +501,19 @@ onMounted(() => {
 
 .fixed-corner table,
 .fixed-column table {
-  width: 260px !important;
+  width: 240px !important;
 }
 
 .fixed-header {
   position: absolute;
   top: 0;
-  left: 260px !important;
+  left: 240px !important;
   /* Chiều rộng của fixed-corner */
   right: 0;
   z-index: 2;
   background-color: white;
-  height: 80px;
-  /* Set explicit height for header (2 rows of 40px) */
+  height: 60px;
+  /* Set explicit height for header (2 rows of 30px) */
   overflow: hidden;
   /* Prevents scrollbar from appearing */
 }
@@ -519,11 +530,11 @@ onMounted(() => {
 
 .fixed-column {
   position: absolute;
-  top: 80px;
+  top: 60px;
   /* Chiều cao của header */
   left: 0;
   bottom: 0;
-  width: 260px !important;
+  width: 240px !important;
   /* Tổng chiều rộng của cột STT và Họ Tên */
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -534,22 +545,20 @@ onMounted(() => {
 
 .scrollable-content {
   position: absolute;
-  top: 80px;
+  top: 60px;
   /* Chiều cao của header */
-  left: 260px !important;
+  left: 240px !important;
   /* Chiều rộng của fixed-column */
   right: 0;
   bottom: 0;
-  overflow-x: auto !important;
-  /* allow horizontal scroll */
+  overflow-x: hidden !important;
+  /* hide horizontal scroll */
   overflow-y: auto !important;
   /* allow vertical scroll */
-  will-change: transform;
-  /* Optimization for smoother scrolling */
 }
 
 .scrollable-content table {
-  width: max-content;
+  width: 100%;
   border-left: none !important;
 }
 
@@ -578,18 +587,19 @@ onMounted(() => {
 
 /* Ensure all rows have the same height */
 .person-row {
-  height: 65px;
+  height: 30px;
 }
 
 /* Header styles */
 .header-cell {
   font-weight: 600;
   background-color: #f8f9fa;
+  font-size: 0.75rem;
 }
 
 /* Thêm style cho time-period */
 .time-period {
-  font-size: 0.8em;
+  font-size: 0.65em;
   display: block;
   text-align: center;
   color: #666;

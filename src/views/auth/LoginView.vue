@@ -16,12 +16,7 @@
             <span class="p-input-icon-left input-left w-100">
               <i class="pi pi-user"></i>
               <div class="input-email">
-                <InputText
-                  v-model="email"
-                  type="email"
-                  placeholder="E-mail address"
-                  class="w-100"
-                />
+                <InputText v-model="email" type="email" placeholder="E-mail address" class="w-100" />
               </div>
             </span>
             <small class="text-danger">{{ errors.email }}</small>
@@ -30,13 +25,7 @@
             <span class="p-input-icon-left w-100">
               <i class="pi pi-lock"></i>
               <div class="input-password">
-                <Password
-                  v-model="password"
-                  placeholder="Password"
-                  toggleMask
-                  class="w-100"
-                  :feedback="false"
-                />
+                <Password v-model="password" placeholder="Password" toggleMask class="w-100" :feedback="false" />
               </div>
             </span>
             <small class="text-danger">{{ errors.password }}</small>
@@ -165,7 +154,8 @@ const handleLogin = async () => {
 }
 
 .text-red-500 {
-  color: #ef4444; /* Tailwind's red-500 color */
+  color: #ef4444;
+  /* Tailwind's red-500 color */
 }
 
 .marquee-container {
@@ -185,6 +175,7 @@ const handleLogin = async () => {
   0% {
     transform: translateX(100%);
   }
+
   100% {
     transform: translateX(-100%);
   }

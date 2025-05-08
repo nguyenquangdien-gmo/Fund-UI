@@ -1,7 +1,7 @@
 // src/stores/leaveRequestStore.ts
 import { defineStore } from 'pinia'
 import Cookies from 'js-cookie'
-import axiosInstance from '@/router/Interceptor'
+import axiosInstance from '@/router/CreateApiInstance'
 
 // Định nghĩa các interface dựa trên dữ liệu thực tế
 interface Position {
@@ -178,6 +178,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
             },
           },
         )
+        console.log(response.data)
 
         if (response.data.success) {
           this.user = response.data.data
@@ -192,8 +193,12 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
             }),
             { path: '/' },
           )
+          console.log(Cookies.get('user'))
 
-          return { success: true, data: response.data.data }
+          return { 
+            success: true, 
+            data: response.data.data
+          }
         } else {
           throw new Error(response.data.message || 'Đăng nhập thất bại')
         }
@@ -207,9 +212,30 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
     },
 
     // Đăng xuất
-    logout(): void {
-      this.user = null
-      Cookies.remove('user')
+    async logout(): Promise<{ success: boolean; error?: string }> {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Call the logout API endpoint
+        const response = await axiosInstance.post('/admin-create/logout', {});
+        
+        // Clear user state regardless of API response
+        this.user = null;
+        Cookies.remove('user');
+        
+        return { success: true };
+      } catch (error: unknown) {
+        // Still remove cookies even if API call fails
+        this.user = null;
+        Cookies.remove('user');
+        
+        const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi đăng xuất';
+        this.error = errorMessage;
+        return { success: false, error: errorMessage };
+      } finally {
+        this.loading = false;
+      }
     },
 
     // Lấy danh sách loại đơn nghỉ
@@ -369,7 +395,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
       try {
         const response =
-          await axiosInstance.get<ApiResponse<LeaveRequest[]>>('/auth/staff-wfh/list')
+          await axiosInstance.get<ApiResponse<LeaveRequest[]>>('/admin-create/my-wfh-requests')
 
         if (response.data.success) {
           const wfhRequests = response.data.data || []
@@ -493,13 +519,19 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
+        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] } | LeaveRequest[]>>(
           '/admin-create/personal-staff-attendance',
           { params },
         )
 
         if (response.data.success) {
-          return { success: true, data: response.data.data.items }
+          // Check if the data has an 'items' property or is already an array
+          const items = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : response.data.data?.items || [];
+          
+          console.log('Attendance items:', items);
+          return { success: true, data: items }
         } else {
           throw new Error(response.data.message || 'Không thể lấy dữ liệu staff attendance')
         }
@@ -516,7 +548,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
     async fetchPersonalStaffWfh(params: {
       startDate: string
       endDate: string
-      fromDate: string
+      fromDate: number
       toDate: number
       page: number
       userObjId: string
@@ -525,13 +557,19 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
       this.error = null
 
       try {
-        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] }>>(
+        const response = await axiosInstance.get<ApiResponse<{ items: LeaveRequest[] } | LeaveRequest[]>>(
           '/admin-create/personal-staff-wfh',
           { params },
         )
 
         if (response.data.success) {
-          return { success: true, data: response.data.data.items }
+          // Check if the data has an 'items' property or is already an array
+          const items = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : response.data.data?.items || [];
+          
+          console.log('WFH items:', items);
+          return { success: true, data: items }
         } else {
           throw new Error(response.data.message || 'Không thể lấy dữ liệu staff WFH')
         }

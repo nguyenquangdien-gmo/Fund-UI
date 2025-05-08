@@ -313,20 +313,33 @@ export const useWorkStore = defineStore('work', {
         }
 
         // Create the work entry
-        const response = await axiosInstance.post<ApiResponse<WorkResponseDTO[]>>('/works', workDTO)
+        const response = await axiosInstance.post<ApiResponse<WorkResponseDTO | WorkResponseDTO[]>>('/works', workDTO)
+
+        // Ensure this.works is initialized as an array
+        if (!Array.isArray(this.works)) {
+          this.works = [];
+        }
+
+        // Ensure response.data.data is treated as an array
+        const responseData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (response.data.data ? [response.data.data] : []);
 
         // Update works list with new entries
-        this.works = [...this.works, ...response.data.data]
+        this.works = [...this.works, ...responseData]
 
         // Update user works if we have that user's works loaded
         if (this.userWorks[workDTO.userId]) {
           this.userWorks[workDTO.userId] = [
             ...this.userWorks[workDTO.userId],
-            ...response.data.data,
+            ...responseData
           ]
+        } else {
+          // Initialize the user's works array if it doesn't exist
+          this.userWorks[workDTO.userId] = [...responseData];
         }
 
-        return { success: true, data: response.data.data }
+        return { success: true, data: responseData }
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to create work entry from request'
@@ -353,23 +366,36 @@ export const useWorkStore = defineStore('work', {
 
       try {
         // Use the provided data directly without transformations
-        const response = await axiosInstance.post<ApiResponse<WorkResponseDTO[]>>(
+        const response = await axiosInstance.post<ApiResponse<WorkResponseDTO | WorkResponseDTO[]>>(
           '/works',
           workData,
         )
 
+        // Ensure this.works is initialized as an array
+        if (!Array.isArray(this.works)) {
+          this.works = [];
+        }
+
+        // Ensure response.data.data is treated as an array
+        const responseData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (response.data.data ? [response.data.data] : []);
+
         // Update works list with new entries
-        this.works = [...this.works, ...response.data.data]
+        this.works = [...this.works, ...responseData];
 
         // Update user works if we have that user's works loaded
         if (this.userWorks[workData.userId]) {
           this.userWorks[workData.userId] = [
             ...this.userWorks[workData.userId],
-            ...response.data.data,
-          ]
+            ...responseData
+          ];
+        } else {
+          // Initialize the user's works array if it doesn't exist
+          this.userWorks[workData.userId] = [...responseData];
         }
-
-        return { success: true, data: response.data.data }
+        
+        return { success: true, data: responseData };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to create work entry directly'

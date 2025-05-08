@@ -16,9 +16,9 @@
         <template #content>
           <form @submit.prevent="handleLogin" class="p-fluid">
             <div class="field mb-4">
-              <label for="username" class="font-medium mb-2">Tên đăng nhập</label>
+              <label for="username" class="font-medium mb-2">Tên đăng nhập Admin Create</label>
               <div class="p-input-icon-left w-full">
-                <InputText id="username" v-model="loginUsername" required placeholder="Nhập tên đăng nhập"
+                <InputText id="username" v-model="loginUsername" required placeholder="Nhập tên đăng nhập Admin Create"
                   style="width: 100%;" />
               </div>
             </div>
@@ -32,8 +32,12 @@
             <Message v-if="loginError" severity="error" :closable="false" class="mb-3 w-full">
               {{ loginError }}
             </Message>
-            <Button type="submit" label="Đăng nhập" icon="pi pi-sign-in" iconPos="right" :loading="loginLoading"
-              class="w-full mt-3" style="display: flex;justify-self: center;" />
+            <div style="display: flex;justify-content: space-between;">
+              <Button type="submit" label="Đăng nhập Admin Create" icon="pi pi-sign-in" iconPos="right"
+                :loading="loginLoading" class="w-full mt-3" style="margin-right: 5px;" />
+              <Button label="Bỏ qua" severity="secondary" iconPos="right" @click="skipLogin" class="w-full mt-3"
+                style="" />
+            </div>
           </form>
         </template>
       </Card>
@@ -65,7 +69,7 @@
               <span class="text-danger"> Số ngày nghỉ: {{ leaveCount }}</span>
             </div>
 
-            <button @click="showRegisterModal = true" class="btn btn-success">
+            <button @click="showRegisterForm()" class="btn btn-success">
               Đăng ký WFH/Nghỉ phép
             </button>
             <button @click="syncData" class="btn btn-primary ms-2">
@@ -382,7 +386,6 @@ import Dropdown from 'primevue/dropdown'
 import { useUserStore } from '@/pinia/userStore'
 import { useLeaveRequestStore } from '@/pinia/useAPICreate'
 import { useWorkStore } from '@/pinia/workStore'
-import { removeAuthToken } from '@/router/CreateApiInstance'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import Cookies from 'js-cookie'
@@ -455,7 +458,8 @@ interface LateCheckIn {
 
 // Component state
 // --- Login State ---
-const isLoggedIn = ref<boolean>(false) // Initially false, will be checked on mount
+const isLoggedIn = ref<boolean>(true) // Changed to true by default to hide login form
+const hasSkippedLogin = ref<boolean>(false) // New state to track if user has skipped login
 const loginUsername = ref<string>('')
 const loginPassword = ref<string>('')
 const loginError = ref<string | null>(null)
@@ -489,6 +493,13 @@ const formErrors = ref<{
 // User information
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+
+// Add a watcher to reset username when login form is shown
+watch(() => isLoggedIn.value, (newValue) => {
+  if (!newValue && user.value?.email) {
+    loginUsername.value = user.value.email;
+  }
+});
 
 // Work entries and counts
 const calendarEntries = ref<WorkEntry[]>([])
@@ -566,9 +577,7 @@ watch([currentMonth, currentYear], () => {
 
 // Watch for selected month/year changes in team monthly view
 watch([selectedMonth, selectedYear], () => {
-  // Only load if logged in
-  if (!isLoggedIn.value) return
-
+  // Only load team data if needed
 })
 
 // Watch for type changes to set default times for WFH
@@ -630,16 +639,37 @@ watch(() => newEntry.value.timePeriod, (newPeriod) => {
 
 // Load data on component mount
 onMounted(async () => {
-  // ngay lúc này isLoggedIn = false
-  await checkAuthentication()
-  // nếu không tìm thấy cookie AUTHTOKEN hoặc user => checkAuthentication
-  // sẽ set isLoggedIn = false và return luôn
+  // Check if the user has skipped login before using localStorage
+  const skippedLogin = localStorage.getItem('calendar_skipped_login')
+
+  // Set initial login state based on stored preference or admin authentication
+  if (skippedLogin === 'true') {
+    isLoggedIn.value = true
+    hasSkippedLogin.value = true
+  } else if (leaveRequestStore.isAuthenticated) {
+    isLoggedIn.value = true
+    try {
+      // If already logged in, load leave types and reporters
+      await Promise.all([
+        leaveRequestStore.fetchLeaveTypes(),
+        leaveRequestStore.fetchReporters()
+      ]);
+    } catch (error) {
+      console.error('Error loading additional data:', error);
+    }
+  } else {
+    // Default to showing login form if not skipped before and not authenticated
+    isLoggedIn.value = false
+  }
+
+  // Set default login username from user email if available
+  if (user.value?.email) {
+    loginUsername.value = user.value.email;
+  }
 })
 
 // API methods with type safety
 async function loadMonthData(showLoader: boolean = true): Promise<void> {
-  if (!isLoggedIn.value) return;
-
   try {
     if (showLoader) loading.value = true;
     errorMessage.value = '';
@@ -830,7 +860,7 @@ function validateForm(): boolean {
         fromDateObj.getFullYear() !== currentDateObj.getFullYear()) {
         // Chỉ báo lỗi nếu không thuộc tháng hiện tại
         if (fromDateObj < currentDateObj) {
-          formErrors.value.fromDate = 'Ngày bắt đầu phải trong tháng hiện tại hoặc tương lai';
+          formErrors.value.fromDate = 'Không thể tạo đơn cho tháng trước';
         }
       }
     }
@@ -845,7 +875,7 @@ function validateForm(): boolean {
         endDateObj.getFullYear() !== currentDateObj.getFullYear()) {
         // Chỉ báo lỗi nếu không thuộc tháng hiện tại
         if (endDateObj < currentDateObj) {
-          formErrors.value.endDate = 'Ngày kết thúc phải trong tháng hiện tại hoặc tương lai';
+          formErrors.value.endDate = 'Không thể tạo đơn cho tháng trước';
         }
       }
     }
@@ -871,10 +901,23 @@ function formatDateWithoutTimezone(date: Date): string {
 // Add this helper function to parse user data from cookies
 function getUserFromCookies() {
   try {
+    // First try to get user info from the store
+    const userInfo = leaveRequestStore.getUserInfo;
+    if (userInfo && userInfo.userObjId) {
+      return {
+        userObjId: userInfo.userObjId,
+        name: userInfo.name,
+        staffCode: userInfo.staffCode,
+        userPositionCode: userInfo.userPositionCode,
+        departmentCode: userInfo.departmentCode,
+      };
+    }
+
+    // Fallback to cookie if store doesn't have the info
     const userDataStr = Cookies.get('user');
     return userDataStr ? JSON.parse(userDataStr) : {};
   } catch (e) {
-    console.error('Error parsing user cookie:', e);
+    console.error('Error getting user data:', e);
     return {};
   }
 }
@@ -1120,15 +1163,25 @@ async function handleLogin() {
   loginError.value = null;
 
   try {
+    // Validate that the entered username matches the user's email
+    if (user.value?.email && loginUsername.value !== user.value.email) {
+      loginError.value = 'Vui lòng nhập email của bạn';
+      loginLoading.value = false;
+      return;
+    }
+
     const result = await leaveRequestStore.signIn(loginUsername.value, loginPassword.value);
 
     if (result.success && result.data) {
-      // Đánh dấu đã đăng nhập
+      // Mark as logged in and clear skipped state
       isLoggedIn.value = true;
-      loginUsername.value = '';
+      hasSkippedLogin.value = false;
+      localStorage.removeItem('calendar_skipped_login');
+
+      // Keep username but clear the password
       loginPassword.value = '';
 
-      // Tải dữ liệu cần thiết
+      // Load necessary data
       loading.value = true;
       await Promise.all([
         loadMonthData(false),
@@ -1136,6 +1189,14 @@ async function handleLogin() {
         leaveRequestStore.fetchReporters()
       ]);
       loading.value = false;
+
+      // Show login success notification
+      toast.add({
+        severity: 'success',
+        summary: 'Đăng nhập thành công',
+        detail: 'Bạn đã đăng nhập thành công vào Admin Create.',
+        life: 3000
+      });
     } else {
       loginError.value = result.error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.';
     }
@@ -1147,11 +1208,33 @@ async function handleLogin() {
   }
 }
 
-// Khắc phục lỗi lateCheckIns
+// Thêm hàm skipLogin sau hàm handleLogin
+function skipLogin() {
+  isLoggedIn.value = true
+  hasSkippedLogin.value = true
+  // loginUsername value no longer cleared
+  loginPassword.value = ''
+
+  // Save preference to localStorage
+  localStorage.setItem('calendar_skipped_login', 'true')
+
+  // Load data
+  loading.value = true
+  loadMonthData(false).finally(() => {
+    loading.value = false
+
+    // Show notification that user is viewing in limited mode
+    toast.add({
+      severity: 'info',
+      summary: 'Chế độ xem giới hạn',
+      detail: 'Bạn đang xem lịch làm việc ở chế độ giới hạn. Để đăng ký WFH/Nghỉ phép hoặc đồng bộ dữ liệu, vui lòng đăng nhập.',
+      life: 5000
+    });
+  });
+}
+
 // Định nghĩa hàm loadLateCheckIns
 async function loadLateCheckIns(showLoader: boolean = true): Promise<void> {
-  if (!isLoggedIn.value) return;
-
   try {
     if (showLoader) loading.value = true;
     errorMessage.value = '';
@@ -1217,84 +1300,6 @@ function formatTimeValue(date: Date | Date[] | (Date | null)[] | null | undefine
 function isMultiDayEntry(entry: WorkEntry | undefined): boolean {
   if (!entry || !entry.fromDate || !entry.endDate) return false;
   return entry.fromDate !== entry.endDate;
-}
-
-// Khai báo thiếu hàm checkAuthentication
-async function checkAuthentication() {
-  loading.value = true;
-  try {
-    const userDataExists = Cookies.get('user');
-    // console.log('tokenExists:', tokenExists);
-    // console.log('userDataExists', userDataExists);
-
-    // Nếu không có token hoặc không có user data, cần đăng nhập
-    if (!userDataExists) {
-      isLoggedIn.value = false;
-
-      toast.add({
-        severity: 'warn',
-        summary: 'Thông tin đăng nhập thiếu',
-        detail: 'Vui lòng đăng nhập lại.',
-        life: 4000
-      });
-
-      loading.value = false;
-      return;
-    }
-
-    try {
-      // Phân tích dữ liệu người dùng từ cookie
-      const userData = JSON.parse(userDataExists);
-
-      // Kiểm tra dữ liệu người dùng có đầy đủ thông tin không
-      if (!userData.userObjId || !userData.name) {
-        isLoggedIn.value = false;
-        removeAuthToken();
-        Cookies.remove('user');
-        toast.add({
-          severity: 'warn',
-          summary: 'Thông tin người dùng không đầy đủ',
-          detail: 'Vui lòng đăng nhập lại.',
-          life: 4000
-        });
-        loading.value = false;
-        return;
-      }
-
-      // Nếu đã có token và user data hợp lệ, đánh dấu đã đăng nhập
-      isLoggedIn.value = true;
-
-      // Tải dữ liệu cần thiết
-      await Promise.all([
-        loadMonthData(false),
-        leaveRequestStore.fetchLeaveTypes(),
-        leaveRequestStore.fetchReporters()
-      ]);
-    } catch (e) {
-      isLoggedIn.value = false;
-      removeAuthToken();
-      Cookies.remove('user');
-      toast.add({
-        severity: 'warn',
-        summary: 'Lỗi dữ liệu người dùng',
-        detail: 'Vui lòng đăng nhập lại.',
-        life: 4000
-      });
-    }
-  } catch (error) {
-    isLoggedIn.value = false;
-    removeAuthToken();
-    Cookies.remove('user');
-
-    toast.add({
-      severity: 'error',
-      summary: 'Lỗi xác thực',
-      detail: 'Không thể xác thực phiên đăng nhập. Vui lòng đăng nhập lại.',
-      life: 4000
-    });
-  } finally {
-    loading.value = false;
-  }
 }
 
 // Thêm hàm confirmDelete đang bị thiếu
@@ -1409,20 +1414,43 @@ onMounted(() => {
 
 // Add sync function after resetForm function
 async function syncData() {
+  if (!leaveRequestStore.isAuthenticated) {
+    // If not logged in, show notification requiring login
+    toast.add({
+      severity: 'info',
+      summary: 'Yêu cầu đăng nhập',
+      detail: 'Vui lòng đăng nhập Admin Create để đồng bộ dữ liệu.',
+      life: 3000
+    });
+
+    // Show login form and reset skipped state
+    isLoggedIn.value = false;
+    localStorage.removeItem('calendar_skipped_login');
+    hasSkippedLogin.value = false;
+    return;
+  }
+
   try {
     loading.value = true;
     const cookieUser = getUserFromCookies();
+
+    // Check if we have a valid user object from cookies
+    if (!cookieUser || !cookieUser.userObjId) {
+      throw new Error('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+    }
+
     const startDateString = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-01`;
     const endDateString = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-${daysInMonth.value}`;
     const startTimestamp = new Date(startDateString).getTime();
     const endTimestamp = new Date(endDateString).getTime();
-
     // Get all existing works from your system
     const allWorksResponse = await workStore.getAllWorks();
     if (!allWorksResponse.success) {
       throw new Error(allWorksResponse.error || 'Failed to get works data');
     }
-    const allWorks = allWorksResponse.data || [];
+    const allWorks = Array.isArray(allWorksResponse.data)
+      ? allWorksResponse.data
+      : (allWorksResponse.data ? [allWorksResponse.data] : []);
 
     // Create a map for faster lookup
     const existingWorkMap = new Map();
@@ -1447,14 +1475,13 @@ async function syncData() {
     const wfhResponse = await leaveRequestStore.fetchPersonalStaffWfh({
       startDate: startDateString,
       endDate: endDateString,
-      fromDate: startDateString,
+      fromDate: startTimestamp,
       toDate: endTimestamp,
       page: 1,
       userObjId: cookieUser.userObjId
     });
     let syncCount = 0;
     let failedCount = 0;
-    const syncPromises = [];
 
     // Helper function to parse date and extract time
     function parseDateTime(dateTimeStr: string) {
@@ -1484,97 +1511,168 @@ async function syncData() {
     }
 
     // Process attendance data (LEAVE)
-    if (attendanceResponse.success && attendanceResponse.data) {
-      for (const item of attendanceResponse.data) {
-        if (!existingWorkMap.has(item._id)) {
-          const fromDateTime = parseDateTime(item.fromDate);
-          const endDateTime = parseDateTime(item.endDate);
+    // Check if data exists and is an array, if not, use an empty array
+    const attendanceData = (attendanceResponse.success && Array.isArray(attendanceResponse.data))
+      ? attendanceResponse.data
+      : [];
 
-          try {
-            const workResult = await workStore.createWorkDirect({
-              userId: user.value.id,
-              fromDate: fromDateTime.date,
-              endDate: endDateTime.date,
-              startTime: fromDateTime.time,
-              endTime: endDateTime.time,
-              type: 'LEAVE',
-              reason: item.reason || '',
-              idCreate: item._id,
-            });
+    console.log(`Processing ${attendanceData.length} LEAVE items`);
 
-            if (workResult.data) {
+    for (const item of attendanceData) {
+      if (!existingWorkMap.has(item._id)) {
+        const fromDateTime = parseDateTime(item.fromDate);
+        const endDateTime = parseDateTime(item.endDate);
+
+        try {
+          const workResult = await workStore.createWorkDirect({
+            userId: user.value.id,
+            fromDate: fromDateTime.date,
+            endDate: endDateTime.date,
+            startTime: fromDateTime.time,
+            endTime: endDateTime.time,
+            type: 'LEAVE',
+            reason: item.reason || '',
+            idCreate: item._id,
+          });
+
+          console.log('LEAVE workResult:', workResult);
+
+          // Check if the API call was successful
+          if (workResult.success) {
+            syncCount++;
+          } else {
+            // Even if API reports failure, the record might have been inserted
+            // Let's verify by checking if it exists in the database after the call
+            const checkResult = await workStore.getAllWorks();
+            const checkData = Array.isArray(checkResult.data)
+              ? checkResult.data
+              : (checkResult.data ? [checkResult.data] : []);
+
+            const recordExists = checkResult.success &&
+              checkData.some(work => work.idCreate === item._id);
+
+            if (recordExists) {
+              console.log(`LEAVE record ${item._id} was inserted despite API error`);
               syncCount++;
             } else {
               failedCount++;
             }
-          } catch (error) {
-            failedCount++;
           }
+        } catch (error) {
+          failedCount++;
         }
+      } else {
+        console.log(`LEAVE record ${item._id} already exists, skipping`);
       }
     }
 
     // Process WFH data
-    if (wfhResponse.success && wfhResponse.data) {
-      for (const item of wfhResponse.data) {
-        if (!existingWorkMap.has(item._id)) {
-          const fromDateTime = parseDateTime(item.fromDate);
-          const endDateTime = parseDateTime(item.endDate);
+    // Check if data exists and is an array, if not, use an empty array
+    const wfhData = (wfhResponse.success && Array.isArray(wfhResponse.data))
+      ? wfhResponse.data
+      : [];
 
-          try {
-            const workResult = await workStore.createWorkDirect({
-              userId: user.value.id,
-              fromDate: fromDateTime.date,
-              endDate: endDateTime.date,
-              startTime: "08:00",
-              endTime: "17:00",
-              type: 'WFH',
-              reason: item.reason || '',
-              idCreate: item._id
-            });
+    console.log(`Processing ${wfhData.length} WFH items`);
 
-            if (workResult.success) {
+    for (const item of wfhData) {
+      if (!existingWorkMap.has(item._id)) {
+        const fromDateTime = parseDateTime(item.fromDate);
+        const endDateTime = parseDateTime(item.endDate);
+
+        try {
+          const workResult = await workStore.createWorkDirect({
+            userId: user.value.id,
+            fromDate: fromDateTime.date,
+            endDate: endDateTime.date,
+            startTime: "08:00",
+            endTime: "17:00",
+            type: 'WFH',
+            reason: item.reason || '',
+            idCreate: item._id
+          });
+
+          console.log('WFH workResult:', workResult);
+
+          // Check if the API call was successful
+          if (workResult.success) {
+            syncCount++;
+          } else {
+            // Even if API reports failure, the record might have been inserted
+            // Let's verify by checking if it exists in the database after the call
+            const checkResult = await workStore.getAllWorks();
+            const checkData = Array.isArray(checkResult.data)
+              ? checkResult.data
+              : (checkResult.data ? [checkResult.data] : []);
+
+            const recordExists = checkResult.success &&
+              checkData.some(work => work.idCreate === item._id);
+
+            if (recordExists) {
+              console.log(`WFH record ${item._id} was inserted despite API error`);
               syncCount++;
             } else {
               failedCount++;
             }
-
-          } catch (error) {
-            failedCount++;
-
           }
+        } catch (error) {
+          failedCount++;
         }
+      } else {
+        console.log(`WFH record ${item._id} already exists, skipping`);
       }
     }
+    console.log(`Final syncCount: ${syncCount}, failedCount: ${failedCount}`);
 
     // Refresh calendar data
     loadMonthData();
 
     // Show detailed success/failure message
     if (syncCount > 0) {
-
       toast.add({
         severity: 'success',
         summary: 'Đồng bộ thành công',
+        detail: `Đã đồng bộ ${syncCount} bản ghi.`,
         life: 4000
       });
     } else {
       toast.add({
-        severity: 'error',
+        severity: 'info',
         summary: 'Thông báo',
-        detail: 'Đồng bộ không thành công or đã đồng bộ trước đó',
+        detail: 'Không có dữ liệu mới để đồng bộ hoặc đã đồng bộ trước đó.',
         life: 3000
       });
     }
   } catch (error) {
+    console.error('Sync error:', error);
     toast.add({
       severity: 'error',
       summary: 'Lỗi đồng bộ',
-      detail: error || 'Không thể đồng bộ dữ liệu. Vui lòng thử lại sau.',
+      detail: error instanceof Error ? error.message : 'Không thể đồng bộ dữ liệu. Vui lòng thử lại sau.',
       life: 3000
     });
   } finally {
     loading.value = false;
+  }
+}
+
+// Cập nhật hàm showRegisterForm để kiểm tra đăng nhập trước
+function showRegisterForm() {
+  if (!leaveRequestStore.isAuthenticated) {
+    // If not logged in, show notification requiring login
+    toast.add({
+      severity: 'info',
+      summary: 'Yêu cầu đăng nhập',
+      detail: 'Vui lòng đăng nhập Admin Create để đăng ký WFH/Nghỉ phép.',
+      life: 3000
+    });
+
+    // Show login form and reset skipped state
+    isLoggedIn.value = false;
+    localStorage.removeItem('calendar_skipped_login');
+    hasSkippedLogin.value = false;
+  } else {
+    // If already logged in, show registration form
+    showRegisterModal.value = true;
   }
 }
 </script>

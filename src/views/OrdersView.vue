@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 space-y-4">
     <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-semibold" style="text-align: center; padding: 1rem;">Danh sách đặt đồ</h2>
+      <h2 class="text-2xl font-semibold" style="text-align: center; padding: 1rem;">DANH SÁCH ORDER</h2>
       <div class="p-input-icon-left my-2 d-flex justify-content-between ">
         <!-- <i class="pi pi-search" /> -->
          <div class="d-flex flex-row gap-2">
@@ -78,11 +78,12 @@
       </Column>
       <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
+            <Button 
             label="Chi tiết" 
+            icon="pi pi-eye" 
             class="p-button-sm p-button-primary" 
             @click="$router.push(`/orders/${data.id}`)" 
-          />
+            />
         </template>
       </Column>
     </DataTable>

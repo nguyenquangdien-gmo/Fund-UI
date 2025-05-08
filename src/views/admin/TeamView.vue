@@ -41,7 +41,7 @@
             <span v-else>Chưa có QR</span>
           </template>
         </Column>
-        <Column header="Actions" style="width: 20%">
+        <Column header="Actions" style="width: 26%">
           <template #body="{ data }">
             <Button
               label="Sửa"
@@ -53,16 +53,21 @@
               label="Xóa"
               icon="pi pi-trash"
               severity="danger"
-              class="ml-2"
               style="margin-left: 10px"
               @click="confirmDeleteTeam(data)"
+            />
+            <Button
+              label="Chi tiết"
+              icon="pi pi-eye"
+              severity="primary"
+              style="margin-left: 10px"
+              @click="viewTeamDetails(data)"
             />
           </template>
         </Column>
       </DataTable>
     </div>
   </div>
-
   <Dialog
     v-model:visible="showTeamDialog"
     modal
@@ -128,7 +133,7 @@
   </Dialog>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import InputText from 'primevue/inputtext'
@@ -137,6 +142,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import FileUpload from 'primevue/fileupload'
+import { useRouter } from 'vue-router'
 
 // const baseURL = "http://localhost:8080/api/v1";
 const token = localStorage.getItem('accessToken')
@@ -144,6 +150,7 @@ const teams = ref([])
 const searchQuery = ref('')
 const showTeamDialog = ref(false)
 const isUpdate = ref(false)
+const router = useRouter()
 const form = ref({ id: '', name: '', slug: '', channelId: '', token: '', qrCodeFile: null })
 const qrPreview = ref(null)
 
@@ -285,6 +292,10 @@ const teamToDelete = ref(null)
 const confirmDeleteTeam = (team) => {
   teamToDelete.value = team
   showConfirmDialog.value = true
+}
+
+const viewTeamDetails = (data) => {
+  router.push(`/teams/${data.slug}`)
 }
 
 const deleteTeam = async () => {

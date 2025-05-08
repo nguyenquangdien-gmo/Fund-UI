@@ -17,6 +17,7 @@ import { setupAxiosInterceptors } from './router/Interceptor'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import "./assets/style.css"
 
 declare global {
   interface Window {

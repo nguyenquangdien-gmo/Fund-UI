@@ -156,13 +156,12 @@ const selectedUser = ref({ label: '', value: '' })
 const onPage = (event: { first: number }) => {
   first.value = event.first
 }
-
-const token = localStorage.getItem('accessToken')
 const fromDate = ref<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
 const toDate = ref<Date | null>(
   new Date(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
 )
 const lateRecords = ref<LateRecord[]>([])
+  const userOptions = ref<User[]>([])
 const searchTerm = ref('')
 const isAdmin = ref(false)
 
@@ -270,9 +269,9 @@ function searchItems(event: { query: string }) {
   const query = event.query.toLowerCase()
   const uniqueSuggestions = new Map()
 
-  lateRecords.value.forEach((item) => {
-    if (item.user?.id || item.user?.fullName) {
-      const label = `${item.user?.id ?? ''} - ${item.user?.fullName ?? ''}`
+  userOptions.value.forEach((item) => {
+    if (item.id || item.fullName) {
+      const label = `${item?.id ?? ''} - ${item?.fullName ?? ''}`
       if (!uniqueSuggestions.has(label)) {
         uniqueSuggestions.set(label, {
           label,
@@ -283,18 +282,33 @@ function searchItems(event: { query: string }) {
   })
 
   suggestions.value = [
-    { label: 'All Members', value: 'All Members' },
+    { label: 'Tất cả', value: 'Tất cả' },
     ...Array.from(uniqueSuggestions.values()).filter((item) =>
       item.label.toLowerCase().includes(query),
     ),
   ]
 }
 
+// fetch user to multi select
+const fetchUsers = async () => {
+  try {
+    const token = localStorage.getItem('accessToken')
+    const response = await axiosInstance.get<User[]>(`/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    userOptions.value = response.data
+    console.log('User options:', userOptions.value);
+    
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
+}
+
 const handleSelect = (event: { originalEvent: Event; value: { label: string; value: string } }) => {
   console.log('Selected item:', event.value);
   
   const selected = event.value
-  const selectedId = selected.label === 'All Members' ? '' : selected.value.split(' - ')[0]
+  const selectedId = selected.label === 'Tất cả' ? '' : selected.value.split(' - ')[0]
   searchTerm.value = selectedId
 }
 
@@ -505,6 +519,7 @@ onMounted(() => {
   fetchLateRecords()
   checkIsAdmin()
   fillSelectUser()
+  fetchUsers()
 })
 
 // Cải tiến hàm lọc với kiểm tra an toàn

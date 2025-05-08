@@ -39,57 +39,57 @@
       class="p-datatable-sm"
     >
       <Column header="STT">
-      <template #body="{ index }">
-        {{ index + 1 }}
-      </template>
+        <template #body="{ index }">
+          {{ index + 1 }}
+        </template>
       </Column>
       <Column field="title" header="Tiêu đề" sortable />
       <Column field="message" header="Nội dung" sortable />
-      <Column field="startTime" header="Thời gian bắt đầu" sortable>
-      <template #body="{ data }">
-        {{ new Date(data.startTime).toLocaleDateString() }}
-      </template>
-      </Column>
-      <Column field="endTime" header="Thời gian kết thúc" sortable>
-      <template #body="{ data }">
-        {{ new Date(data.endTime).toLocaleDateString() }}
-      </template>
-      </Column>
-      <Column field="notifyHour" header="Giờ nhắc" sortable>
+      <Column field="notifyHour" header="Giờ nhắc" sortable style="width: 100px;">
         <template #body="{ data }">
           {{ new Date(`1970-01-01T${data.notifyHour}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) }}
         </template>
       </Column>
-      <Column field="repeatCount" header="Số lần lặp lại" sortable />
-      <Column field="repeatIntervalDays" header="Khoảng cách lặp (ngày)" sortable />
-      <Column field="status" header="Trạng thái" sortable>
-      <template #body="{ data }">
-        <Tag 
-        :value="data.status" 
-        :severity="data.status === 'COMPLETED' ? 'success' : 
-             data.status === 'ACTIVE' ? 'info' : 
-             data.status === 'DISABLED' ? 'secondary' : 
-             data.status === 'EXPIRED' ? 'danger' : 'warn'" 
-        />
-      </template>
+      <Column field="startTime" header="Thời gian bắt đầu" sortable>
+        <template #body="{ data }">
+          {{ new Date(data.startTime).toLocaleDateString() }}
+        </template>
       </Column>
+      <Column field="endTime" header="Thời gian kết thúc" sortable>
+        <template #body="{ data }">
+          {{ new Date(data.endTime).toLocaleDateString() }}
+        </template>
+      </Column>
+      <Column field="repeatCount" header="Số lần lặp lại" sortable style="width: 80px;"/>
+      <Column field="repeatIntervalDays" header="Khoảng cách lặp (ngày)" sortable style="width: 80px;"/>
       <Column field="createdAt" header="Ngày tạo" sortable>
-      <template #body="{ data }">
-        {{ new Date(data.createdAt).toLocaleDateString() }}
-      </template>
+        <template #body="{ data }">
+          {{ new Date(data.createdAt).toLocaleDateString() }}
+        </template>
       </Column>
-      <Column header="Hành động">
+      <Column field="status" header="Trạng thái" sortable>
+        <template #body="{ data }">
+          <Tag 
+          :value="data.status" 
+          :severity="data.status === 'COMPLETED' ? 'success' : 
+              data.status === 'ACTIVE' ? 'info' : 
+              data.status === 'DISABLED' ? 'secondary' : 
+              data.status === 'EXPIRED' ? 'danger' : 'warn'" 
+          />
+        </template>
+      </Column>
+      <Column header="Hành động" style="width: 230px;">
         <template #body="{ data }">
           <Button 
             label="Chỉnh sửa" 
             icon="pi pi-pencil" 
-            class="p-button-info p-mr-2" 
+            class="p-button-info" 
             @click="editReminder(data)" 
           />
           <Button 
             label="Hủy" 
             icon="pi pi-trash" 
-            class="p-button-danger" 
+            class="p-button-danger ms-2" 
             @click="deleteReminder(data.id)" 
           />
         </template>

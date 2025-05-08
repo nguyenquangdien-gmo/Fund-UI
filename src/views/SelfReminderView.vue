@@ -60,8 +60,8 @@
           {{ new Date(data.endTime).toLocaleDateString() }}
         </template>
       </Column>
-      <Column field="repeatCount" header="Số lần lặp lại" sortable style="width: 80px;"/>
-      <Column field="repeatIntervalDays" header="Khoảng cách lặp (ngày)" sortable style="width: 80px;"/>
+      <Column field="repeatCount" header="Số lần lặp lại" sortable />
+      <Column field="repeatIntervalDays" header="Khoảng cách lặp (ngày)" sortable style="width: 5%;"/>
       <Column field="createdAt" header="Ngày tạo" sortable>
         <template #body="{ data }">
           {{ new Date(data.createdAt).toLocaleDateString() }}
@@ -78,20 +78,22 @@
           />
         </template>
       </Column>
-      <Column header="Hành động" style="width: 230px;">
+      <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
-            label="Chỉnh sửa" 
-            icon="pi pi-pencil" 
-            class="p-button-info" 
-            @click="editReminder(data)" 
-          />
-          <Button 
-            label="Hủy" 
-            icon="pi pi-trash" 
-            class="p-button-danger ms-2" 
-            @click="deleteReminder(data.id)" 
-          />
+          <div class="d-flex gap-2">
+            <Button 
+              label="Sửa" 
+              icon="pi pi-pencil" 
+              class="p-button-info" 
+              @click="editReminder(data)" 
+            />
+            <Button 
+              label="Hủy" 
+              icon="pi pi-trash" 
+              class="p-button-danger" 
+              @click="deleteReminder(data.id)" 
+            />
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -145,6 +147,56 @@
         <Button label="Lưu" icon="pi pi-check" class="p-button-primary" @click="saveReminder" />
       </template>
     </Dialog>
+
+    <Dialog v-model:visible="isEditDialogVisible" header="Chỉnh sửa nhắc nhở" :modal="true" :closable="true">
+      <div class="p-fluid">
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editTitle">Tiêu đề<span class="text-red-500">*</span></label>
+          <InputText id="editTitle" v-model="editReminderData.title" placeholder="Nhập tiêu đề" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.title">{{ errors.title }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editMessage">Nội dung<span class="text-red-500">*</span></label>
+          <InputText id="editMessage" v-model="editReminderData.message" placeholder="Nhập nội dung" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.message">{{ errors.message }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editStartTime">Thời gian bắt đầu<span class="text-red-500">*</span></label>
+          <DatePicker id="editStartTime" v-model="editReminderData.startTime" type="datetime" placeholder="Chọn thời gian bắt đầu" dateFormat="dd/mm/yy" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.startTime">{{ errors.startTime }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editEndTime">Thời gian kết thúc<span class="text-red-500">*</span></label>
+          <DatePicker id="editEndTime" v-model="editReminderData.endTime" type="datetime" placeholder="Chọn thời gian kết thúc" dateFormat="dd/mm/yy" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.endTime">{{ errors.endTime }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editNotifyHour">Giờ nhắc<span class="text-red-500">*</span></label>
+          <DatePicker id="editNotifyHour" v-model="editReminderData.notifyHour" type="time" placeholder="Chọn giờ nhắc" timeOnly hourFormat="24" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.notifyHour">{{ errors.notifyHour }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editRepeatCount">Số lần lặp lại<span class="text-red-500">*</span></label>
+          <InputText id="editRepeatCount" v-model="editReminderData.repeatCount" type="number" placeholder="Nhập số lần lặp lại" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.repeatCount">{{ errors.repeatCount }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="editRepeatIntervalDays">Khoảng cách lặp (ngày)<span class="text-red-500">*</span></label>
+          <InputText id="editRepeatIntervalDays" v-model="editReminderData.repeatIntervalDays" type="number" placeholder="Nhập khoảng cách lặp (ngày)" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.repeatIntervalDays">{{ errors.repeatIntervalDays }}</div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" icon="pi pi-times" class="p-button-text" @click="isEditDialogVisible = false" />
+        <Button label="Lưu" icon="pi pi-check" class="p-button-primary" @click="updateReminder" />
+      </template>
+    </Dialog>
     
   </div>
 </template>
@@ -171,6 +223,84 @@ const newReminder = ref<SelfReminderRequestDTO>({
   repeatCount: "0",
   repeatIntervalDays: "0",
 });
+
+const editReminderData = ref<SelfReminderRequestDTO>({
+  title: '',
+  message: '',
+  startTime: new Date(),
+  endTime: new Date(),
+  notifyHour: new Date(new Date().setHours(8, 0, 0, 0)),
+  repeatCount: "0",
+  repeatIntervalDays: "0",
+});
+
+const isEditDialogVisible = ref(false);
+
+const editReminder = (reminder: SelfReminderResponseDTO) => {
+  editReminderData.value = {
+    title: reminder.title,
+    message: reminder.message,
+    startTime: new Date(reminder.startTime),
+    endTime: new Date(reminder.endTime),
+    notifyHour: new Date(`1970-01-01T${reminder.notifyHour}`),
+    repeatCount: reminder.repeatCount.toString(),
+    repeatIntervalDays: reminder.repeatIntervalDays.toString(),
+  };
+  isEditDialogVisible.value = true;
+};
+
+const updateReminder = async () => {
+  if (!validateEditForm()) return;
+
+  try {
+    const reminderPayload = {
+      title: editReminderData.value.title,
+      message: editReminderData.value.message,
+      startTime: new Date(editReminderData.value.startTime.getTime() - editReminderData.value.startTime.getTimezoneOffset() * 60000).toISOString(),
+      endTime: new Date(editReminderData.value.endTime.getTime() - editReminderData.value.endTime.getTimezoneOffset() * 60000).toISOString(),
+      notifyHour: editReminderData.value.notifyHour.toTimeString().split(' ')[0],
+      repeatCount: editReminderData.value.repeatCount,
+      repeatIntervalDays: editReminderData.value.repeatIntervalDays,
+    };
+
+    await axiosInstance.put(`/self-reminders/${editReminderData.value.id}`, reminderPayload);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Nhắc nhở đã được cập nhật thành công',
+      life: 3000,
+    });
+
+    isEditDialogVisible.value = false;
+    fetchSelfReminders();
+  } catch (error) {
+    console.error('Error updating reminder:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể cập nhật nhắc nhở. Vui lòng thử lại sau',
+      life: 3000,
+    });
+  }
+};
+
+function validateEditForm() {
+  let isValid = true;
+
+  errors.title = editReminderData.value.title.trim() ? '' : 'Tiêu đề không được để trống';
+  errors.message = editReminderData.value.message.trim() ? '' : 'Nội dung không được để trống';
+  errors.startTime = editReminderData.value.startTime ? '' : 'Vui lòng chọn thời gian bắt đầu';
+  errors.endTime = editReminderData.value.endTime ? '' : 'Vui lòng chọn thời gian kết thúc';
+  errors.repeatCount = Number(editReminderData.value.repeatCount) > 0 ? '' : 'Số lần lặp lại phải lớn hơn 0';
+  errors.repeatIntervalDays = Number(editReminderData.value.repeatIntervalDays) > 0 ? '' : 'Khoảng cách lặp phải lớn hơn 0';
+
+  if (errors.title || errors.message || errors.startTime || errors.endTime || errors.notifyHour) {
+    isValid = false;
+  }
+
+  return isValid;
+}
 
 const errors = reactive({
   title: '',

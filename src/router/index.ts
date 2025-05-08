@@ -32,6 +32,7 @@ import DriveAccountManager from '@/views/DriveAccountManager.vue'
 import RestaurantView from '@/views/RestaurantView.vue'
 import OrdersView from '@/views/OrdersView.vue'
 import OrderDetailView from '@/views/OrderDetailView.vue'
+import SelfReminderView from '@/views/SelfReminderView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -89,6 +90,12 @@ const router = createRouter({
       path: '/contributions',
       name: 'contributions',
       component: ContributionsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/self-reminders',
+      name: 'self-reminders',
+      component: SelfReminderView,
       meta: { requiresAuth: true },
     },
     {

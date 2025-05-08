@@ -267,6 +267,7 @@ const baseItems = [
       { label: 'Hóa đơn', icon: 'pi pi-receipt', command: () => router.push('/user/invoices') },
       { label: 'Đặt nước', icon: 'pi pi-shopping-cart', command: () => router.push('/restaurants') },
       { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
+      { label: 'Tạo nhắc nhở', icon: 'pi pi-clock', command: () => router.push('/self-reminders') },
     ],
   },
   { label: 'Đơn nghỉ', icon: 'pi pi-calendar-clock', command: () => router.push('/work-calendar') },

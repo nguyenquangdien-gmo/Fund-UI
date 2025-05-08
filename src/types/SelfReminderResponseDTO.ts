@@ -16,7 +16,7 @@ export class SelfReminderResponseDTO {
         message: string,
         startTime: Date,
         endTime: Date,
-        notifyHour: number,
+        notifyHour: string,
         repeatCount: number,
         repeatIntervalDays: number,
         status: string,

@@ -17,6 +17,9 @@
             </div>
           </div>
          </div>
+         <div>
+          <Button label="Tạo nhắc nhở" icon="pi pi-plus" class="p-button-success" @click="createReminder()" />
+         </div>
       </div>
     </div>
 
@@ -75,12 +78,79 @@
         {{ new Date(data.createdAt).toLocaleDateString() }}
       </template>
       </Column>
+      <Column header="Hành động">
+        <template #body="{ data }">
+          <Button 
+            label="Chỉnh sửa" 
+            icon="pi pi-pencil" 
+            class="p-button-info p-mr-2" 
+            @click="editReminder(data)" 
+          />
+          <Button 
+            label="Hủy" 
+            icon="pi pi-trash" 
+            class="p-button-danger" 
+            @click="deleteReminder(data.id)" 
+          />
+        </template>
+      </Column>
     </DataTable>
+
+    <Dialog v-model:visible="isDialogVisible" header="Tạo nhắc nhở" :modal="true" :closable="true">
+      <div class="p-fluid">
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="title">Tiêu đề<span class="text-red-500">*</span></label>
+          <InputText id="title" v-model="newReminder.title" placeholder="Nhập tiêu đề" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.title" >{{ errors.title }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="message">Nội dung<span class="text-red-500">*</span></label>
+          <InputText id="message" v-model="newReminder.message" placeholder="Nhập nội dung" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.message" >{{ errors.message }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="startTime">Thời gian bắt đầu<span class="text-red-500">*</span></label>
+            <DatePicker id="startTime" v-model="newReminder.startTime" type="datetime" placeholder="Chọn thời gian bắt đầu" dateFormat="dd/mm/yy" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.startTime" >{{ errors.startTime }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="endTime">Thời gian kết thúc<span class="text-red-500">*</span></label>
+          <DatePicker id="endTime" v-model="newReminder.endTime" type="datetime" placeholder="Chọn thời gian kết thúc" dateFormat="dd/mm/yy"/>
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.endTime" >{{ errors.endTime }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="notifyHour">Giờ nhắc<span class="text-red-500">*</span></label>
+            <DatePicker id="notifyHour" v-model="newReminder.notifyHour" type="time" placeholder="Chọn giờ nhắc" timeOnly hourFormat="24" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.notifyHour" >{{ errors.notifyHour }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="repeatCount">Số lần lặp lại<span class="text-red-500">*</span></label>
+          <InputText id="repeatCount" v-model="newReminder.repeatCount" type="number" placeholder="Nhập số lần lặp lại" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.repeatCount" >{{ errors.repeatCount }}</div>
+
+        <div class="field d-flex align-items-center justify-content-between p-2">
+          <label for="repeatIntervalDays">Khoảng cách lặp (ngày)<span class="text-red-500">*</span></label>
+          <InputText id="repeatIntervalDays" v-model="newReminder.repeatIntervalDays" type="number" placeholder="Nhập khoảng cách lặp (ngày)" />
+        </div>
+        <div class="text-red-500 text-end" v-if="errors.repeatIntervalDays" >{{ errors.repeatIntervalDays }}</div>
+      </div>
+      <template #footer>
+        <Button label="Hủy" icon="pi pi-times" class="p-button-text" @click="isDialogVisible = false" />
+        <Button label="Lưu" icon="pi pi-check" class="p-button-primary" @click="saveReminder" />
+      </template>
+    </Dialog>
+    
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, reactive } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import axiosInstance from '@/router/Interceptor'
 import DataTable from 'primevue/datatable'
@@ -90,9 +160,31 @@ import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 
 import { SelfReminderResponseDTO } from '@/types/SelfReminderResponseDTO'
+import { SelfReminderRequestDTO } from '@/types/SelfReminderRequestDTO'
 
+const newReminder = ref<SelfReminderRequestDTO>({
+  title: '',
+  message: '',
+  startTime: new Date(),
+  endTime: new Date(),
+  notifyHour: new Date(new Date().setHours(8, 0, 0, 0)),
+  repeatCount: "0",
+  repeatIntervalDays: "0",
+});
+
+const errors = reactive({
+  title: '',
+  message: '',
+  startTime: '',
+  endTime: '',
+  notifyHour: '',
+  repeatCount: "",
+  repeatIntervalDays: "",
+});
 
 const selfReminders = ref<SelfReminderResponseDTO[]>([])
+
+const isDialogVisible = ref(false)
 const searchTerm = ref('')
 const sortField = ref<string>()
 const sortOrder = ref<number>()
@@ -157,6 +249,75 @@ const filteredSelfReminders = computed(() =>
     })
 )
 
+const createReminder = () => {
+  isDialogVisible.value = true
+}
+
+const saveReminder = async () => {
+  if (!validateForm()) return;
+
+  try {
+    // Send request to save the reminder
+    const reminderPayload = {
+      title: newReminder.value.title,
+      message: newReminder.value.message,
+      startTime: new Date(newReminder.value.startTime.getTime() - newReminder.value.startTime.getTimezoneOffset() * 60000).toISOString(),
+      endTime: new Date(newReminder.value.endTime.getTime() - newReminder.value.endTime.getTimezoneOffset() * 60000).toISOString(),
+      notifyHour: newReminder.value.notifyHour.toTimeString().split(' ')[0], // Extract time in HH:mm:ss format
+      repeatCount: newReminder.value.repeatCount,
+      repeatIntervalDays: newReminder.value.repeatIntervalDays,
+    };
+
+    await axiosInstance.post('/self-reminders', reminderPayload);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Nhắc nhở đã được tạo thành công',
+      life: 3000,
+    });
+
+    // Reset form and close dialog
+    Object.assign(newReminder, {
+      title: '',
+      message: '',
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      notifyHour: '00:00',
+      repeatCount: 0,
+      repeatIntervalDays: 0,
+    });
+    isDialogVisible.value = false;
+
+    // Refresh the reminders list
+    fetchSelfReminders();
+  } catch (error) {
+    console.error('Error saving reminder:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Không thể tạo nhắc nhở. Vui lòng thử lại sau',
+      life: 3000,
+    });
+  }
+};
+
+function validateForm() {
+  let isValid = true;
+
+  errors.title = newReminder.value.title.trim() ? '' : 'Tiêu đề không được để trống';
+  errors.message = newReminder.value.message.trim() ? '' : 'Nội dung không được để trống';
+  errors.startTime = newReminder.value.startTime ? '' : 'Vui lòng chọn thời gian bắt đầu';
+  errors.endTime = newReminder.value.endTime ? '' : 'Vui lòng chọn thời gian kết thúc';
+  errors.repeatCount = Number(newReminder.value.repeatCount) > 0 ? '' : 'Số lần lặp lại phải lớn hơn 0';
+  errors.repeatIntervalDays = Number(newReminder.value.repeatIntervalDays) > 0 ? '' : 'Khoảng cách lặp phải lớn hơn 0';
+
+  if (errors.title || errors.message || errors.startTime || errors.endTime || errors.notifyHour) {
+    isValid = false;
+  }
+
+  return isValid;
+}
 
 </script>
 

@@ -1,30 +1,36 @@
 <template>
   <div class="container">
     <div class="p-4">
-      <h2 class="text-xl">CHI TIẾT</h2>
-
-      <div class="mb-4">
-        <h3 class="text-lg font-bold">Thông Tin Team</h3>
-        <p><strong>Tên:</strong> {{ team?.name }}</p>
-        <p><strong>Mô Tả:</strong> {{ team?.description }}</p>
-        <p><strong>Quy Định:</strong> {{ team?.regulation }}</p>
+      <div v-if="!isEdit" class="mb-2 p-4 border rounded shadow-md bg-white">
+        <div class="mb-3">
+            <div v-html="team?.regulation || 'N/A'"></div>
+          </div>
       </div>
-      
-      <div class="mb-3 flex justify-between">
-        <!-- <InputText
+
+      <div v-if="isEdit" class="mb-2 p-4 border rounded shadow-md bg-white mt-4">
+        <TextEditor v-if="team" v-model="team.regulation" :initialData="team?.regulation || ''" />
+        <div class="mt-3 d-flex justify-content-end">
+          <Button @click="saveContent">Lưu</Button>
+        </div>
+      </div>
+
+      <div class="mb-3 d-flex justify-content-between">
+        <InputText
           v-model="searchQuery"
-          placeholder="Tìm kiếm theo tên team..."
+          placeholder="Tìm kiếm theo tên..." 
           class="w-full p-inputtext-sm"
         />
         <Button
-          label="Tạo team"
+          v-if="isAdmin"
+          label="Sửa Nội Quy"
+          icon="pi pi-pencil"
           severity="success"
           class="btn"
           raised
           size="small"
-          @click="openCreateDialog"
+          @click="openEdit"
           style="margin-left: 10px; padding-top: 5px"
-        /> -->
+        />
       </div>
       <DataTable
         :value="filteredMembers"
@@ -62,14 +68,20 @@ import { ref, computed, onMounted } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
 import { useRoute } from 'vue-router'
 import type { User } from '@/types/User'
 import type Team from '@/types/Team'
+import TextEditor from '@/components/editor/TextEditor.vue'
+import { useToast } from 'primevue'
 
 // const baseURL = "http://localhost:8080/api/v1";
 const members = ref<User[]>([])
 const team = ref<Team>()
 const searchQuery = ref('')
+const toast = useToast()
+const isEdit = ref(false)
+const isAdmin = ref(false)
 
 const route = useRoute()
 const teamId = route.params.teamId as string
@@ -85,6 +97,19 @@ const fetchMembers = async () => {
   }
 }
 
+const checkAdmin = async () => {
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
+  try {
+    const user = JSON.parse(userData);
+    return user.role === 'ADMIN';
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+    return false;
+  }
+};
+
 const fetchTeams = async () => {
   try {
     const response = await axiosInstance.get(`/teams/${teamId}`)
@@ -94,7 +119,37 @@ const fetchTeams = async () => {
   }
 }
 
-onMounted(() => {
+const openEdit = () => {
+  isEdit.value = !isEdit.value
+}
+
+const saveContent = async () => {
+  try {
+    if (team.value) {
+      await axiosInstance.put(`/teams/${teamId}/regulation`, {
+        regulation: team.value.regulation,
+      })
+      isEdit.value = false
+      toast.add({
+        severity: 'success',
+        summary: 'Thành công',
+        detail: 'Nội quy đã được lưu thành công!',
+        life: 3000,
+      })
+    }
+  } catch (error) {
+    console.error('Error saving regulation:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: 'Đã xảy ra lỗi khi lưu nội quy!',
+      life: 3000,
+    })  
+  }
+}
+
+onMounted(async () => {
+  isAdmin.value = await checkAdmin()
   fetchMembers()
   fetchTeams()
 })
@@ -107,9 +162,6 @@ const filteredMembers = computed(() => {
     meber.fullName.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
-
-
-
 </script>
 
 <style>

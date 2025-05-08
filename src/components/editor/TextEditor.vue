@@ -3,7 +3,7 @@
         <div class="editor-container editor-container_classic-editor" ref="editorContainerElement">
             <div class="editor-container__editor">
                 <div ref="editorElement">
-                    <ckeditor v-if="editor && config" :modelValue="typeof config.initialData === 'string' ? config.initialData : ''" :editor="editor" :config="config" />
+                    <ckeditor v-if="editor && config" :modelValue="typeof config.initialData === 'string' ? config.initialData : ''" :editor="editor" :config="config" @update:modelValue="(val: string) => emit('update:modelValue', val)"/>
                 </div>
             </div>
         </div>
@@ -60,6 +60,14 @@ import {
 
 import translations from 'ckeditor5/translations/vi.js';
 import 'ckeditor5/ckeditor5.css';
+
+const props = defineProps<{
+  initialData: string
+}>();
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: string): void
+}>();
 
 // Constants
 const LICENSE_KEY = 'GPL';
@@ -171,7 +179,7 @@ const config = computed<EditorConfig | null>(() => {
 		htmlSupport: {
 			allow: [{ name: /^.*$/, styles: true, attributes: true, classes: true }]
 		},
-		initialData: '<h2>Congratulations on setting up CKEditor 5! 🎉</h2><p>...</p>',
+		initialData: props.initialData,
 		language: 'vi',
 		licenseKey: LICENSE_KEY,
 		link: {

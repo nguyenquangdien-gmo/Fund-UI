@@ -78,11 +78,12 @@
       </Column>
       <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
+            <Button 
             label="Chi tiết" 
+            icon="pi pi-eye" 
             class="p-button-sm p-button-primary" 
             @click="$router.push(`/orders/${data.id}`)" 
-          />
+            />
         </template>
       </Column>
     </DataTable>

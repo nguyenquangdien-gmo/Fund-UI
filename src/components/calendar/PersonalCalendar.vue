@@ -1473,9 +1473,8 @@ async function syncData() {
 
     // Get personal staff WFH
     const wfhResponse = await leaveRequestStore.fetchPersonalStaffWfh({
-      startDate: startDateString,
       endDate: endDateString,
-      fromDate: startTimestamp,
+      fromDate: startDateString,
       toDate: endTimestamp,
       page: 1,
       userObjId: cookieUser.userObjId

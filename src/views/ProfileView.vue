@@ -202,7 +202,6 @@ const qrCode = ref<string | null>(null)
 //   } catch (error) {
 //     console.error('Error fetching avatar:', error)
 //   }
-// }
 const fetchUserProfile = async () => {
   try {
     const response = await axiosInstance.post('/users/get-user', { email: user.value.email })
@@ -482,10 +481,10 @@ const saveUser = async () => {
         ? form.value.email
         : form.value.email + '@runsystem.net',
       fullName: form.value.fullName,
-      dob: seletedDob.value ? seletedDob.value.toISOString().split('T')[0] : '',
+      dob: seletedDob.value ? formatDateForAPI(seletedDob.value) : '',
       phoneNumber: form.value.phoneNumber,
       position: form.value.position,
-      joinDate: seletedJoinDate.value ? seletedJoinDate.value.toISOString().split('T')[0] : '',
+      joinDate: seletedJoinDate.value ? formatDateForAPI(seletedJoinDate.value) : '',
       slugTeam: selectedTeam.value.toLowerCase(),
     }
 
@@ -523,6 +522,15 @@ const saveUser = async () => {
     })
   }
 }
+
+// Add this helper function before onMounted
+const formatDateForAPI = (date: Date) => {
+  // Adjust for timezone to prevent date shift
+  const d = new Date(date)
+  d.setHours(12) // Set to noon to avoid timezone issues
+  return d.toISOString().split('T')[0]
+}
+
 onMounted(() => {
   fetchUserProfile()
   fetchTeams()

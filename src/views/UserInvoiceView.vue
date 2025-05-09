@@ -88,7 +88,7 @@
       <small class="text-danger" v-if="errors.type">{{ errors.type }}</small>
     </div>
     <div class="mb-3">
-      <label class="fw-bold">Hóa đơn<span class="text-danger">*</span></label>
+      <label class="fw-bold">Hóa đơn</label>
       <FileUpload mode="basic" accept="image/*" customUpload @select="handleInvoiceUpload" />
       <div class="avatar-image">
         <img v-if="billImage" :src="billImage" class="avatar-preview" />
@@ -283,9 +283,6 @@ const validateForm = () => {
   errors.value = { description: '', type: '', amount: '', billImage: '' }
   if (!form.value.description) errors.value.description = 'Vui lòng nhập mô tả về phí!'
   if (!selectedType.value) errors.value.type = 'Vui lòng chọn loại phí!'
-  if (!form.value.billImage) {
-    errors.value.billImage = 'Vui lòng upload hóa đơn làm bằng chứng!'
-  }
 
   if (!form.value.amount || form.value.amount <= 0)
     errors.value.amount = 'Số tiền cần phải lớn hơn 0!'

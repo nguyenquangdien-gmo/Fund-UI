@@ -546,9 +546,8 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
     },
 
     async fetchPersonalStaffWfh(params: {
-      startDate: string
       endDate: string
-      fromDate: number
+      fromDate: string
       toDate: number
       page: number
       userObjId: string

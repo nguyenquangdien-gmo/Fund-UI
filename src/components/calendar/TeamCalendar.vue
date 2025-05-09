@@ -45,87 +45,54 @@
 
       <!-- Calendar Table -->
       <div class="table-wrapper" ref="tableWrapperRef">
-        <!-- Góc trên bên trái (cố định) -->
-        <div class="fixed-corner">
-          <table class="table table-bordered mb-0">
-            <thead class="bg-light">
-              <tr>
-                <th class="cell header-cell stt" rowspan="2"></th>
-                <th class="cell header-cell name" rowspan="2">Ngày</th>
-              </tr>
-            </thead>
-            <thead class="bg-light">
-              <tr>
-                <th class="cell header-cell stt" rowspan="2">STT</th>
-                <th class="cell header-cell name" rowspan="2">Họ Tên</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-
-        <!-- Header cố định (phần trên, không có scroll ngang) -->
-        <div class="fixed-header" ref="headerRef">
-          <table class="table table-bordered mb-0 no-bottom-border" style="width: 100%">
-            <thead>
-              <tr class="day-row">
-                <th v-for="(date, index) in calendarDates" :key="`day-${index}`" class="cell header-cell"
-                  :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
-                  {{ date.getDate() }}
-                </th>
-                <th class="cell header-cell stats" rowspan="2"><span>WFH</span></th>
-                <th class="cell header-cell stats" rowspan="2"><span>OFF</span></th>
-              </tr>
-              <tr class="weekday-row">
-                <th v-for="(date, index) in calendarDates" :key="`weekday-${index}`" class="cell header-cell weekday"
-                  :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
-                  {{ getWeekdayName(date) }}
-                </th>
-              </tr>
-            </thead>
-          </table>
-        </div>
-
-        <!-- Cột cố định (bên trái, có thể scroll dọc) -->
-        <div class="fixed-column" ref="columnRef">
-          <table class="table table-bordered mb-0">
-            <tbody>
-              <tr v-for="(person, index) in people" :key="person.id" class="person-row">
-                <td class="cell stt">{{ index + 1 }}</td>
-                <td class="cell name">{{ person.name }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Phần nội dung chính (chỉ scroll dọc) -->
-        <div class="scrollable-content" @scroll="handleScroll" ref="contentRef">
-          <table class="table table-bordered mb-0 no-top-border" style="width: 100%">
-            <tbody>
-              <tr v-for="(person, pIndex) in people" :key="`row-${pIndex}`" class="person-row">
-                <td v-for="(date, dIndex) in calendarDates" :key="`cell-${pIndex}-${dIndex}`" class="cell data-cell"
-                  :class="{
-                    'weekend': isWeekend(date),
-                    'wfh': hasStatus(person.id, date, 'WFH'),
-                    'off': hasStatus(person.id, date, 'OFF')
-                  }" :style="{ width: cellWidth + 'px' }"
-                  v-tooltip="{ value: getStatusWithPeriod(person.id, date), position: 'bottom' }">
-                  <!-- Cell nội dung trống, chỉ hiển thị màu nền -->
-                </td>
-                <td class="cell stats">{{ getTotalDays(person.id, 'WFH') }}</td>
-                <td class="cell stats">{{ getTotalDays(person.id, 'OFF') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-bordered">
+          <thead class="bg-light">
+            <tr>
+              <th class="cell header-cell stt">STT</th>
+              <th class="cell header-cell name">Họ Tên</th>
+              <th v-for="(date, index) in calendarDates" :key="`day-${index}`" class="cell header-cell"
+                :class="{ 'weekend': isWeekend(date) }" :style="{ width: cellWidth + 'px' }">
+                {{ date.getDate() }}<br>
+                <span class="weekday">{{ getWeekdayName(date) }}</span>
+              </th>
+              <th class="cell header-cell stats"><span>WFH</span></th>
+              <th class="cell header-cell stats"><span>OFF</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(person, pIndex) in people" :key="`row-${pIndex}`" class="person-row">
+              <td class="cell stt">{{ pIndex + 1 }}</td>
+              <td class="cell name">{{ person.name }}</td>
+              <td v-for="(date, dIndex) in calendarDates" :key="`cell-${pIndex}-${dIndex}`" class="cell data-cell"
+                :class="{
+                  'weekend': isWeekend(date),
+                  'wfh': hasStatus(person.id, date, 'WFH'),
+                  'off': hasStatus(person.id, date, 'OFF')
+                }" :style="{ width: cellWidth + 'px' }"
+                v-tooltip="{ value: getStatusWithPeriod(person.id, date), position: 'bottom' }">
+                <!-- Cell nội dung trống, chỉ hiển thị màu nền -->
+              </td>
+              <td class="cell stats">{{ getTotalDays(person.id, 'WFH') }}</td>
+              <td class="cell stats">{{ getTotalDays(person.id, 'OFF') }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed, onActivated } from 'vue';
 import axiosInstance from '@/router/Interceptor';
 import Tooltip from 'primevue/tooltip';
+import { eventBus } from '@/event/EventBus';
+import type { AxiosRequestConfig } from 'axios';
+
+// Define custom config interface with hideLoader option
+interface CustomAxiosConfig extends AxiosRequestConfig {
+  hideLoader?: boolean;
+}
 
 // Define directive
 const vTooltip = Tooltip;
@@ -160,6 +127,7 @@ const selectedYear = ref(currentYear);
 const calendarDates = ref<Date[]>([]);
 
 // Container width and dynamic cell width calculation
+const tableWrapperRef = ref<HTMLElement | null>(null);
 const containerWidth = ref(0);
 const fixedColumnsWidth = 240; // STT + Họ Tên columns width
 const statsColumnsWidth = 80; // WFH + OFF columns width
@@ -175,24 +143,9 @@ const cellWidth = computed(() => {
 // Weekday names in Vietnamese
 const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-// Refs cho các phần của bảng
-const headerRef = ref<HTMLElement | null>(null);
-const columnRef = ref<HTMLElement | null>(null);
-const contentRef = ref<HTMLElement | null>(null);
-const tableWrapperRef = ref<HTMLElement | null>(null);
-
 // Kết quả API
 const attendanceData = ref<AttendanceRecord[]>([]);
 const people = ref<Person[]>([]);
-
-// Helper to abbreviate full name: e.g. 'Bùi Quang Huy' → 'B.Q Huy'
-function abbreviateName(fullName: string): string {
-  const parts = fullName.trim().split(' ');
-  if (parts.length < 2) return fullName;
-  const last = parts.pop()!;
-  const initials = parts.map(p => p[0]).join('.');
-  return `${initials}. ${last}`;
-}
 
 // Thực sự gọi API
 interface User { id: number; fullName: string }
@@ -211,28 +164,39 @@ interface WorkSummary {
 
 async function fetchAttendanceData() {
   try {
+    eventBus.emit('loader:show');
+
     // 1. Lấy danh sách users và viết tắt tên
-    const usersRes = await axiosInstance.get<User[]>('/users');
-    people.value = usersRes.data.map(u => ({ id: u.id, name: u.fullName }));
+    const config: CustomAxiosConfig = { hideLoader: true };
+    const usersRes = await axiosInstance.get<User[]>('/users', config);
+    people.value = usersRes.data.map((u: User) => ({ id: u.id, name: u.fullName }));
 
     // 2. Lấy tóm tắt công theo từng user
-    const summaryRes = await axiosInstance.get<WorkSummary[]>('/works/work-summary', {
-      params: { month: selectedMonth.value, year: selectedYear.value }
-    });
+    const summaryConfig: CustomAxiosConfig = {
+      params: { month: selectedMonth.value, year: selectedYear.value },
+      hideLoader: true
+    };
+    const summaryRes = await axiosInstance.get<WorkSummary[]>('/works/work-summary', summaryConfig);
     const records: AttendanceRecord[] = [];
-    summaryRes.data.forEach(u => u.work.forEach(entry => {
-      const start = new Date(entry.fromDate);
-      const end = new Date(entry.endDate);
-      const curr = new Date(start);
-      while (curr <= end) {
-        const status = entry.type === 'LEAVE' ? 'OFF' : entry.type;
-        records.push({ personId: u.userId, date: formatDate(curr), status, timePeriod: entry.timePeriod });
-        curr.setDate(curr.getDate() + 1);
-      }
-    }));
+
+    summaryRes.data.forEach((u: WorkSummary) => {
+      u.work.forEach((entry) => {
+        const start = new Date(entry.fromDate);
+        const end = new Date(entry.endDate);
+        const curr = new Date(start);
+        while (curr <= end) {
+          const status = entry.type === 'LEAVE' ? 'OFF' : entry.type;
+          records.push({ personId: u.userId, date: formatDate(curr), status, timePeriod: entry.timePeriod });
+          curr.setDate(curr.getDate() + 1);
+        }
+      });
+    });
+
     attendanceData.value = records;
   } catch (e) {
     console.error('Error fetching attendance data:', e);
+  } finally {
+    eventBus.emit('loader:hide');
   }
 }
 
@@ -242,17 +206,6 @@ function formatDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-// Get attendance status for a specific person and date
-function getAttendanceStatus(personId: number, date: Date): string {
-  const dateStr = formatDate(date);
-  const record = attendanceData.value.find(
-    r => r.personId === personId && r.date === dateStr
-  );
-
-  // Return just the status for CSS class detection, without any HTML
-  return record ? record.status : '';
 }
 
 // Get total days for a specific status
@@ -306,43 +259,24 @@ async function updateCalendarData() {
   });
 }
 
-watch([selectedMonth, selectedYear], updateCalendarData);
-onMounted(updateCalendarData);
-
-// Improved scroll handler with requestAnimationFrame for performance
-let isScrolling = false;
-function handleScroll(event: Event) {
-  if (!isScrolling) {
-    isScrolling = true;
-
-    window.requestAnimationFrame(() => {
-      const target = event.target as HTMLElement;
-
-      if (headerRef.value) {
-        const headerContainer = headerRef.value.querySelector('.header-container') as HTMLElement | null;
-        if (headerContainer) {
-          headerContainer.style.transform = `translateX(-${target.scrollLeft}px)`;
-        }
-      }
-
-      if (columnRef.value) {
-        columnRef.value.scrollTop = target.scrollTop;
-      }
-
-      isScrolling = false;
-    });
-  }
+// Debounce function to prevent multiple rapid updates
+function debounce(fn: Function, delay: number) {
+  let timeout: ReturnType<typeof setTimeout>;
+  return function (...args: any[]) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
 }
+
+// Create debounced update function
+const debouncedUpdate = debounce(updateCalendarData, 300);
+
+// Watch for month/year changes with debounce
+watch([selectedMonth, selectedYear], debouncedUpdate);
 
 onMounted(() => {
   // Initialize calendar dates
-  initCalendarDates();
-
-  // Initialize attendance data
-  fetchAttendanceData();
-
-  // Update container width
-  updateContainerWidth();
+  updateCalendarData();
 
   // Add resize event listener
   window.addEventListener('resize', updateContainerWidth);
@@ -363,6 +297,11 @@ onMounted(() => {
   });
 });
 
+// Add onActivated hook to reload data when component is activated
+onActivated(() => {
+  updateCalendarData();
+});
+
 // Add new helper functions for more reliable status checking and tooltip display
 function hasStatus(personId: number, date: Date, specificStatus?: string): boolean {
   const dateStr = formatDate(date);
@@ -373,17 +312,6 @@ function hasStatus(personId: number, date: Date, specificStatus?: string): boole
   if (!record) return false;
   if (specificStatus) return record.status === specificStatus;
   return true;
-}
-
-// Function to get only status for cell display
-function getStatusShort(personId: number, date: Date): string {
-  const dateStr = formatDate(date);
-  const record = attendanceData.value.find(
-    r => r.personId === personId && r.date === dateStr
-  );
-
-  if (!record) return '';
-  return record.status;
 }
 
 // Function to get full status with time period info for tooltip
@@ -406,10 +334,16 @@ function getStatusWithPeriod(personId: number, date: Date): string {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.card-body {
+  display: flex;
+  flex-direction: column;
+}
+
 .filter-controls {
   background-color: #f8f9fa;
   padding: 15px;
   border-radius: 4px;
+  margin-bottom: 15px;
 }
 
 .legend {
@@ -438,12 +372,11 @@ function getStatusWithPeriod(personId: number, date: Date): string {
 }
 
 .table-wrapper {
-  position: relative;
   border: 1px solid #dee2e6;
   border-radius: 0.25rem;
-  height: 600px;
-  overflow: hidden;
   box-sizing: border-box;
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* Common table styles */
@@ -451,6 +384,7 @@ function getStatusWithPeriod(personId: number, date: Date): string {
   margin: 0;
   border-collapse: collapse;
   table-layout: fixed;
+  width: 100%;
 }
 
 /* No bottom border for header table */
@@ -518,111 +452,8 @@ function getStatusWithPeriod(personId: number, date: Date): string {
 
 .stats span {
   font-weight: 700;
+  font-weight: 700;
   font-size: 11px;
-}
-
-/* Fixed elements */
-.fixed-corner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  background-color: white;
-  width: 240px !important;
-  /* Tổng chiều rộng của cột STT và Họ Tên */
-  border-right: 1px solid #dee2e6;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.fixed-corner table,
-.fixed-column table {
-  width: 240px !important;
-}
-
-.fixed-header {
-  position: absolute;
-  top: 0;
-  left: 240px !important;
-  /* Chiều rộng của fixed-corner */
-  right: 0;
-  z-index: 2;
-  background-color: white;
-  height: 60px;
-  /* Set explicit height for header (2 rows of 30px) */
-  overflow: hidden;
-  /* Prevents scrollbar from appearing */
-}
-
-.header-container {
-  position: relative;
-  will-change: transform;
-  /* Optimization for transforms */
-}
-
-.fixed-header table {
-  width: 100%;
-}
-
-.fixed-column {
-  position: absolute;
-  top: 60px;
-  /* Chiều cao của header */
-  left: 0;
-  bottom: 0;
-  width: 240px !important;
-  /* Tổng chiều rộng của cột STT và Họ Tên */
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  z-index: 1;
-  background-color: white;
-  border-right: 1px solid #dee2e6;
-}
-
-.scrollable-content {
-  position: absolute;
-  top: 60px;
-  /* Chiều cao của header */
-  left: 240px !important;
-  /* Chiều rộng của fixed-column */
-  right: 0;
-  bottom: 0;
-  overflow-x: hidden !important;
-  /* hide horizontal scroll */
-  overflow-y: auto !important;
-  /* allow vertical scroll */
-}
-
-.scrollable-content table {
-  width: 100%;
-  border-left: none !important;
-}
-
-/* Add shadow to indicate scrollable areas */
-.fixed-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), transparent);
-  pointer-events: none;
-}
-
-.fixed-column::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.1), transparent);
-  pointer-events: none;
-}
-
-/* Ensure all rows have the same height */
-.person-row {
-  height: 30px;
 }
 
 /* Header styles */
@@ -630,6 +461,17 @@ function getStatusWithPeriod(personId: number, date: Date): string {
   font-weight: 600;
   background-color: #f8f9fa;
   font-size: 0.75rem;
+}
+
+/* Weekday name style */
+.weekday {
+  font-size: 0.7rem;
+  color: #6c757d;
+}
+
+/* Ensure all rows have the same height */
+.person-row {
+  height: 30px;
 }
 
 /* Thêm style cho time-period */

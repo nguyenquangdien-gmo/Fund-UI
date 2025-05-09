@@ -50,7 +50,7 @@
       </DataTable>
     </div>
   </div>
-  <Dialog v-if="admin" v-model:visible="showConfirmDialog" modal
+  <Dialog v-model:visible="showConfirmDialog" modal
     :header="type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' : 'Chuyển khoản'"
     :style="{ width: '25rem' }">
     <div>Bạn có chắc chắn muốn {{ type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' :

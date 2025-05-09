@@ -379,7 +379,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onActivated } from 'vue'
 import axiosInstance from '@/router/Interceptor'
 import Calendar from 'primevue/calendar'
 import Dropdown from 'primevue/dropdown'
@@ -666,7 +666,19 @@ onMounted(async () => {
   if (user.value?.email) {
     loginUsername.value = user.value.email;
   }
+
+  // Load data when component is mounted
+  if (isLoggedIn.value) {
+    loadMonthData();
+  }
 })
+
+// Add a watcher to reload data when component becomes visible
+onActivated(() => {
+  if (isLoggedIn.value) {
+    loadMonthData();
+  }
+});
 
 // API methods with type safety
 async function loadMonthData(showLoader: boolean = true): Promise<void> {

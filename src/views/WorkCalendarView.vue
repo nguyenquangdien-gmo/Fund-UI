@@ -17,10 +17,12 @@
         </div>
       </div>
 
-      <!-- Calendar Components -->
+      <!-- Calendar Components with KeepAlive -->
       <div class="calendar-container">
-        <PersonalCalendar v-if="activeTab === 'personal'" />
-        <TeamCalendar v-if="activeTab === 'team'" />
+        <keep-alive>
+          <PersonalCalendar v-if="activeTab === 'personal'" />
+          <TeamCalendar v-else-if="activeTab === 'team'" />
+        </keep-alive>
       </div>
     </div>
   </div>

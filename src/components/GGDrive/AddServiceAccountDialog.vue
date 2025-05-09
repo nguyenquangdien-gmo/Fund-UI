@@ -1,69 +1,30 @@
 <template>
   <div>
-    <Dialog 
-      :visible="visible" 
-      modal 
-      :header="isEdit ? 'Cập nhật tài khoản dịch vụ' : 'Thêm tài khoản dịch vụ'" 
-      :style="{ width: '550px' }" 
-      @update:visible="$emit('update:visible', $event)"
-      :blockScroll="true"
-    >
+    <Dialog :visible="visible" modal :header="isEdit ? 'Cập nhật tài khoản dịch vụ' : 'Thêm tài khoản dịch vụ'"
+      :style="{ width: '550px' }" @update:visible="$emit('update:visible', $event)" :blockScroll="true">
       <div class="form-container">
         <div class="form-group">
-          <label for="account-name">Tên tài khoản</label>
-          <input
-            id="account-name"
-            v-model="form.accountName"
-            type="text"
-            class="form-input"
-            placeholder="Nhập tên tài khoản"
-          />
+          <label for="account-name">Tên tài khoản<span class="text-danger">*</span></label>
+          <input id="account-name" v-model="form.accountName" type="text" class="form-input"
+            placeholder="Nhập tên tài khoản" />
         </div>
-        
+
         <div class="form-group">
-          <label for="application-name">Tên ứng dụng</label>
-          <input
-            id="application-name"
-            v-model="form.applicationName"
-            type="text"
-            class="form-input"
-            placeholder="Nhập tên ứng dụng"
-          />
+          <label for="application-name">Tên ứng dụng<span class="text-danger">*</span></label>
+          <input id="application-name" v-model="form.applicationName" type="text" class="form-input"
+            placeholder="Nhập tên ứng dụng" />
         </div>
-        
+
         <div class="form-group">
           <label for="description">Mô tả (tùy chọn)</label>
-          <textarea
-            id="description"
-            v-model="form.description"
-            class="form-input form-textarea"
-            placeholder="Mô tả tài khoản dịch vụ này"
-            rows="3"
-          ></textarea>
+          <textarea id="description" v-model="form.description" class="form-input form-textarea"
+            placeholder="Mô tả tài khoản dịch vụ này" rows="3"></textarea>
         </div>
-        
-        <div class="form-group">
-          <label for="root-folder">ID thư mục gốc (tùy chọn)</label>
-          <input
-            id="root-folder"
-            v-model="form.rootFolderId"
-            type="text"
-            class="form-input"
-            placeholder="Để trống sẽ sử dụng thư mục gốc mặc định 'root'"
-          />
-        </div>
-        
+
         <div class="form-group">
           <label for="credentials-file">File thông tin xác thực</label>
-          <input
-            type="file"
-            id="credentials-file"
-            ref="fileInput"
-            class="form-input form-file"
-            accept=".json"
-            @change="onFileSelect"
-            :disabled="isEdit"
-          />
+          <input type="file" id="credentials-file" ref="fileInput" class="form-input form-file" accept=".json"
+            @change="onFileSelect" :disabled="isEdit" />
           <div v-if="selectedFile" class="selected-file">
             <span>{{ selectedFile.name }}</span>
             <button class="remove-file-btn" @click="removeFile">
@@ -76,29 +37,21 @@
             Nếu bạn muốn cập nhật thông tin xác thực, vui lòng xóa và tạo tài khoản mới.
           </p>
         </div>
-        
+
         <div class="form-group">
           <div class="checkbox-group">
-            <input
-              type="checkbox"
-              id="is-default"
-              v-model="form.isDefault"
-            />
+            <input type="checkbox" id="is-default" v-model="form.isDefault" />
             <label for="is-default" class="checkbox-label">
               Đặt làm tài khoản mặc định
             </label>
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <Button label="Hủy" icon="pi pi-times" @click="$emit('update:visible', false)" class="p-button-text" />
-        <Button 
-          :label="isEdit ? 'Cập nhật' : 'Thêm'" 
-          :icon="isEdit ? 'pi pi-check' : 'pi pi-plus'" 
-          @click="handleSubmit" 
-          :disabled="!isFormValid" 
-        />
+        <Button :label="isEdit ? 'Cập nhật' : 'Thêm'" :icon="isEdit ? 'pi pi-check' : 'pi pi-plus'"
+          @click="handleSubmit" :disabled="!isFormValid" />
       </template>
     </Dialog>
   </div>
@@ -114,7 +67,7 @@ interface ServiceAccount {
   description?: string;
   rootFolderId?: string;
   isDefault: boolean;
-  enabled: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -144,9 +97,9 @@ export default defineComponent({
   setup(props, { emit }) {
     const fileInput = ref<HTMLInputElement | null>(null);
     const selectedFile = ref<File | null>(null);
-    
+
     const isEdit = computed(() => props.editAccount !== null);
-    
+
     const form = ref<ServiceAccountForm>({
       accountName: '',
       applicationName: '',
@@ -154,7 +107,7 @@ export default defineComponent({
       rootFolderId: '',
       isDefault: false
     });
-    
+
     // Reset form when dialog opens or edit account changes
     watch(() => [props.visible, props.editAccount], () => {
       console.log('Visibility changed:', props.visible, 'Edit account:', props.editAccount);
@@ -181,68 +134,68 @@ export default defineComponent({
         }
       }
     }, { immediate: true });
-    
+
     onMounted(() => {
       console.log('AddServiceAccountDialog mounted');
     });
-    
+
     const onFileSelect = (event: Event) => {
       const input = event.target as HTMLInputElement;
       if (input.files && input.files.length > 0) {
         selectedFile.value = input.files[0];
       }
     };
-    
+
     const removeFile = () => {
       selectedFile.value = null;
       if (fileInput.value) {
         fileInput.value.value = '';
       }
     };
-    
+
     const isFormValid = computed(() => {
       if (isEdit.value) {
         // For edit, we don't require the file
-        return form.value.accountName.trim() !== '' && 
-               form.value.applicationName.trim() !== '';
+        return form.value.accountName.trim() !== '' &&
+          form.value.applicationName.trim() !== '';
       } else {
         // For new account, we require the file
-        return form.value.accountName.trim() !== '' && 
-               form.value.applicationName.trim() !== '' &&
-               selectedFile.value !== null;
+        return form.value.accountName.trim() !== '' &&
+          form.value.applicationName.trim() !== '' &&
+          selectedFile.value !== null;
       }
     });
-    
+
     const handleSubmit = () => {
       console.log('handleSubmit called, form valid:', isFormValid.value);
       if (!isFormValid.value) return;
-      
+
       const formData = new FormData();
       formData.append('accountName', form.value.accountName);
       formData.append('applicationName', form.value.applicationName);
-      
+
       if (form.value.description) {
         formData.append('description', form.value.description);
       }
-      
+
       if (form.value.rootFolderId) {
         formData.append('rootFolderId', form.value.rootFolderId);
       }
-      
+
       formData.append('isDefault', String(form.value.isDefault));
-      
+
       if (selectedFile.value) {
         formData.append('credentials', selectedFile.value);
       }
-      
+
       emit('save-account', {
         accountId: isEdit.value ? props.editAccount?.id : undefined,
         formData
       });
-      
+
       emit('update:visible', false);
     };
-    
+
     return {
       form,
       fileInput,
@@ -343,4 +296,4 @@ label {
   align-items: center;
   gap: 0.5rem;
 }
-</style> 
+</style>

@@ -4,7 +4,7 @@
       <h1>Quản lý tài khoản dịch vụ Google Drive</h1>
       <div class="header-actions">
         <router-link to="/drive" class="back-link">
-          <PButton icon="pi pi-arrow-left" label="Quay lại Drive" class="p-button-text mr-2" />
+          <PButton icon="pi pi-arrow-left" label="Quay lại Drive" class="p-button-text" />
         </router-link>
         <PButton icon="pi pi-plus" label="Thêm tài khoản" @click="showAddAccountDialog" />
       </div>
@@ -15,14 +15,14 @@
         <i class="pi pi-spin pi-spinner"></i>
         Đang tải danh sách tài khoản...
       </p>
-      
+
       <div v-else-if="serviceAccounts.length === 0" class="empty-accounts">
         <i class="pi pi-user-plus" style="font-size: 2rem; color: var(--text-secondary);"></i>
         <p>Chưa có tài khoản dịch vụ nào</p>
         <p class="empty-description">Tài khoản dịch vụ giúp ứng dụng kết nối với Google Drive API.</p>
         <PButton icon="pi pi-plus" label="Thêm tài khoản dịch vụ" @click="showAddAccountDialog" />
       </div>
-      
+
       <div v-else class="accounts-list">
         <div v-for="account in serviceAccounts" :key="account.id" class="account-card">
           <div class="account-header">
@@ -31,42 +31,33 @@
               <span v-if="account.isDefault" class="default-badge">Mặc định</span>
             </div>
             <div class="account-actions">
-              <PButton v-if="!account.isDefault" icon="pi pi-star" class="p-button-text p-button-sm" 
-                @click="handleSetDefaultAccount(account.id)" 
-                title="Đặt làm mặc định" />
-              <PButton icon="pi pi-pencil" class="p-button-text p-button-sm" 
-                @click="handleEditAccount(account.id)" 
+              <PButton v-if="!account.isDefault" icon="pi pi-star" class="p-button-text p-button-sm"
+                @click="handleSetDefaultAccount(account.id)" title="Đặt làm mặc định" />
+              <PButton icon="pi pi-pencil" class="p-button-text p-button-sm" @click="handleEditAccount(account.id)"
                 title="Chỉnh sửa" />
-              <PButton v-if="account.enabled" icon="pi pi-power-off" class="p-button-text p-button-sm" 
-                @click="handleDisableAccount(account.id)" 
-                title="Vô hiệu hóa" />
-              <PButton v-else icon="pi pi-check-circle" class="p-button-text p-button-sm" 
-                @click="handleEnableAccount(account.id)" 
-                title="Kích hoạt" />
-              <PButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" 
-                @click="handleDeleteAccount(account.id)" 
-                title="Xóa" />
+              <PButton v-if="account.isActive" icon="pi pi-power-off" class="p-button-text p-button-sm"
+                @click="handleDisableAccount(account.id)" title="Vô hiệu hóa" />
+              <PButton v-else icon="pi pi-check-circle" class="p-button-text p-button-sm"
+                @click="handleEnableAccount(account.id)" title="Kích hoạt" />
+              <PButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm"
+                @click="handleDeleteAccount(account.id)" title="Xóa" />
             </div>
           </div>
-          
+
           <div class="account-content">
             <div class="account-details">
               <div class="detail-row">
                 <span class="detail-label">Tên ứng dụng:</span>
                 <span class="detail-value">{{ account.applicationName }}</span>
               </div>
-              <div v-if="account.description" class="detail-row">
+              <div class="detail-row">
                 <span class="detail-label">Mô tả:</span>
-                <span class="detail-value">{{ account.description }}</span>
-              </div>
-              <div v-if="account.rootFolderId" class="detail-row">
-                <span class="detail-label">Thư mục gốc:</span>
-                <span class="detail-value">{{ account.rootFolderId }}</span>
+                <span class="detail-value">{{ account.description ? account.description : '-' }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Trạng thái:</span>
-                <span class="detail-value" :class="{ 'enabled': account.enabled, 'disabled': !account.enabled }">
-                  {{ account.enabled ? 'Đang hoạt động' : 'Vô hiệu hóa' }}
+                <span class="detail-value" :class="{ 'enabled': account.isActive, 'disabled': !account.isActive }">
+                  {{ account.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa' }}
                 </span>
               </div>
               <div class="detail-row">
@@ -80,21 +71,13 @@
     </div>
 
     <!-- Dialogs -->
-    <AddServiceAccountDialog
-      v-model:visible="addAccountDialogVisible"
-      :edit-account="accountToEdit"
-      @save-account="handleSaveAccount"
-    />
+    <AddServiceAccountDialog v-model:visible="addAccountDialogVisible" :edit-account="accountToEdit"
+      @save-account="handleSaveAccount" />
 
-    <ConfirmDialog
-      v-model:visible="deleteDialogVisible"
-      :title="deleteDialogData.title"
-      :message="deleteDialogData.message"
-      :confirm-label="deleteDialogData.confirmLabel"
-      :confirm-icon="deleteDialogData.confirmIcon"
-      :confirm-class="deleteDialogData.confirmClass"
-      @confirm="deleteDialogData.onConfirm"
-    />
+    <ConfirmDialog v-model:visible="deleteDialogVisible" :title="deleteDialogData.title"
+      :message="deleteDialogData.message" :confirm-label="deleteDialogData.confirmLabel"
+      :confirm-icon="deleteDialogData.confirmIcon" :confirm-class="deleteDialogData.confirmClass"
+      @confirm="deleteDialogData.onConfirm" />
 
     <PToast />
   </div>
@@ -116,7 +99,7 @@ interface GoogleServiceAccount {
   description?: string;
   rootFolderId?: string;
   isDefault: boolean;
-  enabled: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -132,14 +115,14 @@ export default defineComponent({
   setup() {
     const driveStore = useDriveStore();
     const toast = useToast();
-    
+
     const isLoading = ref(false);
     const serviceAccounts = ref<GoogleServiceAccount[]>([]);
-    
+
     // Dialog states
     const addAccountDialogVisible = ref(false);
     const accountToEdit = ref<GoogleServiceAccount | null>(null);
-    
+
     const deleteDialogVisible = ref(false);
     const deleteDialogData = ref({
       title: '',
@@ -147,15 +130,17 @@ export default defineComponent({
       confirmLabel: '',
       confirmIcon: '',
       confirmClass: '',
-      onConfirm: () => {}
+      onConfirm: () => { }
     });
-    
+
     // Load service accounts
     const loadServiceAccounts = async () => {
       isLoading.value = true;
       try {
         const accounts = await driveStore.getUserServiceAccounts();
         serviceAccounts.value = accounts;
+        // console.log(serviceAccounts.value);
+
       } catch (error) {
         console.error('Error loading service accounts:', error);
         toast.add({
@@ -180,13 +165,13 @@ export default defineComponent({
         minute: '2-digit'
       });
     };
-    
+
     // Dialog handlers
     const showAddAccountDialog = () => {
       accountToEdit.value = null;
       addAccountDialogVisible.value = true;
     };
-    
+
     const handleEditAccount = async (accountId: number) => {
       try {
         const account = await driveStore.getUserServiceAccountById(accountId);
@@ -202,12 +187,12 @@ export default defineComponent({
         });
       }
     };
-    
+
     const handleDeleteAccount = (accountId: number) => {
       console.log('Showing delete account dialog for:', accountId);
       const account = serviceAccounts.value.find(a => a.id === accountId);
       if (!account) return;
-      
+
       deleteDialogData.value.title = 'Xóa tài khoản dịch vụ';
       deleteDialogData.value.message = `Bạn có chắc chắn muốn xóa tài khoản dịch vụ "${account.accountName}"?`;
       deleteDialogData.value.confirmLabel = 'Xóa';
@@ -216,53 +201,79 @@ export default defineComponent({
       deleteDialogData.value.onConfirm = () => deleteAccount(accountId);
       deleteDialogVisible.value = true;
     };
-    
+
     // Account operations
     const handleSaveAccount = async ({ accountId, formData }: { accountId?: number, formData: FormData }) => {
       try {
-        if (accountId) {
-          // Update existing account
-          const accountName = formData.get('accountName') as string;
-          const applicationName = formData.get('applicationName') as string;
-          const description = formData.get('description') as string || undefined;
-          const rootFolderId = formData.get('rootFolderId') as string || undefined;
-          const isDefault = formData.get('isDefault') === 'true';
-          const credentials = formData.get('credentials') as File || undefined;
-          
-          await driveStore.updateServiceAccount(
-            accountId, 
-            { accountName, applicationName, description, rootFolderId, isDefault },
-            credentials
+        const accountName = formData.get('accountName') as string;
+        const applicationName = formData.get('applicationName') as string;
+        const description = formData.get('description') as string || undefined;
+        const rootFolderId = formData.get('rootFolderId') as string || undefined;
+        const isDefault = formData.get('isDefault') === 'true';
+
+        if (!accountId) {
+          // Validate duplicate names when creating new account
+          const isDuplicate = serviceAccounts.value.some(
+            account => account.accountName === accountName || account.applicationName === applicationName
           );
-          
-          toast.add({
-            severity: 'success',
-            summary: 'Thành công',
-            detail: 'Cập nhật tài khoản dịch vụ thành công',
-            life: 3000
-          });
-        } else {
+
+          if (isDuplicate) {
+            toast.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: 'Tên tài khoản hoặc tên ứng dụng đã tồn tại',
+              life: 3000
+            });
+            return;
+          }
+
           // Create new account
-          const accountName = formData.get('accountName') as string;
-          const applicationName = formData.get('applicationName') as string;
-          const description = formData.get('description') as string || undefined;
-          const rootFolderId = formData.get('rootFolderId') as string || undefined;
-          const isDefault = formData.get('isDefault') === 'true';
           const credentials = formData.get('credentials') as File;
-          
           if (!credentials) {
             throw new Error('Thiếu file thông tin xác thực');
           }
-          
+
           await driveStore.configureServiceAccount(
             credentials,
             { accountName, applicationName, description, rootFolderId, isDefault }
           );
-          
+
           toast.add({
             severity: 'success',
             summary: 'Thành công',
             detail: 'Tạo tài khoản dịch vụ mới thành công',
+            life: 3000
+          });
+        } else {
+          // Update existing account
+          const currentAccount = serviceAccounts.value.find(a => a.id === accountId);
+          const isDuplicate = serviceAccounts.value.some(
+            account => account.id !== accountId &&
+              (account.accountName === accountName || account.applicationName === applicationName)
+          );
+
+          if (isDuplicate) {
+            toast.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: 'Tên tài khoản hoặc tên ứng dụng đã tồn tại',
+              life: 3000
+            });
+            return;
+          }
+
+          const credentials = formData.get('credentials') as File || undefined;
+
+          await driveStore.updateServiceAccount(
+            accountId,
+            { accountName, applicationName, description, rootFolderId, isDefault },
+            credentials
+          );
+
+          toast.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: 'Cập nhật tài khoản dịch vụ thành công',
             life: 3000
           });
         }
@@ -278,7 +289,7 @@ export default defineComponent({
         });
       }
     };
-    
+
     const deleteAccount = async (accountId: number) => {
       try {
         await driveStore.deleteServiceAccount(accountId);
@@ -300,7 +311,7 @@ export default defineComponent({
         });
       }
     };
-    
+
     const handleSetDefaultAccount = async (accountId: number) => {
       try {
         await driveStore.setDefaultServiceAccount(accountId);
@@ -322,7 +333,7 @@ export default defineComponent({
         });
       }
     };
-    
+
     const handleEnableAccount = async (accountId: number) => {
       try {
         await driveStore.enableServiceAccount(accountId);
@@ -344,7 +355,7 @@ export default defineComponent({
         });
       }
     };
-    
+
     const handleDisableAccount = async (accountId: number) => {
       try {
         await driveStore.disableServiceAccount(accountId);
@@ -366,12 +377,12 @@ export default defineComponent({
         });
       }
     };
-    
+
     // Load accounts on mount
     onMounted(() => {
       loadServiceAccounts();
     });
-    
+
     return {
       isLoading,
       serviceAccounts,
@@ -532,27 +543,23 @@ export default defineComponent({
   .app-container {
     padding: 1rem;
   }
-  
+
   .accounts-list {
     grid-template-columns: 1fr;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .header-actions {
     align-self: flex-end;
   }
 }
 
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
 .back-link {
   text-decoration: none;
 }
-</style> 
+</style>

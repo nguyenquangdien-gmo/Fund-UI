@@ -102,6 +102,10 @@
                 @click="confirmDeleteEvent(data)"
               />
             </div>
+            <div v-else>
+              Quá hạn
+            </div>
+            
           </template>
         </Column>
       </DataTable>

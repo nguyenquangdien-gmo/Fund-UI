@@ -54,12 +54,11 @@ import axiosInstance, { resetAuthFlags } from '@/router/Interceptor'
 import { useUserStore } from '@/pinia/userStore'
 import CryptoJS from "crypto-js";
 
-// const baseURL = "http://localhost:8080/api/v1";
+
 interface Error {
   email: string
   password: string
 }
-
 
 const SECRET_KEY = import.meta.env.VITE_SECRET_KEY;
 const email = ref('')
@@ -105,12 +104,9 @@ const decrypt = (cipher: string): string => {
   return bytes.toString(CryptoJS.enc.Utf8);
 };
 
-
 onMounted(() => {
-
   const encryptedEmail = localStorage.getItem("savedEmail");
   const encryptedPassword = localStorage.getItem("savedPassword");
-
 
   if (encryptedEmail && encryptedPassword) {
     email.value = decrypt(encryptedEmail);
@@ -118,7 +114,6 @@ onMounted(() => {
     rememberMe.value = true;
   }
 });
-
 
 const userStore = useUserStore()
 const handleLogin = async () => {

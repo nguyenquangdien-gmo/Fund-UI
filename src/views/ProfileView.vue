@@ -92,12 +92,10 @@
       <div class="mb-3">
         <label for="phone" class="fw-bold">SĐT</label>
         <InputText :useGrouping="false" id="phone" v-model="form.phoneNumber" class="w-100" autocomplete="off" />
-        <small class="text-danger" v-if="errors.phone">{{ errors.phone }}</small>
       </div>
       <div class="mb-3">
         <label for="position" class="fw-bold">Chức vụ</label>
         <InputText id="position" v-model="form.position" class="w-100" autocomplete="off" />
-        <small class="text-danger" v-if="errors.position">{{ errors.phone }}</small>
       </div>
       <!-- <div class="mb-3">
         <label for="position" class="fw-bold">Chức vụ</label>

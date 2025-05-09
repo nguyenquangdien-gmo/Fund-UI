@@ -105,10 +105,11 @@
                 <td v-for="(date, dIndex) in calendarDates" :key="`cell-${pIndex}-${dIndex}`" class="cell data-cell"
                   :class="{
                     'weekend': isWeekend(date),
-                    'wfh': getAttendanceStatus(person.id, date).startsWith('WFH'),
-                    'off': getAttendanceStatus(person.id, date).startsWith('OFF')
-                  }" :style="{ width: cellWidth + 'px' }">
-                  <div v-html="getAttendanceStatus(person.id, date)"></div>
+                    'wfh': hasStatus(person.id, date, 'WFH'),
+                    'off': hasStatus(person.id, date, 'OFF')
+                  }" :style="{ width: cellWidth + 'px' }"
+                  v-tooltip="{ value: getStatusWithPeriod(person.id, date), position: 'bottom' }">
+                  <!-- Cell nội dung trống, chỉ hiển thị màu nền -->
                 </td>
                 <td class="cell stats">{{ getTotalDays(person.id, 'WFH') }}</td>
                 <td class="cell stats">{{ getTotalDays(person.id, 'OFF') }}</td>
@@ -124,6 +125,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue';
 import axiosInstance from '@/router/Interceptor';
+import Tooltip from 'primevue/tooltip';
+
+// Define directive
+const vTooltip = Tooltip;
 
 interface Person {
   id: number;
@@ -245,9 +250,9 @@ function getAttendanceStatus(personId: number, date: Date): string {
   const record = attendanceData.value.find(
     r => r.personId === personId && r.date === dateStr
   );
-  if (!record) return '';
 
-  return `${record.status}<br><small class="time-period">(${record.timePeriod})</small>`;
+  // Return just the status for CSS class detection, without any HTML
+  return record ? record.status : '';
 }
 
 // Get total days for a specific status
@@ -357,6 +362,40 @@ onMounted(() => {
     window.removeEventListener('resize', updateContainerWidth);
   });
 });
+
+// Add new helper functions for more reliable status checking and tooltip display
+function hasStatus(personId: number, date: Date, specificStatus?: string): boolean {
+  const dateStr = formatDate(date);
+  const record = attendanceData.value.find(
+    r => r.personId === personId && r.date === dateStr
+  );
+
+  if (!record) return false;
+  if (specificStatus) return record.status === specificStatus;
+  return true;
+}
+
+// Function to get only status for cell display
+function getStatusShort(personId: number, date: Date): string {
+  const dateStr = formatDate(date);
+  const record = attendanceData.value.find(
+    r => r.personId === personId && r.date === dateStr
+  );
+
+  if (!record) return '';
+  return record.status;
+}
+
+// Function to get full status with time period info for tooltip
+function getStatusWithPeriod(personId: number, date: Date): string {
+  const dateStr = formatDate(date);
+  const record = attendanceData.value.find(
+    r => r.personId === personId && r.date === dateStr
+  );
+
+  if (!record) return '';
+  return `${record.status} (${record.timePeriod})`;
+}
 </script>
 
 <style scoped>
@@ -387,13 +426,13 @@ onMounted(() => {
 }
 
 .legend-box.wfh {
-  background-color: #e6f7ff;
+  background-color: #00aeff;
   /* Light yellow-blue color */
   border: 1px solid #91d5ff;
 }
 
 .legend-box.off {
-  background-color: #ffebee;
+  background-color: #ff405d;
   /* Light red color */
   border: 1px solid #ffcdd2;
 }
@@ -439,19 +478,15 @@ onMounted(() => {
 
 /* Cell status styles */
 .data-cell.wfh {
-  background-color: #e6f7ff;
+  background-color: #00aeff;
   /* Light yellow-blue color */
-  color: #0050b3;
-  font-weight: 700;
-  font-size: 8px;
+  position: relative;
 }
 
 .data-cell.off {
-  background-color: #ffebee;
+  background-color: #ff405d;
   /* Light red color */
-  color: #c62828;
-  font-weight: 700;
-  font-size: 8px;
+  position: relative;
 }
 
 /* Weekend styling */

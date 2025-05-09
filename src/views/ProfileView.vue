@@ -359,8 +359,6 @@ const errors = ref({
   email: '',
   fullName: '',
   dob: '',
-  phone: '',
-  position: '',
   joinDate: '',
   slugTeam: '',
   avatar: '',
@@ -372,8 +370,6 @@ const resetErrors = () => {
     email: '',
     fullName: '',
     dob: '',
-    phone: '',
-    position: '',
     joinDate: '',
     slugTeam: '',
     avatar: '',
@@ -422,8 +418,6 @@ const validateUserForm = async () => {
     email: '',
     fullName: '',
     dob: '',
-    phone: '',
-    position: '',
     joinDate: '',
     slugTeam: '',
     avatar: '',
@@ -442,12 +436,6 @@ const validateUserForm = async () => {
     if (user.value.email !== form.value.email && response.data === true) {
       errors.value.email = 'Email đã tồn tại!'
     }
-  }
-
-  if (!form.value.phoneNumber) {
-    errors.value.phone = 'Vui lòng nhập số điện thoại!'
-  } else if (!/^\d{10}$/.test(form.value.phoneNumber)) {
-    errors.value.phone = 'Số điện thoại không hợp lệ!'
   }
 
   if (!form.value.fullName) errors.value.fullName = 'Vui lòng nhập họ tên!'

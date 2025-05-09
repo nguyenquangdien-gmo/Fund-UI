@@ -180,7 +180,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
         )
         console.log(response.data)
 
-        if (response.data.success) {
+        if (response.data) {
           this.user = response.data.data
           Cookies.set(
             'user',
@@ -324,7 +324,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
 
     // Xóa đơn WFH
     async deleteWfhRequest(
-      wfhObjId: string,
+      staffWfhObjId: string,
     ): Promise<{ success: boolean; data?: Record<string, unknown>; error?: string }> {
       this.loading = true
       this.error = null
@@ -333,13 +333,13 @@ export const useLeaveRequestStore = defineStore('leaveRequest', {
         const response = await axiosInstance.delete<ApiResponse<Record<string, unknown>>>(
           '/admin-create/wfh/delete',
           {
-            data: { wfhObjId },
+            data: { staffWfhObjId },
           },
         )
 
         if (response.data.success) {
           // Cập nhật danh sách đơn WFH
-          this.leaveRequests = this.leaveRequests.filter((request) => request._id !== wfhObjId)
+          this.leaveRequests = this.leaveRequests.filter((request) => request._id !== staffWfhObjId)
           return { success: true, data: response.data.data }
         } else {
           throw new Error(response.data.message || 'Xóa đơn WFH thất bại')

@@ -1000,6 +1000,8 @@ async function registerEntry() {
         reason: newEntry.value.reason,
       };
 
+      // console.log('leavePayload', leavePayload);
+
       const result = await leaveRequestStore.createLeaveRequestNew(leavePayload);
 
       if (result && result.success) {
@@ -1049,6 +1051,7 @@ async function registerEntry() {
         reason: newEntry.value.reason || '',
         userObjId: cookieUser.userObjId,
       };
+      // console.log('wfhPayload', wfhPayload);
 
       const result = await leaveRequestStore.createWfhRequestNew(wfhPayload);
 
@@ -1443,11 +1446,13 @@ async function syncData() {
     const endDateString = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-${daysInMonth.value}`;
     const startTimestamp = new Date(startDateString).getTime();
     const endTimestamp = new Date(endDateString).getTime();
-    // Get all existing works from your system
+
+    // Get all existing works from local DB
     const allWorksResponse = await workStore.getAllWorks();
     if (!allWorksResponse.success) {
-      throw new Error(allWorksResponse.error || 'Failed to get works data');
+      throw new Error(allWorksResponse.error || 'Failed to get works data from local DB');
     }
+
     const allWorks = Array.isArray(allWorksResponse.data)
       ? allWorksResponse.data
       : (allWorksResponse.data ? [allWorksResponse.data] : []);
@@ -1460,7 +1465,8 @@ async function syncData() {
       }
     });
 
-    // Get personal staff attendance
+    // Get data from API
+    // Get personal staff attendance (LEAVE)
     const attendanceResponse = await leaveRequestStore.fetchPersonalStaffAttendance({
       startDate: startDateString,
       endDate: endDateString,
@@ -1470,7 +1476,6 @@ async function syncData() {
       userObjId: cookieUser.userObjId
     });
 
-
     // Get personal staff WFH
     const wfhResponse = await leaveRequestStore.fetchPersonalStaffWfh({
       endDate: endDateString,
@@ -1479,158 +1484,184 @@ async function syncData() {
       page: 1,
       userObjId: cookieUser.userObjId
     });
-    let syncCount = 0;
-    let failedCount = 0;
 
-    // Helper function to parse date and extract time
-    function parseDateTime(dateTimeStr: string) {
-      // Handle different date formats
-      let dateObj;
-      if (typeof dateTimeStr === 'string') {
-        // Check if dateTimeStr contains time information
-        if (dateTimeStr.includes(':')) {
-          dateObj = new Date(dateTimeStr);
-        } else {
-          // If no time info, default to start of day
-          dateObj = new Date(`${dateTimeStr}T00:00:00`);
-        }
-      } else {
-        // Assume it's a timestamp
-        dateObj = new Date(dateTimeStr);
-      }
+    // Create a map of all API data IDs for faster lookup
+    const apiDataMap = new Map();
 
-      const date = dateObj.toISOString().split('T')[0];
-      const hours = String(dateObj.getHours()).padStart(2, '0');
-      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-
-      return {
-        date,
-        time: `${hours}:${minutes}`
-      };
-    }
-
-    // Process attendance data (LEAVE)
-    // Check if data exists and is an array, if not, use an empty array
+    // Add LEAVE records to API data map
     const attendanceData = (attendanceResponse.success && Array.isArray(attendanceResponse.data))
       ? attendanceResponse.data
       : [];
 
-    console.log(`Processing ${attendanceData.length} LEAVE items`);
-
-    for (const item of attendanceData) {
-      if (!existingWorkMap.has(item._id)) {
-        const fromDateTime = parseDateTime(item.fromDate);
-        const endDateTime = parseDateTime(item.endDate);
-
-        try {
-          const workResult = await workStore.createWorkDirect({
-            userId: user.value.id,
-            fromDate: fromDateTime.date,
-            endDate: endDateTime.date,
-            startTime: fromDateTime.time,
-            endTime: endDateTime.time,
-            type: 'LEAVE',
-            reason: item.reason || '',
-            idCreate: item._id,
-          });
-
-          console.log('LEAVE workResult:', workResult);
-
-          // Check if the API call was successful
-          if (workResult.success) {
-            syncCount++;
-          } else {
-            // Even if API reports failure, the record might have been inserted
-            // Let's verify by checking if it exists in the database after the call
-            const checkResult = await workStore.getAllWorks();
-            const checkData = Array.isArray(checkResult.data)
-              ? checkResult.data
-              : (checkResult.data ? [checkResult.data] : []);
-
-            const recordExists = checkResult.success &&
-              checkData.some(work => work.idCreate === item._id);
-
-            if (recordExists) {
-              console.log(`LEAVE record ${item._id} was inserted despite API error`);
-              syncCount++;
-            } else {
-              failedCount++;
-            }
-          }
-        } catch (error) {
-          failedCount++;
-        }
-      } else {
-        console.log(`LEAVE record ${item._id} already exists, skipping`);
+    attendanceData.forEach(item => {
+      if (item._id) {
+        apiDataMap.set(item._id, { ...item, type: 'LEAVE' });
       }
-    }
+    });
 
-    // Process WFH data
-    // Check if data exists and is an array, if not, use an empty array
+    // Add WFH records to API data map
     const wfhData = (wfhResponse.success && Array.isArray(wfhResponse.data))
       ? wfhResponse.data
       : [];
 
-    console.log(`Processing ${wfhData.length} WFH items`);
+    wfhData.forEach(item => {
+      if (item._id) {
+        apiDataMap.set(item._id, { ...item, type: 'WFH' });
+      }
+    });
 
-    for (const item of wfhData) {
-      if (!existingWorkMap.has(item._id)) {
-        const fromDateTime = parseDateTime(item.fromDate);
-        const endDateTime = parseDateTime(item.endDate);
+    let addedCount = 0;
+    let updatedCount = 0;
+    let deletedCount = 0;
+    let failedCount = 0;
 
-        try {
-          const workResult = await workStore.createWorkDirect({
-            userId: user.value.id,
-            fromDate: fromDateTime.date,
-            endDate: endDateTime.date,
-            startTime: "08:00",
-            endTime: "17:00",
-            type: 'WFH',
-            reason: item.reason || '',
-            idCreate: item._id
-          });
+    // Helper function to parse date and extract time
+    function parseDateTime(dateTimeStr: string | number) {
+      // Handle different date formats
+      let dateObj;
+      let date;
+      let time = "00:00";
 
-          console.log('WFH workResult:', workResult);
+      if (typeof dateTimeStr === 'string') {
+        // If it's just a date in YYYY-MM-DD format with no time component
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateTimeStr)) {
+          // Return the date as is without any timezone conversion
+          return {
+            date: dateTimeStr,
+            time: time
+          };
+        }
 
-          // Check if the API call was successful
-          if (workResult.success) {
-            syncCount++;
-          } else {
-            // Even if API reports failure, the record might have been inserted
-            // Let's verify by checking if it exists in the database after the call
-            const checkResult = await workStore.getAllWorks();
-            const checkData = Array.isArray(checkResult.data)
-              ? checkResult.data
-              : (checkResult.data ? [checkResult.data] : []);
+        // If it includes time
+        if (dateTimeStr.includes(':')) {
+          dateObj = new Date(dateTimeStr);
 
-            const recordExists = checkResult.success &&
-              checkData.some(work => work.idCreate === item._id);
-
-            if (recordExists) {
-              console.log(`WFH record ${item._id} was inserted despite API error`);
-              syncCount++;
-            } else {
-              failedCount++;
+          // Extract time part directly from the string
+          const timePart = dateTimeStr.split('T')[1]?.split('.')[0] || '';
+          if (timePart) {
+            const timeComponents = timePart.split(':');
+            if (timeComponents.length >= 2) {
+              time = `${timeComponents[0]}:${timeComponents[1]}`;
             }
           }
-        } catch (error) {
-          failedCount++;
+        } else {
+          // It's a date without time
+          dateObj = new Date(`${dateTimeStr}T00:00:00`);
         }
       } else {
-        console.log(`WFH record ${item._id} already exists, skipping`);
+        // It's a timestamp
+        dateObj = new Date(dateTimeStr);
+      }
+
+      // For dates with time components, we need to preserve the exact date
+      // Get UTC components to avoid timezone shifts
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getUTCDate()).padStart(2, '0');
+      date = `${year}-${month}-${day}`;
+
+      // If there's no explicit time in the string but we created a date object,
+      // Extract hours and minutes from the date object
+      if (time === "00:00" && typeof dateTimeStr !== 'string') {
+        const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+        const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+        time = `${hours}:${minutes}`;
+      }
+
+      return {
+        date,
+        time
+      };
+    }
+
+    // 1. Process items that exist in API
+    for (const [apiId, apiItem] of apiDataMap.entries()) {
+      try {
+        const fromDateTime = parseDateTime(apiItem.fromDate);
+        const endDateTime = parseDateTime(apiItem.endDate);
+
+        // Create work data object
+        const workData = {
+          userId: user.value.id,
+          fromDate: fromDateTime.date,
+          endDate: endDateTime.date,
+          startTime: apiItem.type === 'WFH' ? "08:00" : fromDateTime.time,
+          endTime: apiItem.type === 'WFH' ? "17:00" : endDateTime.time,
+          type: apiItem.type,
+          reason: apiItem.reason || '',
+          idCreate: apiId
+        };
+
+        // Case 1: Exists in both API and local DB - update by deleting and inserting
+        if (existingWorkMap.has(apiId)) {
+          const existingWork = existingWorkMap.get(apiId);
+
+          // Delete the existing work entry
+          await workStore.deleteWork(existingWork.id);
+
+          // Create new work entry with updated data
+          const workResult = await workStore.createWorkDirect(workData);
+
+          if (workResult.success) {
+            updatedCount++;
+          } else {
+            failedCount++;
+          }
+        }
+        // Case 3: Exists in API but not in local DB - insert new
+        else {
+          const workResult = await workStore.createWorkDirect(workData);
+
+          if (workResult.success) {
+            addedCount++;
+          } else {
+            failedCount++;
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing API item ${apiId}:`, error);
+        failedCount++;
       }
     }
-    console.log(`Final syncCount: ${syncCount}, failedCount: ${failedCount}`);
 
-    // Refresh calendar data
-    loadMonthData();
+    for (const [localId, localWork] of existingWorkMap.entries()) {
+      if (!apiDataMap.has(localId)) {
+        try {
+          // Case 2: Exists in local DB but not in API - delete
+          await workStore.deleteWork(localWork.id);
+          deletedCount++;
+        } catch (error) {
+          console.error(`Error deleting local work ${localId}:`, error);
+          failedCount++;
+        }
+      }
+    }
 
-    // Show detailed success/failure message
-    if (syncCount > 0) {
+    console.log(`Sync results: Added: ${addedCount}, Updated: ${updatedCount}, Deleted: ${deletedCount}, Failed: ${failedCount}`);
+
+    await loadMonthData();
+
+    let summaryMessage = '';
+    if (addedCount > 0) summaryMessage += `${addedCount} bản ghi mới, `;
+    if (updatedCount > 0) summaryMessage += `${updatedCount} bản ghi cập nhật, `;
+    if (deletedCount > 0) summaryMessage += `${deletedCount} bản ghi đã xóa, `;
+    if (failedCount > 0) summaryMessage += `${failedCount} bản ghi lỗi, `;
+
+    // Remove trailing comma and space
+    summaryMessage = summaryMessage.replace(/, $/, '');
+
+    if (addedCount > 0 || updatedCount > 0 || deletedCount > 0) {
       toast.add({
         severity: 'success',
         summary: 'Đồng bộ thành công',
-        detail: `Đã đồng bộ ${syncCount} bản ghi.`,
+        detail: `Đã đồng bộ: ${summaryMessage}.`,
+        life: 4000
+      });
+    } else if (failedCount > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Đồng bộ có lỗi',
+        detail: `Có ${failedCount} bản ghi không thể đồng bộ.`,
         life: 4000
       });
     } else {
@@ -1674,6 +1705,15 @@ function showRegisterForm() {
     showRegisterModal.value = true;
   }
 }
+
+// Add a watch to update end date when start date changes
+watch(() => fromDateValue.value, (newDate) => {
+  if (newDate) {
+    // Set end date equal to start date by default
+    endDateValue.value = new Date(newDate);
+    newEntry.value.endDate = formatCalendarDate(newDate);
+  }
+});
 </script>
 
 <style scoped>

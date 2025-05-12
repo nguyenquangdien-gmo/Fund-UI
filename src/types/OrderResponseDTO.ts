@@ -9,6 +9,7 @@ export class OrderResponseDTO {
     restaurantLink: string;
     createdBy: UserResponseDTO;
     createdAt: Date;
+    isCreator: boolean;
 
     constructor(
         id: number,
@@ -20,7 +21,8 @@ export class OrderResponseDTO {
         restaurantName: string,
         restaurantLink: string,
         createdBy: UserResponseDTO,
-        createdAt: Date
+        createdAt: Date,
+        isCreator: boolean
     ) {
         this.id = id;
         this.title = title;
@@ -32,6 +34,7 @@ export class OrderResponseDTO {
         this.restaurantLink = restaurantLink;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
+        this.isCreator = isCreator;
     }
 }
 

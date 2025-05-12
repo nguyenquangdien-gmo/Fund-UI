@@ -371,19 +371,17 @@ const fetchUsers = async () => {
 }
 
 const checkAdmin = async () => {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return false
+  const userData = sessionStorage.getItem('user');
+  
+  if (!userData) return false;
   try {
-    const response = await axiosInstance.get('/tokens/is-admin', {
-      params: { token },
-    })
-    isAdminRole.value = response.data // Trả về true nếu là admin
+    const user = JSON.parse(userData);
+    isAdminRole.value = user.role === 'ADMIN';
   } catch (error) {
-    // console.error('Lỗi khi kiểm tra quyền admin:', error)
-    isAdminRole.value = false
+    console.error('Error parsing user data from sessionStorage:', error);
+    isAdminRole.value = false;
   }
-}
-
+};
 
 onMounted(() => {
   fetchRestaurants();

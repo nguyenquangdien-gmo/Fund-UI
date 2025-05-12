@@ -88,11 +88,21 @@
       </Column>
       <Column header="Hành động">
         <template #body="{ data }">
-          <Button 
-            label="Chi tiết" 
-            class="p-button-sm p-button-primary" 
-            @click="$router.push(`/orders/${data.id}`)" 
-          />
+            <div class="flex gap-2">
+              <Button 
+              label="Chi tiết" 
+              icon="pi pi-check-square" 
+              class="p-button-sm p-button-primary" 
+              @click="$router.push(`/orders/${data.id}`)" 
+              />
+              <Button 
+              v-if="isAdminRole || data.isCreator"
+              label="Xóa" 
+              icon="pi pi-trash" 
+              class="p-button-sm p-button-danger ms-2" 
+              @click="deleteOrder(data)" 
+              />
+            </div>
         </template>
       </Column>
     </DataTable>
@@ -274,6 +284,7 @@ const isOrderDialogVisible = ref(false);
 const selectMode = ref<'select' | 'input'>('select');
 const otherRestaurantLink = ref('');
 const usedRestaurantIds = ref<number[]>([]);
+const isAdminRole = ref(false);
 const restaurant = ref<RestaurantRequestDTO>({
   name: '',
   link: '',
@@ -282,7 +293,17 @@ const restaurant = ref<RestaurantRequestDTO>({
 const order = ref<OrderRequestDTO>({
   title: '',
   description: '',
-  deadline: new Date(new Date().setHours(15, 0, 0, 0)),
+  deadline: (() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    if (currentHour >= 15) {
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+    }
+    else {
+      now.setHours(15, 0, 0, 0);
+    }
+    return now;
+  })(),
   restaurantId: null,
   relatedUserIds: [],
 });
@@ -296,6 +317,17 @@ const fetchOrders = async () => {
       },
     });
     const fetchedOrders = response.data;
+
+    fetchedOrders.forEach((order: OrderResponseDTO) => {
+      const userData = sessionStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        order.isCreator = order.createdBy.fullName === user.fullName;
+      } else {
+        order.isCreator = false;
+      }
+    });
+  
 
     // Fetch details for each order
     const detailedOrders = await Promise.all(
@@ -347,10 +379,25 @@ const fetchUsers = async () => {
   }
 }
 
+const checkAdmin = async () => {
+  const userData = sessionStorage.getItem('user');
+  if (!userData) return false;
+  try {
+    const user = JSON.parse(userData);
+    console.log('user', user.fullName);
+    
+    isAdminRole.value = user.role === 'ADMIN';
+  } catch (error) {
+    console.error('Error parsing user data from sessionStorage:', error);
+    isAdminRole.value = false;
+  }
+};
+
 onMounted(() => {
   fetchOrders();
   fetchUsers();
   fetchRestaurants();
+  checkAdmin();
 })
 
 const filteredOrders = computed(() =>
@@ -521,6 +568,24 @@ const createOrder = async () => {
     }
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo order!', life: 3000 });
+  }
+};
+
+const deleteOrder = async (data: any) => {
+  try {
+    if (data.details.length > 0) {
+      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể xóa đơn hàng vì đã có người đặt!', life: 3000 });
+      return;
+    }
+    const response = await axiosInstance.delete(`/orders/${data.id}`);
+    if (response && response.status === 200) {
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Đơn hàng đã được xóa!', life: 3000 });
+      fetchOrders();
+    } else {
+      throw new Error('Không thể xóa đơn hàng!');
+    }
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa đơn hàng!', life: 3000 });
   }
 };
 </script>

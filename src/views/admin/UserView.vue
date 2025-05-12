@@ -38,7 +38,7 @@
         </Column>
         <Column header="Actions" style="width: 25%">
           <template #body="{ data }">
-            <Button icon="pi pi-dollar" severity="help" @click="handleTransferClick" class="left-10" />
+            <Button icon="pi pi-dollar" severity="help" @click="handleTransferClick(data)" class="left-10" />
             <Button v-if="admin" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)"
               class="left-10" />
             <Button v-if="admin" icon="pi pi-undo" severity="Warn" class="left-10" @click="confirmReset(data.email)"
@@ -52,17 +52,22 @@
   </div>
   <Dialog v-model:visible="showConfirmDialog" modal
     :header="type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' : 'Chuyển khoản'"
-    :style="{ width: '25rem' }">
-    <div>Bạn có chắc chắn muốn {{ type === 'delete' ? 'Xác nhận xóa' : type === 'reset' ? 'Xác nhận tạo lại mật khẩu' :
-      'Chuyển khoản' }}?</div>
-    <div class="avatar-image">
-      <img v-if="qrCode" :src="qrCode" class="avatar-preview" />
+    :style="{ width: '25rem' }" @hide="cleanupQrCode">
+    <div v-if="type === 'delete' || type === 'reset'">
+      Bạn có chắc chắn muốn {{ type === 'delete' ? 'xóa' : 'tạo lại mật khẩu' }}?
+    </div>
+    <div v-if="type === 'transfer'" class="text-center">
+      <p>Quét mã QR để chuyển khoản</p>
+      <div class="avatar-image">
+        <img v-if="qrCode" :src="qrCode" class="avatar-preview" />
+        <p v-else>Đang tải mã QR...</p>
+      </div>
     </div>
     <div class="d-flex justify-content-end gap-2 mt-3">
       <Button label="Hủy" severity="secondary" @click="showConfirmDialog = false" />
       <Button v-if="type === 'delete'" label="Xóa" severity="danger" @click="deleteUser" />
       <Button v-if="type === 'reset'" label="Reset" severity="success" @click="resetPassword(emailToReset)" />
-      <Button v-else label="Xác nhận" severity="success" @click="showConfirmDialog = false" />
+      <Button v-if="type === 'transfer'" label="Đóng" severity="success" @click="showConfirmDialog = false" />
     </div>
   </Dialog>
 
@@ -248,13 +253,7 @@ const fetchUsers = async () => {
   try {
     const response = await axiosInstance.get(`/users`)
     users.value = response.data
-
     console.log(users.value)
-    const qrCodeRes = await axiosInstance.get(`/users/${user.value.id}/qr-code`, {
-      responseType: 'blob',
-    })
-    const blob = new Blob([qrCodeRes.data], { type: 'image/png' })
-    qrCode.value = URL.createObjectURL(blob)
   } catch (error) {
     console.error('Error fetching users:', error)
   }
@@ -295,9 +294,23 @@ const findTeam = (slugTeam: string) => {
   return team ? team.slug : ''
 }
 
-function handleTransferClick() {
+function handleTransferClick(user: User) {
   showConfirmDialog.value = true
   type.value = 'transfer'
+  fetchUserQrCode(user.id)
+}
+
+const fetchUserQrCode = async (userId: number) => {
+  try {
+    const qrCodeRes = await axiosInstance.get(`/users/${userId}/qr-code`, {
+      responseType: 'blob',
+    })
+    const blob = new Blob([qrCodeRes.data], { type: 'image/png' })
+    qrCode.value = URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Error fetching user QR code:', error)
+    qrCode.value = null
+  }
 }
 
 const openUpdateDialog = (user: User) => {
@@ -473,6 +486,13 @@ const formatDate = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+}
+
+const cleanupQrCode = () => {
+  if (qrCode.value) {
+    URL.revokeObjectURL(qrCode.value)
+    qrCode.value = null
+  }
 }
 
 onMounted(async () => {

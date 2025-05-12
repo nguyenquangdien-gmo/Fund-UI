@@ -18,7 +18,7 @@
             <p>{{ form.email }}</p>
           </div>
           <div>
-            <span>Chức Vụ:</span>
+            <span>Biệt danh:</span>
             <p>{{ form.position ? form.position : 'Chưa cập nhật' }}</p>
           </div>
           <div>
@@ -94,7 +94,7 @@
         <InputText :useGrouping="false" id="phone" v-model="form.phoneNumber" class="w-100" autocomplete="off" />
       </div>
       <div class="mb-3">
-        <label for="position" class="fw-bold">Chức vụ</label>
+        <label for="position" class="fw-bold">Biệt danh</label>
         <InputText id="position" v-model="form.position" class="w-100" autocomplete="off" />
       </div>
       <!-- <div class="mb-3">
@@ -140,17 +140,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import axiosInstance from '@/router/Interceptor'
-import Password from 'primevue/password'
-import Button from 'primevue/button'
 import { useUserStore } from '@/pinia/userStore'
-import { useToast } from 'primevue/usetoast'
-import InputText from 'primevue/inputtext'
+import axiosInstance from '@/router/Interceptor'
+import Button from 'primevue/button'
 import Calendar from 'primevue/calendar'
 import Dropdown from 'primevue/dropdown'
-import InputNumber from 'primevue/inputnumber'
 import FileUpload from 'primevue/fileupload'
+import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import { useToast } from 'primevue/usetoast'
+import { computed, onMounted, ref } from 'vue'
 
 const userStore = useUserStore()
 const user = computed(() => userStore.user)

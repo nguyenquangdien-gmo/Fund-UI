@@ -1,9 +1,9 @@
 <template>
-  <div class="marquee-container">
+  <!-- <div class="marquee-container">
     <div class="marquee-content text-danger fw-bold fs-5 p-2">
-      Thời gian hoạt động từ 8:30 - 10:30 thứ 2 đến thứ 6.
+      Thời gian hoạt động từ 6:00 - 18:00 thứ 2 đến thứ 7.
     </div>
-  </div>
+  </div> -->
 
   <div class="login-container">
     <Card class="p-4 shadow-lg">
@@ -43,16 +43,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { useUserStore } from '@/pinia/userStore'
+import axiosInstance, { resetAuthFlags } from '@/router/Interceptor'
+import CryptoJS from "crypto-js"
+import Button from 'primevue/button'
 import Card from 'primevue/card'
+import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
-import Button from 'primevue/button'
-import Checkbox from 'primevue/checkbox';
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axiosInstance, { resetAuthFlags } from '@/router/Interceptor'
-import { useUserStore } from '@/pinia/userStore'
-import CryptoJS from "crypto-js";
 
 
 interface Error {

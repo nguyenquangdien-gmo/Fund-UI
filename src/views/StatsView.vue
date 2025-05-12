@@ -16,7 +16,7 @@
           <p class="text-2xl font-semibold">
             {{ balance.length > 1 ? `${formatCurrency(balance[0]?.totalAmount?.toString() || '0')}` : `0 VNĐ` }}
           </p>
-          <p class="text-green-500 text-sm">Tiền chung</p>
+          <p class="text-green-500 text-sm">Tiền quỹ chung</p>
         </div>
       </div>
       <div class="stat-card">
@@ -26,7 +26,7 @@
           <p class="text-2xl font-semibold">
             {{ balance.length > 1 ? `${formatCurrency(balance[1]?.totalAmount?.toString() || '0')}` : '0 VNĐ' }}
           </p>
-          <p class="text-green-500 text-sm">Tiền ăn vặt</p>
+          <p class="text-green-500 text-sm">Tiền quỹ ăn vặt</p>
         </div>
       </div>
       <div class="stat-card">
@@ -36,7 +36,7 @@
           <p class="text-2xl font-semibold">
             {{ formatCurrency((amountCharge + amountBillCharge + incomeAmount).toString()) }}
           </p>
-          <p class="text-green-500 text-sm">Tiền thu</p>
+          <p class="text-green-500 text-sm">Các khoản thu</p>
         </div>
       </div>
       <div class="stat-card">
@@ -44,7 +44,7 @@
         <div>
           <h3 class="text-gray">Tổng chi</h3>
           <p class="text-2xl font-semibold">{{ formatCurrency(expenseAmount.toString()) }}</p>
-          <p class="text-green-500 text-sm">Tiền chi ra</p>
+          <p class="text-green-500 text-sm">Các khoản chi</p>
         </div>
       </div>
       <div class="stat-card">
@@ -67,7 +67,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 charts-pie-line">
       <div class="bg-white shadow-lg rounded-lg p-5 line-chart">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-xl font-semibold text-gray-700">QŨY HÀNG THÁNG</p>
+          <p class="text-xl font-semibold text-gray-700">QUỸ HÀNG THÁNG</p>
         </div>
         <Chart type="line" :data="combinedMonthlyData" :options="chartMonthOptions" class="h-[20rem]" />
       </div>
@@ -101,10 +101,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import axiosInstance from '@/router/Interceptor'
-import Chart from 'primevue/chart'
-import formatCurrency from '@/utils/FormatCurrency'
+import axiosInstance from '@/router/Interceptor';
+import formatCurrency from '@/utils/FormatCurrency';
+import Chart from 'primevue/chart';
+import { computed, onMounted, ref } from 'vue';
 
 // Define interfaces
 interface LateUser {

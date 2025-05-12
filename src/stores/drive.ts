@@ -354,15 +354,11 @@ export const useDriveStore = defineStore('drive', {
     },
 
     // Folder operations
-    async listFolderContents(folderId: number, accountId?: number) {
+    async listFolderContents(folderId: number) {
       try {
         // Thêm timestamp để tránh cache
         const timestamp = new Date().getTime()
         let url = `/drive/folders/${folderId}/contents?_=${timestamp}`
-
-        if (accountId) {
-          url += `&accountId=${accountId}`
-        }
 
         const response = await axiosInstance.get(url)
 
@@ -387,11 +383,11 @@ export const useDriveStore = defineStore('drive', {
       }
     },
 
-    async createFolder(name: string, parentFolderId?: number | null, accountId?: number) {
+    async createFolder(name: string, parentFolderId?: number | null) {
       try {
         // Đảm bảo gửi đúng định dạng như đã test thành công
         console.log(
-          `Creating folder: name=${name}, parentId=${parentFolderId === null ? 'null' : parentFolderId}, accountId=${accountId || 'none'}`,
+          `Creating folder: name=${name}, parentId=${parentFolderId === null ? null : parentFolderId}`,
         )
 
         // Luôn gửi parentFolderId dưới dạng string, null sẽ được chuyển đổi trong backend
@@ -403,13 +399,8 @@ export const useDriveStore = defineStore('drive', {
 
         console.log('Request payload:', request)
 
-        // Thêm accountId vào URL nếu có
-        let url = '/drive/folders'
-        if (accountId) {
-          url += `?accountId=${accountId}`
-        }
-
         // Thực hiện gọi API và log kết quả
+        let url = '/drive/folders'
         const response = await axiosInstance.post(url, request)
         console.log('Created folder response:', response.data)
 

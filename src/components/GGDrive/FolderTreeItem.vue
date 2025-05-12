@@ -1,31 +1,32 @@
 <template>
   <div class="folder-tree-item">
-    <div 
-      class="folder-content"
-      :class="{ 'is-selected': isSelected }"
-      @click="handleFolderClick"
-    >
+    <div class="folder-content" :class="{ 'is-selected': isSelected }" @click="handleFolderClick">
       <div class="folder-icons">
-        <svg v-if="folder.children.length > 0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon">
-          <path v-if="isExpanded" d="m6 9 6 6 6-6"/>
-          <path v-else d="m9 18 6-6-6-6"/>
+        <svg v-if="folder.children.length > 0" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" class="toggle-icon">
+          <path v-if="isExpanded" d="m6 9 6 6 6-6" />
+          <path v-else d="m9 18 6-6-6-6" />
         </svg>
         <div v-else class="empty-space"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon">
-          <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon">
+          <path
+            d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
         </svg>
       </div>
       <span class="folder-name">{{ folder.name }}</span>
-      
+
       <div class="folder-actions" @click.stop>
         <div class="menu-trigger" @click.stop="toggleMenu">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="1"/>
-            <circle cx="12" cy="5" r="1"/>
-            <circle cx="12" cy="19" r="1"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="19" r="1" />
           </svg>
         </div>
-        
+
         <div v-if="showMenu" class="folder-menu">
           <div class="menu-item" @click="handleCreateSubfolder">
             <i class="pi pi-folder-plus" style="font-size: 1rem"></i>
@@ -36,17 +37,19 @@
             <span>Tải xuống</span>
           </div>
           <div class="menu-item" @click="handleRename">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
             <span>Đổi tên</span>
           </div>
-          <div class="menu-item delete" @click="handleDelete">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18"/>
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          <div class="menu-item delete" @click="handleDelete" v-if="isAdmin">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
             </svg>
             <span>Xóa</span>
           </div>
@@ -59,19 +62,11 @@
     </div>
 
     <div v-if="isExpanded" class="subfolders">
-      <folder-tree-item
-        v-for="subfolder in folder.children"
-        :key="subfolder.id"
-        :folder="subfolder"
-        :selected-folder-id="selectedFolderId"
-        :expand-folder-ids="expandFolderIds"
-        @select-folder="$emit('select-folder', $event)"
-        @rename-folder="$emit('rename-folder', $event)"
-        @delete-folder="$emit('delete-folder', $event)"
-        @create-subfolder="$emit('create-subfolder', $event)"
-        @download-folder="$emit('download-folder', $event)"
-        @add-to-favorites="$emit('add-to-favorites', $event)"
-      />
+      <folder-tree-item v-for="subfolder in folder.children" :key="subfolder.id" :folder="subfolder"
+        :selected-folder-id="selectedFolderId" :expand-folder-ids="expandFolderIds"
+        @select-folder="$emit('select-folder', $event)" @rename-folder="$emit('rename-folder', $event)"
+        @delete-folder="$emit('delete-folder', $event)" @create-subfolder="$emit('create-subfolder', $event)"
+        @download-folder="$emit('download-folder', $event)" @add-to-favorites="$emit('add-to-favorites', $event)" />
     </div>
   </div>
 </template>
@@ -81,6 +76,8 @@ import { defineComponent, ref, computed, onMounted, onBeforeUnmount, watch } fro
 
 // Tạo biến toàn cục để theo dõi menu đang mở
 const activeMenu = ref<string | null>(null);
+
+const isAdmin = ref(false);
 
 interface Folder {
   id: number;
@@ -108,7 +105,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const isExpanded = ref(false);
     const menuId = `folder-menu-${props.folder.id}`;
-    
+
     // Tính toán xem menu của folder này có đang hiển thị không
     const showMenu = computed(() => activeMenu.value === menuId);
 
@@ -124,7 +121,7 @@ export default defineComponent({
     watch(() => props.selectedFolderId, (newId) => {
       if (newId === props.folder.id) {
         console.log(`Folder được chọn: ${props.folder.name} (ID: ${props.folder.id})`);
-        
+
         // Không cần tự động mở rộng folder khi được chọn
         // Chỉ cập nhật UI để hiển thị folder đã được chọn
       }
@@ -189,6 +186,22 @@ export default defineComponent({
 
     const isSelected = computed(() => props.folder.id === props.selectedFolderId);
 
+    const checkIsAdmin = async () => {
+      const userData = sessionStorage.getItem('user');
+
+      if (!userData) return false;
+      try {
+        const user = JSON.parse(userData);
+        isAdmin.value = user.role === 'ADMIN';
+      } catch (error) {
+        console.error('Error parsing user data from sessionStorage:', error);
+        isAdmin.value = false;
+      }
+    };
+
+    // Call checkIsAdmin when component is created
+    checkIsAdmin();
+
     return {
       isExpanded,
       isSelected,
@@ -199,7 +212,8 @@ export default defineComponent({
       handleDownloadFolder,
       handleRename,
       handleDelete,
-      handleAddToFavorites
+      handleAddToFavorites,
+      isAdmin
     };
   }
 });
@@ -394,4 +408,4 @@ export default defineComponent({
 .menu-item.delete:hover {
   background-color: rgba(239, 68, 68, 0.1);
 }
-</style> 
+</style>

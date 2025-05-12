@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="header">
       <h1>Google Drive</h1>
-      <div class="header-actions">
+      <div v-if="isAdmin" class="header-actions">
         <router-link to="/drive/accounts" class="account-link">
           <PButton icon="pi pi-cog" label="Quản lý tài khoản dịch vụ" class="p-button-text" />
         </router-link>
@@ -10,95 +10,46 @@
     </div>
 
     <div class="main-content">
-      <GGDriveSidebar
-        :selected-folder-id="selectedFolderId"
-        :favorites="favorites"
-        @select-folder="selectFolder"
-        @edit-favorite="editFavorite"
-        @remove-favorite="removeFavorite"
-        @rename-folder="showRenameFolderDialog"
-        @delete-folder="confirmDeleteFolder"
-        @create-root-folder="createRootFolder"
-        @create-subfolder="createSubfolder"
-        @download-folder="downloadFolder"
-        @add-external-bookmark="showAddExternalBookmarkDialog"
-        @add-to-favorites="addToFavorites"
-        @preview-bookmark="previewBookmark"
-        ref="sidebar"
-      />
+      <GGDriveSidebar :selected-folder-id="selectedFolderId" :favorites="favorites" @select-folder="selectFolder"
+        @edit-favorite="editFavorite" @remove-favorite="removeFavorite" @rename-folder="showRenameFolderDialog"
+        @delete-folder="confirmDeleteFolder" @create-root-folder="createRootFolder" @create-subfolder="createSubfolder"
+        @download-folder="downloadFolder" @add-external-bookmark="showAddExternalBookmarkDialog"
+        @add-to-favorites="addToFavorites" @preview-bookmark="previewBookmark" ref="sidebar" />
 
-      <GGDriveMainContent
-        :folder-contents="folderContents"
-        :breadcrumbs="breadcrumbs"
-        :is-admin="isAdmin"
-        :is-loading="isLoading"
-        :favorites="favorites"
-        @select-folder="selectFolder"
-        @navigate-to-breadcrumb="navigateToBreadcrumb"
-        @show-upload-modal="showUploadModal = true"
-        @show-create-folder-modal="handleMainContentCreateFolder"
-        @add-to-favorites="addToFavorites"
-        @copy-share-link="copyShareLink"
-        @download-file="downloadFile"
-        @download-folder="downloadFolder"
-        @delete-file="deleteFile"
-        @delete-folder="deleteFolder"
-        @rename-file="showRenameFileDialog"
-        @rename-folder="showRenameFolderDialog"
-        @preview-file="previewFile"
-      />
+      <GGDriveMainContent :folder-contents="folderContents" :breadcrumbs="breadcrumbs" :is-admin="isAdmin"
+        :is-loading="isLoading" :favorites="favorites" @select-folder="selectFolder"
+        @navigate-to-breadcrumb="navigateToBreadcrumb" @show-upload-modal="showUploadModal = true"
+        @show-create-folder-modal="handleMainContentCreateFolder" @add-to-favorites="addToFavorites"
+        @copy-share-link="copyShareLink" @download-file="downloadFile" @download-folder="downloadFolder"
+        @delete-file="deleteFile" @delete-folder="deleteFolder" @rename-file="showRenameFileDialog"
+        @rename-folder="showRenameFolderDialog" @preview-file="previewFile" />
     </div>
 
-    <GGDriveUploadDialog
-      v-model:visible="showUploadModal"
-      @upload-files="uploadSelectedFiles"
-    />
+    <GGDriveUploadDialog v-model:visible="showUploadModal" @upload-files="uploadSelectedFiles" />
 
-    <GGDriveEditFavoriteDialog
-      v-model:visible="showEditFavoriteModal"
-      :favorite="editingFavorite"
-      @save-favorite="saveFavorite"
-    />
+    <GGDriveEditFavoriteDialog v-model:visible="showEditFavoriteModal" :favorite="editingFavorite"
+      @save-favorite="saveFavorite" />
 
-    <GGDriveCreateFolderDialog
-      v-model:visible="showCreateFolderModal"
-      :parent-folder-id="selectedFolderId"
-      :existing-folders="folderContents.subFolders"
-      :existing-files="folderContents.files"
-      :error-message="createFolderError"
-      @update:error-message="createFolderError = $event"
-      @create-folder="createFolder"
-    />
+    <GGDriveCreateFolderDialog v-model:visible="showCreateFolderModal" :parent-folder-id="selectedFolderId"
+      :existing-folders="folderContents.subFolders" :existing-files="folderContents.files"
+      :error-message="createFolderError" @update:error-message="createFolderError = $event"
+      @create-folder="createFolder" />
 
-    <GGDriveRenameItemDialog
-      v-model:visible="showRenameItemModal"
-      :item="itemToRename"
-      :existing-folders="folderContents.subFolders"
-      :existing-files="folderContents.files"
-      @rename-item="renameItem"
-    />
+    <GGDriveRenameItemDialog v-model:visible="showRenameItemModal" :item="itemToRename"
+      :existing-folders="folderContents.subFolders" :existing-files="folderContents.files" @rename-item="renameItem" />
 
-    <GGDriveConfirmDialog
-      v-model:visible="showConfirmDialog"
-      title="Xác nhận xóa"
-      :message="confirmMessage"
-      confirmLabel="Xóa"
-      confirmIcon="pi pi-trash"
-      @confirm="confirmAction"
-    />
+    <GGDriveConfirmDialog v-model:visible="showConfirmDialog" title="Xác nhận xóa" :message="confirmMessage"
+      confirmLabel="Xóa" confirmIcon="pi pi-trash" @confirm="confirmAction" />
 
-    <AddExternalBookmarkDialog
-      v-model:visible="showExternalBookmarkModal"
-      :edit-bookmark="editingExternalBookmark"
-      @save-bookmark="saveExternalBookmark"
-    />
+    <AddExternalBookmarkDialog v-model:visible="showExternalBookmarkModal" :edit-bookmark="editingExternalBookmark"
+      @save-bookmark="saveExternalBookmark" />
 
     <PToast />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import PToast from 'primevue/toast';
 import PButton from 'primevue/button';
 import { useToast } from 'primevue/usetoast';
@@ -115,7 +66,7 @@ import { useDriveStore } from '../stores/drive';
 interface User {
   name: string;
   initials: string;
-  isAdmin: boolean;
+  role: string;
 }
 
 interface DriveFile {
@@ -176,6 +127,8 @@ interface ExternalBookmark {
   type: string;
 }
 
+const isAdmin = ref(false);
+
 export default defineComponent({
   name: 'GGDriveView',
   components: {
@@ -193,18 +146,27 @@ export default defineComponent({
   setup() {
     const toast = useToast();
     const driveStore = useDriveStore();
-    return { toast, driveStore };
+
+    const checkIsAdmin = async () => {
+      const userData = sessionStorage.getItem('user');
+
+      if (!userData) return false;
+      try {
+        const user = JSON.parse(userData);
+        isAdmin.value = user.role === 'ADMIN';
+      } catch (error) {
+        console.error('Error parsing user data from sessionStorage:', error);
+        isAdmin.value = false;
+      }
+    };
+
+    // Call checkIsAdmin when component is created
+    checkIsAdmin();
+
+    return { toast, driveStore, isAdmin };
   },
   data() {
     return {
-      // User info
-      currentUser: {
-        name: 'Nguyễn Văn A',
-        initials: 'NVA',
-        isAdmin: true
-      } as User,
-      isAdmin: true,
-
       // Folder details
       selectedFolderId: 0,
       breadcrumbs: [] as Breadcrumb[],
@@ -217,10 +179,10 @@ export default defineComponent({
 
       // Favorites/Bookmarks (combined drive and external bookmarks)
       favorites: [] as Favorite[],
-      
+
       // Upload
       showUploadModal: false,
-      
+
       // Edit favorite
       showEditFavoriteModal: false,
       editingFavorite: {
@@ -232,15 +194,15 @@ export default defineComponent({
         createdAt: '',
         updatedAt: ''
       } as Favorite,
-      
+
       // External bookmark dialog
       showExternalBookmarkModal: false,
       editingExternalBookmark: null as ExternalBookmark | null,
-      
+
       // Create folder
       showCreateFolderModal: false,
       createFolderError: '',
-      
+
       // Rename item
       showRenameItemModal: false,
       itemToRename: {
@@ -248,32 +210,31 @@ export default defineComponent({
         name: '',
         type: 'folder' as 'file' | 'folder'
       },
-      
+
       // Confirm dialog
       showConfirmDialog: false,
       confirmMessage: '',
       pendingAction: null as (() => Promise<void>) | null,
-      
+
       // New for createSubfolder and createFolder
       parentFolderIdForCreation: null as number | null,
     };
   },
   methods: {
-    // Folder navigation methods
     async selectFolder(id: number): Promise<void> {
       try {
         this.isLoading = true;
-        
+
         // Cập nhật ID folder được chọn
         this.selectedFolderId = id;
-        
+
         // Xóa nội dung hiện tại để tránh hiển thị dữ liệu cũ
         this.folderContents = {
           files: [],
           subFolders: [],
           currentFolder: null
         };
-        
+
         // If id is 0, it means we're viewing the root or there are no folders
         if (id === 0) {
           // Just clear the folder contents
@@ -286,20 +247,20 @@ export default defineComponent({
           this.isLoading = false;
           return;
         }
-        
+
         // Lấy nội dung thư mục từ API với cache buster để đảm bảo dữ liệu mới
         const contents = await this.driveStore.listFolderContents(id);
-        
+
         // Định dạng lại dữ liệu phù hợp với cấu trúc folderContents
         this.folderContents = {
           files: contents.files || [],
           subFolders: contents.folders || [],
           currentFolder: contents.currentFolder || null
         };
-        
+
         // Xây dựng breadcrumb
         await this.buildBreadcrumbs(id, contents.currentFolder);
-        
+
         // Đảm bảo folder được chọn trong sidebar
         if (this.$refs.sidebar) {
           const sidebarComponent = this.$refs.sidebar as { expandFolder?: (folderId: number) => void };
@@ -310,7 +271,7 @@ export default defineComponent({
       } catch (error) {
         console.error('Error fetching folder contents:', error);
         this.showToast('Không thể tải nội dung thư mục', 'error');
-        
+
         // Trong trường hợp lỗi, làm sạch dữ liệu hiển thị
         this.folderContents = {
           files: [],
@@ -321,7 +282,7 @@ export default defineComponent({
         this.isLoading = false;
       }
     },
-    
+
     // Xây dựng breadcrumb từ dữ liệu thư mục
     async buildBreadcrumbs(folderId: number, folder: DriveFolder | null): Promise<void> {
       // Nếu không có folder, breadcrumbs rỗng
@@ -329,27 +290,27 @@ export default defineComponent({
         this.breadcrumbs = [];
         return;
       }
-      
+
       // Khởi tạo mảng breadcrumb với thư mục hiện tại
       const breadcrumbList: Breadcrumb[] = [{ id: folder.id, name: folder.name }];
-      
+
       // Lấy thông tin về path đầy đủ
       try {
         const currentFolder = folder;
         let parentId = currentFolder.parentFolderId;
-        
+
         // Duyệt ngược lên cây thư mục
         while (parentId !== null && parentId !== undefined) {
           const parentFolder = await this.driveStore.getFolderById(parentId);
           if (!parentFolder) break;
-          
+
           // Thêm folder cha vào đầu mảng breadcrumb
           breadcrumbList.unshift({ id: parentFolder.id, name: parentFolder.name });
-          
+
           // Cập nhật cho lần lặp tiếp theo
           parentId = parentFolder.parentFolderId;
         }
-        
+
         // Thêm breadcrumb gốc nếu có thư mục cha
         if (breadcrumbList.length > 1) {
           this.breadcrumbs = breadcrumbList;
@@ -363,11 +324,11 @@ export default defineComponent({
         this.breadcrumbs = [{ id: folder.id, name: folder.name }];
       }
     },
-    
+
     navigateToBreadcrumb(id: number): void {
       this.selectFolder(id);
     },
-    
+
     // File actions
     copyShareLink(file: DriveFile): void {
       navigator.clipboard.writeText(file.webViewLink).then(() => {
@@ -377,7 +338,7 @@ export default defineComponent({
         this.showToast('Không thể sao chép liên kết', 'error');
       });
     },
-    
+
     // Favorites/Bookmarks methods
     async loadFavorites(): Promise<void> {
       try {
@@ -401,13 +362,13 @@ export default defineComponent({
         this.showToast('Không thể tải danh sách yêu thích', 'error');
       }
     },
-    
+
     // Show dialog to add a new external bookmark
     showAddExternalBookmarkDialog(): void {
       this.editingExternalBookmark = null;
       this.showExternalBookmarkModal = true;
     },
-    
+
     // Show dialog to edit an external bookmark
     showEditExternalBookmarkDialog(bookmark: Favorite): void {
       if (bookmark.url) {
@@ -420,7 +381,7 @@ export default defineComponent({
         this.showExternalBookmarkModal = true;
       }
     },
-    
+
     // Save (create or update) an external bookmark
     async saveExternalBookmark(data: { id?: number; name: string; url: string }): Promise<void> {
       try {
@@ -431,9 +392,9 @@ export default defineComponent({
           // For new bookmark, create external bookmark
           await this.driveStore.createExternalBookmark(data.name, data.url);
         }
-        
+
         this.showToast(data.id ? 'Liên kết đã được cập nhật' : 'Đã thêm liên kết mới', 'success');
-        
+
         // Reload favorites
         await this.loadFavorites();
       } catch (error) {
@@ -441,44 +402,44 @@ export default defineComponent({
         this.showToast('Không thể lưu liên kết', 'error');
       }
     },
-    
+
     async addToFavorites(item: DriveFile | DriveFolder): Promise<void> {
       try {
         // Determine if it's a file or folder
         const type = 'size' in item ? 'FILE' : 'FOLDER';
-        
+
         // Sử dụng googleId từ item thay vì id
         // Folder và File trong Google Drive có thuộc tính googleId riêng
         // Trong trường hợp không có, sử dụng fallback là item.id.toString()
         const googleId = item.googleId || item.id.toString();
-        
+
         // Check if item is already a favorite
-        const existingFavorite = this.favorites.find(f => 
+        const existingFavorite = this.favorites.find(f =>
           (f.googleId === googleId) || (f.originalId === googleId)
-        );
-        
+        ) as Favorite | undefined;
+
         if (existingFavorite) {
-          this.showToast('Mục này đã có trong yêu thích', 'info');
-          return;
+          // If already a favorite, remove it
+          await this.driveStore.deleteBookmark(existingFavorite.id);
+          this.showToast(`Đã xóa ${item.name} khỏi yêu thích`, 'success');
+        } else {
+          // If not a favorite, add it
+          await this.driveStore.createBookmark(
+            item.name,
+            googleId,
+            type
+          );
+          this.showToast(`Đã thêm ${item.name} vào yêu thích`, 'success');
         }
-        
-        // Create bookmark using API
-        await this.driveStore.createBookmark(
-          item.name,
-          googleId,
-          type
-        );
-        
-        this.showToast(`Đã thêm ${item.name} vào yêu thích`, 'success');
-        
+
         // Reload favorites
         await this.loadFavorites();
       } catch (error) {
-        console.error('Error adding to favorites:', error);
-        this.showToast('Không thể thêm vào yêu thích', 'error');
+        console.error('Error toggling favorite status:', error);
+        this.showToast('Không thể thay đổi trạng thái yêu thích', 'error');
       }
     },
-    
+
     editFavorite(id: number): void {
       const favorite = this.favorites.find(f => f.id === id);
       if (favorite) {
@@ -490,7 +451,7 @@ export default defineComponent({
         }
       }
     },
-    
+
     async saveFavorite(updatedFavorite: Favorite): Promise<void> {
       try {
         // Update bookmark using API
@@ -498,23 +459,23 @@ export default defineComponent({
           updatedFavorite.id,
           updatedFavorite.name
         );
-        
+
         this.showToast('Đã cập nhật yêu thích thành công', 'success');
         // Reload favorites
         await this.loadFavorites();
-        
+
         this.showEditFavoriteModal = false;
       } catch (error) {
         console.error('Error updating favorite:', error);
         this.showToast('Không thể cập nhật yêu thích', 'error');
       }
     },
-    
+
     async removeFavorite(id: number): Promise<void> {
       try {
         // Delete bookmark using API
         await this.driveStore.deleteBookmark(id);
-        
+
         this.showToast('Đã xóa khỏi yêu thích', 'success');
         // Reload favorites
         await this.loadFavorites();
@@ -523,70 +484,71 @@ export default defineComponent({
         this.showToast('Không thể xóa khỏi yêu thích', 'error');
       }
     },
-    
+
     async downloadFile(file: DriveFile): Promise<void> {
       try {
         this.showToast(`Đang tải xuống ${file.name}...`, 'info');
-        
+
         // Lấy nội dung file từ API
         const blobData = await this.driveStore.downloadFile(file.id);
-        
+
         // Tạo URL tạm thời cho blob
         const blobUrl = window.URL.createObjectURL(blobData);
-        
+
         // Tạo một thẻ a ẩn để tải xuống
         const downloadLink = document.createElement('a');
         downloadLink.href = blobUrl;
         downloadLink.download = file.name;
         document.body.appendChild(downloadLink);
-        
+
         // Kích hoạt tải xuống
         downloadLink.click();
-        
+
         // Dọn dẹp
         window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(downloadLink);
-        
+
         this.showToast(`Đã tải xuống ${file.name} thành công`, 'success');
       } catch (error) {
         console.error('Error downloading file:', error);
         this.showToast('Không thể tải xuống tập tin', 'error');
       }
     },
-    
+
     async downloadFolder(folder: DriveFolder): Promise<void> {
       try {
         this.showToast(`Đang tải xuống thư mục ${folder.name}...`, 'info');
-        
+
         // Lấy nội dung folder dưới dạng zip từ API
         const blobData = await this.driveStore.downloadFolderAsZip(folder.id);
-        
+
         // Tạo URL tạm thời cho blob
         const blobUrl = window.URL.createObjectURL(blobData);
-        
+
         // Tạo một thẻ a ẩn để tải xuống
         const downloadLink = document.createElement('a');
         downloadLink.href = blobUrl;
         downloadLink.download = `${folder.name}.zip`;
         document.body.appendChild(downloadLink);
-        
+
         // Kích hoạt tải xuống
         downloadLink.click();
-        
+
         // Dọn dẹp
         window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(downloadLink);
-        
+
         this.showToast(`Đã tải xuống thư mục ${folder.name} thành công`, 'success');
       } catch (error) {
         console.error('Error downloading folder:', error);
         this.showToast('Không thể tải xuống thư mục', 'error');
       }
     },
-    
+
     // Xóa file 
     async deleteFile(file: DriveFile): Promise<void> {
-      if (confirm(`Bạn có chắc chắn muốn xóa "${file.name}"?`)) {
+      this.confirmMessage = `Bạn có chắc chắn muốn xóa "${file.name}"?`;
+      this.pendingAction = async () => {
         try {
           await this.driveStore.deleteFile(file.id);
           this.showToast(`Đã xóa ${file.name} thành công`, 'success');
@@ -596,48 +558,49 @@ export default defineComponent({
           console.error('Error deleting file:', error);
           this.showToast('Không thể xóa tập tin', 'error');
         }
-      }
+      };
+      this.showConfirmDialog = true;
     },
-    
+
     // Xóa thư mục
     async deleteFolder(folder: DriveFolder): Promise<void> {
       try {
         console.log('Starting folder deletion process...');
         console.log('Folder to delete:', folder);
-        
+
         // Lưu ID của folder đang xem để kiểm tra sau
         const isCurrentFolder = this.selectedFolderId === folder.id;
         console.log('Is current folder:', isCurrentFolder);
-        
+
         // Hiển thị loading để ngăn người dùng tương tác trong khi xử lý
         this.isLoading = true;
-        
+
         // Thực hiện xóa folder
         console.log('Calling driveStore.deleteFolder...');
         await this.driveStore.deleteFolder(folder.id);
         console.log(`Folder ${folder.name} (ID: ${folder.id}) deleted successfully`);
-        
+
         // 1. Lấy lại danh sách folders từ API để đảm bảo cập nhật chính xác
         console.log('Fetching updated folders list...');
         const folders = await this.driveStore.getAllFolders();
         console.log(`Fetched updated folders list. Total: ${folders.length} folders`);
-        
+
         // 2. Đảm bảo refreshFolderTree được gọi và chờ hoàn thành
         console.log('Refreshing folder tree...');
         await this.refreshFolderTree();
-        
+
         // 3. Xử lý UI hiển thị
         if (isCurrentFolder) {
           console.log(`Deleted the currently viewed folder (ID: ${folder.id}). Updating view...`);
           // Nếu đang xem folder bị xóa, đặt lại state
           this.folderContents = { files: [], subFolders: [], currentFolder: null };
           this.breadcrumbs = [];
-          
+
           // Nếu còn folder khác, chọn folder đầu tiên
           if (folders.length > 0) {
             console.log(`Selecting first available folder: ${folders[0].name} (ID: ${folders[0].id})`);
             this.selectedFolderId = folders[0].id;
-            
+
             // Đợi một chút để đảm bảo sidebar đã cập nhật
             setTimeout(async () => {
               console.log('Selecting new folder after deletion...');
@@ -653,7 +616,7 @@ export default defineComponent({
           // Nếu đang xem folder khác, tải lại nội dung folder đó
           // Nhưng trước tiên, xóa dữ liệu hiện tại
           this.folderContents = { files: [], subFolders: [], currentFolder: null };
-          
+
           // Tải lại nội dung folder hiện tại
           // Đợi một chút để đảm bảo sidebar đã cập nhật
           setTimeout(async () => {
@@ -661,7 +624,7 @@ export default defineComponent({
             await this.selectFolder(this.selectedFolderId);
           }, 100);
         }
-        
+
         // 4. Thông báo thành công
         this.showToast(`Đã xóa thư mục ${folder.name} thành công`, 'success');
         console.log('Folder deletion process completed successfully');
@@ -678,22 +641,22 @@ export default defineComponent({
         console.log('Folder deletion process finished');
       }
     },
-    
+
     // Hiển thị dialog xác nhận xóa thư mục
     confirmDeleteFolder(folder: DriveFolder): void {
       const foldersCount = this.driveStore.folders.length;
-      
+
       // Nếu đây là folder cuối cùng, hiển thị cảnh báo đặc biệt
       if (foldersCount <= 1) {
         this.confirmMessage = `Đây là thư mục duy nhất. Bạn có chắc chắn muốn xóa thư mục "${folder.name}"?`;
       } else {
         this.confirmMessage = `Bạn có chắc chắn muốn xóa thư mục "${folder.name}"?`;
       }
-      
+
       this.pendingAction = () => this.deleteFolder(folder);
       this.showConfirmDialog = true;
     },
-    
+
     // Xác nhận thao tác
     confirmAction(): void {
       if (this.pendingAction) {
@@ -701,11 +664,11 @@ export default defineComponent({
         this.pendingAction = null;
       }
     },
-    
+
     // Upload methods
     async uploadSelectedFiles(files: File[]): Promise<void> {
       this.showToast(`Đang tải lên ${files.length} tập tin...`, 'info');
-      
+
       try {
         for (const file of files) {
           await this.driveStore.uploadFile(this.selectedFolderId, file);
@@ -718,7 +681,7 @@ export default defineComponent({
         this.showToast('Không thể tải lên tập tin', 'error');
       }
     },
-    
+
     // Rename methods
     showRenameFileDialog(file: DriveFile): void {
       this.itemToRename = {
@@ -728,7 +691,7 @@ export default defineComponent({
       };
       this.showRenameItemModal = true;
     },
-    
+
     showRenameFolderDialog(folder: DriveFolder): void {
       this.itemToRename = {
         id: folder.id,
@@ -737,7 +700,7 @@ export default defineComponent({
       };
       this.showRenameItemModal = true;
     },
-    
+
     async renameItem(data: { id: number, type: 'file' | 'folder', newName: string }): Promise<void> {
       try {
         if (data.type === 'file') {
@@ -747,7 +710,7 @@ export default defineComponent({
           // Cập nhật cây thư mục khi đổi tên folder
           await this.refreshFolderTree();
         }
-        
+
         this.showToast(`Đã đổi tên thành ${data.newName} thành công`, 'success');
         // Reload folder contents
         await this.selectFolder(this.selectedFolderId);
@@ -756,14 +719,14 @@ export default defineComponent({
         this.showToast('Không thể đổi tên', 'error');
       }
     },
-    
+
     // Toast notification
     showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
       this.toast.add({
         severity: type,
-        summary: type === 'success' ? 'Thành công' : 
-                 type === 'error' ? 'Lỗi' : 
-                 type === 'warning' ? 'Cảnh báo' : 'Thông tin',
+        summary: type === 'success' ? 'Thành công' :
+          type === 'error' ? 'Lỗi' :
+            type === 'warning' ? 'Cảnh báo' : 'Thông tin',
         detail: message,
         life: 3000
       });
@@ -777,11 +740,11 @@ export default defineComponent({
         this.showToast('Vui lòng chọn thư mục trước khi tạo thư mục con', 'warning');
         return;
       }
-      
+
       // Store the parent folder ID for creation
       this.parentFolderIdForCreation = this.selectedFolderId;
       console.log(`Setting parentFolderIdForCreation to: ${this.parentFolderIdForCreation}`);
-      
+
       // Hiển thị dialog tạo thư mục với ID thư mục cha là thư mục hiện tại
       this.showCreateFolderModal = true;
     },
@@ -808,36 +771,36 @@ export default defineComponent({
     async createFolder(data: { name: string, parentFolderId: number }): Promise<void> {
       try {
         console.log('Creating folder with data:', data);
-        
+
         // Use parentFolderIdForCreation if available, otherwise use the data parameter
         let effectiveParentId = data.parentFolderId;
-        
+
         // If we're creating a subfolder from context menu, use parentFolderIdForCreation
         if (this.parentFolderIdForCreation !== null) {
           effectiveParentId = this.parentFolderIdForCreation;
           console.log(`Using parentFolderIdForCreation: ${effectiveParentId}`);
         }
-        
+
         // If parent ID is 0, it means we're creating at root level
         const parentId = effectiveParentId === 0 ? null : effectiveParentId;
-        
+
         console.log(`Sending create folder request: name=${data.name}, parentId=${parentId}`);
         // Get the newly created folder data from the API response
         const newFolder = await this.driveStore.createFolder(data.name, parentId);
         this.showToast(`Đã tạo thư mục ${data.name} thành công`, 'success');
-        
+
         // Đóng dialog sau khi tạo thành công
         this.showCreateFolderModal = false;
-        
+
         // Reset parentFolderIdForCreation immediately after successful creation
         this.parentFolderIdForCreation = null;
-        
+
         // Reload folder tree in sidebar
         await this.refreshFolderTree();
-        
+
         if (newFolder && newFolder.id) {
           console.log(`Folder mới đã được tạo với ID: ${newFolder.id}, tên: ${newFolder.name}`);
-          
+
           // Đợi một chút để folder tree có thời gian cập nhật
           setTimeout(async () => {
             // Nếu đây là thư mục con, trước tiên phải đảm bảo thư mục cha được mở rộng
@@ -847,7 +810,7 @@ export default defineComponent({
                 sidebarComponent.expandFolder(parentId);
               }
             }
-            
+
             // Cập nhật selectedFolderId và load nội dung của folder mới
             this.selectedFolderId = newFolder.id;
             await this.selectFolder(newFolder.id);
@@ -863,11 +826,11 @@ export default defineComponent({
         }
       } catch (error: unknown) {
         console.error('Error creating folder:', error);
-        
+
         // Kiểm tra nếu lỗi là 409 Conflict
-        if (error && typeof error === 'object' && 'response' in error && 
-            error.response && typeof error.response === 'object' && 
-            'status' in error.response && error.response.status === 409) {
+        if (error && typeof error === 'object' && 'response' in error &&
+          error.response && typeof error.response === 'object' &&
+          'status' in error.response && error.response.status === 409) {
           this.createFolderError = 'Tên thư mục đã tồn tại trong thư mục này';
         } else {
           this.showToast('Không thể tạo thư mục', 'error');
@@ -882,7 +845,7 @@ export default defineComponent({
       try {
         // Sử dụng type casting cụ thể để tránh lỗi TypeScript
         const sidebarComponent = this.$refs.sidebar as { fetchFolders?: () => Promise<void> } | undefined;
-        
+
         if (sidebarComponent && typeof sidebarComponent.fetchFolders === 'function') {
           console.log('Calling sidebar.fetchFolders() to refresh tree');
           await sidebarComponent.fetchFolders();
@@ -919,37 +882,37 @@ export default defineComponent({
           window.open(bookmark.url, '_blank');
           return;
         }
-        
+
         // Lấy googleId từ bookmark
         const googleId = bookmark.googleId || bookmark.originalId;
         if (!googleId) {
           this.showToast('Không thể mở tập tin này: ID không hợp lệ', 'error');
           return;
         }
-        
+
         // Nếu là file từ bookmark, cần lấy webViewLink từ server
         this.showToast(`Đang mở ${bookmark.name}...`, 'info');
-        
+
         // Nếu bookmark không có url, thử lấy file từ API rồi mở webViewLink
         const fileId = parseInt(googleId);
         if (isNaN(fileId)) {
           this.showToast(`Không thể mở tập tin: ID không phải là số hợp lệ`, 'error');
           return;
         }
-        
+
         // Lấy nội dung file từ API
         this.isLoading = true;
         try {
           // Cố gắng lấy nội dung thư mục để tìm file
           // (API không có endpoint trực tiếp để lấy file theo ID)
           const folders = await this.driveStore.getAllFolders();
-          
+
           // Tìm file trong các thư mục
           let fileFound = false;
           for (const folder of folders) {
             try {
               const contents = await this.driveStore.listFolderContents(folder.id);
-              const file = contents.files.find(f => f.id === fileId);
+              const file = contents.files.find((f: DriveFile) => f.id === fileId);
               if (file && file.webViewLink) {
                 this.showToast(`Đang mở ${file.name}`, 'info');
                 window.open(file.webViewLink, '_blank');
@@ -961,7 +924,7 @@ export default defineComponent({
               // Tiếp tục kiểm tra các thư mục khác
             }
           }
-          
+
           if (!fileFound) {
             this.showToast('Không thể tìm thấy tập tin để mở', 'error');
           }
@@ -979,7 +942,7 @@ export default defineComponent({
     try {
       // Load bookmarks
       await this.loadFavorites();
-      
+
       // Mặc định không load gì cả, để sidebar tự động chọn folder đầu tiên
       // Sidebar sẽ emit sự kiện select-folder và folder đầu tiên sẽ được load
     } catch (error) {
@@ -1059,22 +1022,22 @@ body {
   .main-content {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
     max-height: 300px;
   }
-  
+
   .content-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .actions {
     width: 100%;
   }
-  
+
   .upload-btn {
     width: 100%;
   }
@@ -1085,11 +1048,11 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .file-icon {
     margin-bottom: 0.5rem;
   }
-  
+
   .file-actions {
     margin-top: 0.5rem;
     width: 100%;

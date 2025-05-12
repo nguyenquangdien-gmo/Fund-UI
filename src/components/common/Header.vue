@@ -230,6 +230,7 @@ watch(user, (newUser) => {
 const baseItems = [
   { label: 'Profile', icon: 'pi pi-user', command: () => router.push('/profile') },
   { label: 'Thống kê', icon: 'pi pi-chart-line', command: () => router.push('/stats') },
+  { label: 'Drive', icon: 'pi pi-folder', command: () => router.push('/drive') },
   {
     label: 'Danh sách',
     icon: 'pi pi-list',

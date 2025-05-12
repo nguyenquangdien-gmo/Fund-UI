@@ -1,3 +1,61 @@
+# Google Drive UI Component
+
+This project includes a Google Drive interface component implemented in Vue 3.
+
+## GGDriveView Component
+
+The Google Drive view component has been implemented in two versions:
+
+1. **Options API Version** (`GGDriveView.vue`): The original implementation using Vue's Options API.
+2. **Composition API Version** (`GGDriveViewComposition.vue`): A refactored version using Vue's Composition API.
+
+## How to Use the Composition API Version
+
+To use the new Composition API version of the component in your routes:
+
+1. Import the component from the views index:
+
+```js
+import { GGDriveViewComposition } from './views';
+```
+
+2. Update your router configuration to use the Composition API version:
+
+```js
+const routes = [
+  {
+    path: '/drive',
+    name: 'GoogleDrive',
+    component: GGDriveViewComposition
+  }
+  // other routes...
+];
+```
+
+## Benefits of the Composition API Version
+
+The Composition API version offers several advantages:
+
+- Better organization of related code
+- Improved type inference
+- More reusable logic
+- Better performance with large components
+- Easier to maintain and extend
+
+## Component Features
+
+Both versions of the component provide the following features:
+
+- File and folder browsing
+- File uploads and downloads
+- Folder creation and navigation
+- File and folder renaming
+- File and folder deletion
+- Favorites management
+- External bookmark management
+- File preview
+- Breadcrumb navigation
+
 # fund-ui
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -37,4 +95,3 @@ npm run build
 ```sh
 npm run lint
 ```
-# Fund-UI

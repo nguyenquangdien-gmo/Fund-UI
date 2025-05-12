@@ -58,14 +58,17 @@
          <div class="d-flex flex-row gap-2">
           <InputText v-model="searchTerm" placeholder="Tìm theo tên người đặt..." />
          </div>
-         <Button 
+         <div class="d-flex gap-2">
+          <Button label="Danh sách order" icon="pi pi-list" class="p-ml-2" @click="$router.push('/orders')" />
+          <Button 
           v-if="!isDeadline"
-          label="Đặt đồ" 
-          class="p-button-sm p-button-success" 
-          icon="pi pi-plus" 
+          label="Đặt món" 
+          class="p-ml-2"
+          icon="pi pi-list" 
           iconPos="left" 
           @click="openOrderDialog" 
           />
+         </div>
       </div>
     </div>
 

@@ -423,10 +423,16 @@ const groupedRestaurants = computed(() => {
   return groups.filter(group => group.items.length > 0);
 });
 
+
  // Mở Dialog
- const openDialog = () => {
-  isDialogVisible.value = true;
+const openDialog = () => {
+  router.push('/restaurants');
 };
+
+//  // Mở Dialog
+//  const openDialog = () => {
+//   isDialogVisible.value = true;
+// };
 
 // Đóng Dialog
 const closeDialog = () => {

@@ -96,7 +96,7 @@
           size="small"
           @click="deleteRestaurant(data)"
         />
-        <Button label="Tạo order" icon="pi pi-calendar" class="ms-2" @click="placeOrderAutoFill(data)" />
+        <Button label="Tạo order" icon="pi pi-calendar" class="ms-2" size="small" @click="placeOrderAutoFill(data)" />
           </div>
         </template>
       </Column>
@@ -425,6 +425,9 @@ const editRestaurant = (restaurant: RestaurantResponseDTO) => {
 
 const deleteRestaurant = async (restaurant: RestaurantResponseDTO) => {
   try {
+    isEditDialogVisible.value = false;
+    isDialogVisible.value = false;
+    isOrderDialogVisible.value = false;
     const response = await axiosInstance.delete(`restaurants/${restaurant.id}`);
     if (response && response.status === 200) {
       toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được xóa!', life: 3000 });

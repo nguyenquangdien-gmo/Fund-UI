@@ -38,11 +38,13 @@
         </Column>
         <Column header="Actions" style="width: 25%">
           <template #body="{ data }">
-            <Button icon="pi pi-dollar" severity="help" @click="handleTransferClick(data)" class="left-10" />
+
             <Button v-if="admin" icon="pi pi-user-edit" severity="info" @click="openUpdateDialog(data)"
               class="left-10" />
             <Button v-if="admin" icon="pi pi-undo" severity="Warn" class="left-10" @click="confirmReset(data.email)"
               :hidden="data.email === user.email" />
+            <Button v-if="hasQrCode(data.id)" icon="pi pi-dollar" severity="help" @click="handleTransferClick(data)"
+              class="left-10" />
             <Button v-if="admin" class="left-10" icon="pi pi-trash" severity="danger" @click="confirmDelete(data)"
               :hidden="data.email === user.email" />
           </template>
@@ -160,6 +162,7 @@ const isAdmin = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+const usersWithQrCode = ref<Set<number>>(new Set())
 
 //pagenation
 const first = ref<number>(0)
@@ -254,9 +257,30 @@ const fetchUsers = async () => {
     const response = await axiosInstance.get(`/users`)
     users.value = response.data
     console.log(users.value)
+    // Check which users have QR codes
+    await checkUsersWithQrCode()
   } catch (error) {
     console.error('Error fetching users:', error)
   }
+}
+
+const checkUsersWithQrCode = async () => {
+  usersWithQrCode.value.clear()
+  for (const user of users.value) {
+    try {
+      const response = await axiosInstance.get(`/users/${user.id}/qr-code`)
+      console.log('response', response.status)
+      if (response.status === 200) {
+        usersWithQrCode.value.add(user.id)
+      }
+    } catch (error) {
+      // User doesn't have QR code
+    }
+  }
+}
+
+const hasQrCode = (userId: number): boolean => {
+  return usersWithQrCode.value.has(userId)
 }
 
 const filteredFunds = computed(() => {
@@ -301,15 +325,24 @@ function handleTransferClick(user: User) {
 }
 
 const fetchUserQrCode = async (userId: number) => {
+  qrCode.value = null // Reset QR code
+
   try {
     const qrCodeRes = await axiosInstance.get(`/users/${userId}/qr-code`, {
       responseType: 'blob',
     })
+
+    // Check if the response is empty or not a valid image
+    if (qrCodeRes.data.size === 0) {
+      throw new Error('QR code not available')
+    }
+
     const blob = new Blob([qrCodeRes.data], { type: 'image/png' })
     qrCode.value = URL.createObjectURL(blob)
   } catch (error) {
     console.error('Error fetching user QR code:', error)
-    qrCode.value = null
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Người dùng chưa cập nhật mã QR', life: 3000 })
+    showConfirmDialog.value = false
   }
 }
 

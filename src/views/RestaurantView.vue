@@ -193,9 +193,8 @@
                   @click="randomRestaurant" 
                   tooltip="Chọn quán ngẫu nhiên"
                   class="p-button-outlined"
-                  
                 >
-                  <i class="pi pi-spin pi-spinner" style="padding: 0.2rem 0;"></i>
+                <i class="pi pi-sync" style="padding: 0.2rem 0;"></i>
               </Button>
             </div>
             <div v-else style="width: 53%;" >
@@ -207,16 +206,14 @@
             </div>
         </div>
 
-
-
         <!--  -->
         <div class="d-flex align-items-center justify-content-between p-2">
           <label for="title" class="mb-2">Tiêu đề<span class="text-red-500">*</span></label>
           <InputText v-model="order.title" id="title" placeholder="Nhập tiêu đề..." required style="width: 53%;" />
         </div>
         <div class="d-flex align-items-center justify-content-between p-2">
-          <label for="description" class="mb-2">Mô tả<span class="text-red-500">*</span></label>
-          <InputText v-model="order.description" id="description" placeholder="Nhập mô tả..." required style="width: 53%;" />
+          <label for="description" class="mb-2">Mô tả</label>
+          <InputText v-model="order.description" id="description" placeholder="Nhập mô tả..." style="width: 53%;" />
         </div>
         <div class="d-flex align-items-center justify-content-between p-2">
           <!-- <label for="relatedUserIds" class="mb-2">Người liên quan<span class="text-red-500">*</span></label> -->
@@ -479,7 +476,6 @@ const updateRestaurant = async () => {
 const validateFields = () => {
     if (selectMode.value === 'select' && !order.value.restaurantId) return 'Vui lòng chọn quán!';
     if (!order.value.title) return 'Tiêu đề là bắt buộc.';
-    if (!order.value.description) return 'Mô tả là bắt buộc.';
     if (!order.value.deadline) return 'Hạn chót là bắt buộc.';
     if (selectMode.value === 'input' && !otherRestaurantLink.value) return 'Vui lòng nhập link quán!';
     return null;

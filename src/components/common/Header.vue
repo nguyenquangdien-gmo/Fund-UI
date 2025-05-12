@@ -252,7 +252,7 @@ const baseItems = [
       { label: 'Đi muộn', icon: 'pi pi-calendar-times', command: () => router.push('/user/late') },
       { label: 'Nợ phạt', icon: 'pi pi-times-circle', command: () => router.push('/bills') },
       { label: 'Hóa đơn', icon: 'pi pi-receipt', command: () => router.push('/user/invoices') },
-      { label: 'Đặt nước', icon: 'pi pi-shopping-cart', command: () => router.push('/restaurants') },
+      { label: 'Đặt nước', icon: 'pi pi-shopping-cart', command: () => router.push('/orders') },
       { label: 'Lịch sử', icon: 'pi pi-history', command: () => router.push('/histories') },
     ],
   },

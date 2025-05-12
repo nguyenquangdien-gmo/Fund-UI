@@ -81,7 +81,7 @@
         <template #body="{ data }">
           <div class="flex space-x-2">
         <Button
-          v-if="isAdminRole" 
+        v-if="isAdminRole" 
           icon="pi pi-pencil"
           label="Sửa"
           class="p-button-warning"
@@ -96,6 +96,7 @@
           size="small"
           @click="deleteRestaurant(data)"
         />
+        <Button label="Tạo order" icon="pi pi-calendar" class="ms-2" @click="placeOrderAutoFill(data)" />
           </div>
         </template>
       </Column>
@@ -292,18 +293,6 @@
       </form>
     </Dialog>
 
-    <ConfirmDialog
-      v-model:visible="confirmDialogVisible"
-      message="Bạn có chắc chắn muốn xóa quán này không?"
-      header="Xác nhận"
-      icon="pi pi-exclamation-triangle"
-      acceptLabel="Có"
-      rejectLabel="Không"
-      @accept="deleteRestaurant(restaurant)"
-      @reject="() => (isDialogVisible = false)"
-      :style="{ width: '400px' }"
-    >
-
   </div>
 </template>
 
@@ -316,9 +305,8 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
-import ConfirmDialog from 'primevue/confirmdialog';
-import MultiSelect from 'primevue/multiselect'
 import { DatePicker } from 'primevue'
+import MultiSelect from 'primevue/multiselect'
 import { useToast } from 'primevue/usetoast'
 
 import { RestaurantResponseDTO } from '@/types/RestaurantResponseDTO'
@@ -335,7 +323,6 @@ const selectedRestaurant = ref<RestaurantRequestDTO>({
   link: '',
   type: RestaurantType.BOTH,
 });
-const confirmDialogVisible = ref(false)
 const isEditDialogVisible = ref(false)
 const selectMode = ref<'select' | 'input'>('select');
 const otherRestaurantLink = ref('');
@@ -397,20 +384,6 @@ const checkAdmin = async () => {
   }
 }
 
-const deleteRestaurant = async (restaurant: RestaurantResponseDTO) => {
-  try {
-    const response = await axiosInstance.delete(`restaurants/${restaurant.id}`)
-    if (response && response.status === 200) {
-      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được xóa!', life: 3000 })
-      fetchRestaurants()
-    } else {
-      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể xóa quán nước!', life: 3000 })
-    }
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa quán nước!', life: 3000 })
-  }
-}
-
 
 onMounted(() => {
   fetchRestaurants();
@@ -450,7 +423,19 @@ const editRestaurant = (restaurant: RestaurantResponseDTO) => {
   isEditDialogVisible.value = true;
 };
 
-
+const deleteRestaurant = async (restaurant: RestaurantResponseDTO) => {
+  try {
+    const response = await axiosInstance.delete(`restaurants/${restaurant.id}`);
+    if (response && response.status === 200) {
+      toast.add({ severity: 'success', summary: 'Thành công', detail: 'Quán nước đã được xóa!', life: 3000 });
+      fetchRestaurants();
+    } else {
+      toast.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Không thể xóa quán nước!', life: 3000 });
+    }
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa quán nước!', life: 3000 });
+  }
+};
 
 const closeEditDialog = () => {
   isEditDialogVisible.value = false;
@@ -482,6 +467,12 @@ const addRestaurant = async () => {
 };
 
 const placeOrder = () => {
+  order.value.restaurantId = null;
+  isOrderDialogVisible.value = true;
+};
+
+const placeOrderAutoFill = (data: RestaurantResponseDTO) => {
+  order.value.restaurantId = data.id;
   isOrderDialogVisible.value = true;
 };
 
